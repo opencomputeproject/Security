@@ -39,7 +39,7 @@ The scope of developing a firmware project includes, but is not limited to:
 
 *   Software stored in non-volatile memory that handles low-level hardware initialization and events (e.g. power-on, reset events). The firmware may also implement the primary runtime features of the product.
 *   Tools for diagnostics, flashing, etc.
-*   Drivers** **for operating systems or boot loaders to be able to use the hardware/firmware, including Option ROMs.
+*   Drivers for operating systems or boot loaders to be able to use the hardware/firmware, including Option ROMs.
 *   Firmware embedded within peripheral hardware devices.
 
 These best practices for secure development will apply to all the above and associated development.
@@ -149,7 +149,7 @@ At the time of writing, a complementary work is ongoing in the Open Compute Proj
 [OpenCompute Project Contributions, IBM White Paper, "Best Practices for Firmware Code Signing"](http://files.opencompute.org/oc/public.php?service=files&t=f4171bae8c7a32f05b0401378ee08483&download)[^3]
 
 
-    "Out of scope for this paper are chain of trust requirements, firmware development practices, supply chain and manufacturing processes, as well as usage of certificates, certificate authorities, and trusted application stores. Also out of scope for this paper but needing attention, is establishing trust in audit logs. Are the audit logs protected against tampering? Can the audit logs be falsified from the start? Are automated procedures in place to detect anomalous activity related to signing server audit logs?"
+&emsp;&emsp;"Out of scope for this paper are chain of trust requirements, firmware development practices, supply chain and manufacturing processes, as well as usage of certificates, certificate authorities, and trusted application stores. Also out of scope for this paper but needing attention, is establishing trust in audit logs. Are the audit logs protected against tampering? Can the audit logs be falsified from the start? Are automated procedures in place to detect anomalous activity related to signing server audit logs?"
 
 One needs to understand what a particular signature means. At the most lax end of the trust spectrum, a signature is applied only to satisfy a policy requirement (e.g. system will not boot without a signed primary boot image) and functions only as an integrity check prior to use. In the degenerate case, where a signing key is well known, a signature has the same meaning as an equivalent strength hash algorithm (e.g. SHA256) ensuring that the bits were read correctly, but saying nothing about them being trustworthy.
 
