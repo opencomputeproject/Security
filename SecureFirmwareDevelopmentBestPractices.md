@@ -1,7 +1,5 @@
 # Secure Firmware Development Best Practices
 
-The original version of this document can be found through this link: [goo.gl/uEoAh4](goo.gl/uEoAh4)
-
 
 ## About
 
