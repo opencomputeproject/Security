@@ -289,16 +289,16 @@ Acceptable source control systems will include the following features or enable 
 
 
 
-    *   Maintain commit history that includes the identity of the committers and intent of the commit. (e.g. by requiring [commit signing](https://help.github.com/en/articles/about-required-commit-signing)[^10])
+*   Maintain commit history that includes the identity of the committers and intent of the commit. (e.g. by requiring [commit signing](https://help.github.com/en/articles/about-required-commit-signing)[^10])
 
 
-    *   Policy enforcement, including:
-    *   Code reviews prior to check-ins.
-    *   Triggering automated testing hooks and generate testing reports.
-    *   Consider CI/CD - Continuous Integration / Continuous Deployment.
-    *   Integration with issue tracking.
-    *   A bug database should link bugs to associated source code changes.
-    *   Ability to reproduce any externally-facing build with the purpose of issuing targeted security fixes.
+*   Policy enforcement, including:
+*   Code reviews prior to check-ins.
+*   Triggering automated testing hooks and generate testing reports.
+*   Consider CI/CD - Continuous Integration / Continuous Deployment.
+*   Integration with issue tracking.
+*   A bug database should link bugs to associated source code changes.
+*   Ability to reproduce any externally-facing build with the purpose of issuing targeted security fixes.
 
 
 ### Security Code Reviews
@@ -465,7 +465,7 @@ The following requirements addresses this threat:
 The group responsible for the IPMI standard [has asked](https://www.intel.com/content/www/us/en/servers/ipmi/ipmi-home.html)[^18] that the industry find suitable alternatives and deprecate IPMI.
 
 
-    **_"No further updates to the IPMI specification are planned or should be expected. The IPMI promoters encourage equipment vendors and IT managers to consider a more modern systems management interface which can provide better security, scalability and features for existing datacenters and be supported on the requisite platforms and devices. DMTF’s Redfish standard (from dmtf.org/redfish) is an example of one such interface."_**
+> "No further updates to the IPMI specification are planned or should be expected. The IPMI promoters encourage equipment vendors and IT managers to consider a more modern systems management interface which can provide better security, scalability and features for existing datacenters and be supported on the requisite platforms and devices. DMTF’s Redfish standard (from dmtf.org/redfish) is an example of one such interface." 
 
 IPMI has a known history of exploitable vulnerabilities (See [Intel IPMI CVE Reports](https://www.cvedetails.com/product/30635/Intel-Ipmi.html?vendor_id=238)[^19],  http://fish2.com/ipmi/), as well as relies on authentication based on a shared secret, which, if leaked, leaves the systems exposed.
 
