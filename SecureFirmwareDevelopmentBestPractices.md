@@ -59,7 +59,7 @@ Throughout this document, the best practices that should be followed are marked 
 
 This document contains recommendations across multiple use cases and pulls information from many sources, including the experiences of the authors. Please use it as a resource for your own requirements, designs, and other project specific needs.
 
-Additional contributions to this document are most welcome. Please use **TODO: Link to Github **to submit your suggestions, or to fork it and create your own customized version.
+Additional contributions to this document are most welcome. Please submit your suggestions, or fork it and create your own customized version.
 
 
 ---
@@ -837,193 +837,204 @@ Document is now published on OCP GitHub. Additional contributions are most welco
 
 
 <!-- Footnotes themselves at the bottom. -->
-## Notes
+## Referenced URLs
 
 [^1]:
-     https://cloudsecurityalliance.org/artifacts/firmware-integrity-in-the-cloud-data-center/
+
+> https://cloudsecurityalliance.org/artifacts/firmware-integrity-in-the-cloud-data-center/
 
 [^2]:
-     https://www.opencompute.org/wiki/Security
+
+> https://www.opencompute.org/wiki/Security
 
 [^3]:
-     http://files.opencompute.org/oc/public.php?service=files&t=f4171bae8c7a32f05b0401378ee08483&download
+
+> http://files.opencompute.org/oc/public.php?service=files&t=f4171bae8c7a32f05b0401378ee08483&download
 
 [^4]:
-     https://git-scm.com/book/en/v2/Git-Basics-Tagging
+
+> https://git-scm.com/book/en/v2/Git-Basics-Tagging
 
 [^5]:
 
-     https://en.wikipedia.org/wiki/Bounds_checking
+> https://en.wikipedia.org/wiki/Bounds_checking
 
 [^6]:
 
-     https://en.wikipedia.org/wiki/W%5EX
+> https://en.wikipedia.org/wiki/W%5EX
 
 [^7]:
 
-     https://en.wikipedia.org/wiki/Address_space_layout_randomization
+> https://en.wikipedia.org/wiki/Address_space_layout_randomization
 
 [^8]:
 
-     https://en.wikipedia.org/wiki/Stack_buffer_overflow#Protection_schemes
+> https://en.wikipedia.org/wiki/Stack_buffer_overflow#Protection_schemes
 
 [^9]:
 
-     https://en.wikipedia.org/wiki/Control-flow_integrity
+> https://en.wikipedia.org/wiki/Control-flow_integrity
 
 [^10]:
 
-     https://help.github.com/en/articles/about-required-commit-signing
+> https://help.github.com/en/articles/about-required-commit-signing
 
 [^11]:
 
-     https://www.owasp.org/index.php/Static_Code_Analysis
+> https://www.owasp.org/index.php/Static_Code_Analysis
 
 [^12]:
 
-     https://www.owasp.org/index.php/Fuzzing
+> https://www.owasp.org/index.php/Fuzzing
 
 [^13]:
 
-     https://en.wikipedia.org/wiki/Code_coverage
+> https://en.wikipedia.org/wiki/Code_coverage
 
 [^14]:
 
-     https://en.wikipedia.org/wiki/Code_coverage#In_practice
+> https://en.wikipedia.org/wiki/Code_coverage#In_practice
 
 [^15]:
 
-     https://en.wikipedia.org/wiki/Formal_methods
+> https://en.wikipedia.org/wiki/Formal_methods
 
 [^16]:
 
-     https://recon.cx/2017/brussels/resources/slides/RECON-BRX-2017-Breaking_CRP_on_NXP_LPC_Microcontrollers_slides.pdf
+> https://recon.cx/2017/brussels/resources/slides/RECON-BRX-2017-Breaking_CRP_on_NXP_LPC_Microcontrollers_slides.pdf
 
 [^17]:
-     http://faq.riffbox.org/content/3/71/en/how-to-erase-frp-factory-reset-protection-using-riff-box-generic-instrucions.html
+
+> http://faq.riffbox.org/content/3/71/en/how-to-erase-frp-factory-reset-protection-using-riff-box-generic-instrucions.html
 
 [^18]:
-     https://www.intel.com/content/www/us/en/servers/ipmi/ipmi-home.html
+
+> https://www.intel.com/content/www/us/en/servers/ipmi/ipmi-home.html
 
 [^19]:
-     https://www.cvedetails.com/product/30635/Intel-Ipmi.html?vendor_id=238
+
+> https://www.cvedetails.com/product/30635/Intel-Ipmi.html?vendor_id=238
 
 [^20]:
 
-     https://docs.microsoft.com/en-us/windows-hardware/drivers/driversecurity/driver-security-checklist
+> https://docs.microsoft.com/en-us/windows-hardware/drivers/driversecurity/driver-security-checklist
 
 [^21]:
 
-     https://en.wikipedia.org/wiki/Principle_of_least_privilege
+> https://en.wikipedia.org/wiki/Principle_of_least_privilege
 
 [^22]:
 
-     https://eclypsium.com/2019/08/10/screwed-drivers-signed-sealed-delivered[/](https://eclypsium.com/2019/08/10/screwed-drivers-signed-sealed-delivered/)
+> https://eclypsium.com/2019/08/10/screwed-drivers-signed-sealed-delivered[/](https://eclypsium.com/2019/08/10/screwed-drivers-signed-sealed-delivered/)
 
 [^23]:
 
-     https://www.kernel.org/doc/html/v5.0/admin-guide/module-signing.html
+> https://www.kernel.org/doc/html/v5.0/admin-guide/module-signing.html
 
 [^24]:
 
-     https://github.com/torvalds/linux/blob/master/include/linux/uaccess.h
+> https://github.com/torvalds/linux/blob/master/include/linux/uaccess.h
 
 [^25]:
 
-     https://lwn.net/Articles/428140/
+> https://lwn.net/Articles/428140/
 
 [^26]:
 
-     https://lwn.net/Articles/429321/
+> https://lwn.net/Articles/429321/
 
 [^27]:
 
-     https://securitytxt.org/
+> https://securitytxt.org/
 
 [^28]:
 
-     https://en.wikipedia.org/wiki/Bug_bounty_program
+> https://en.wikipedia.org/wiki/Bug_bounty_program
 
 [^29]:
 
-     https://www.first.org/cvss/
+> https://www.first.org/cvss/
 
 [^30]:
 
-     https://en.wikipedia.org/wiki/STRIDE_(security)
+> https://en.wikipedia.org/wiki/STRIDE_(security)
 
 [^31]:
-     https://en.wikipedia.org/wiki/DREAD_(risk_assessment_model)
+
+> https://en.wikipedia.org/wiki/DREAD_(risk_assessment_model)
 
 [^32]:
 
-     https://en.wikipedia.org/wiki/Responsible_disclosure
+> https://en.wikipedia.org/wiki/Responsible_disclosure
 
 [^33]:
 
-     https://github.com/chipsec/chipsec
+> https://github.com/chipsec/chipsec
 
 [^34]:
 
-     https://wiki.ubuntu.com/FirmwareTestSuite/Reference
+> https://wiki.ubuntu.com/FirmwareTestSuite/Reference
 
 [^35]:
 
-     https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-147.pdf
+> https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-147.pdf
 
 [^36]:
-     https://doc.coreboot.org/
+
+> https://doc.coreboot.org/
 
 [^37]:
 
-     https://github.com/hardenedlinux/Debian-GNU-Linux-Profiles/blob/master/docs/harbian_fw/harbian_chipsec.md
+> https://github.com/hardenedlinux/Debian-GNU-Linux-Profiles/blob/master/docs/harbian_fw/harbian_chipsec.md
 
 [^38]:
 
-     https://github.com/osresearch/heads
+> https://github.com/osresearch/heads
 
 [^39]:
 
-     https://github.com/coreboot/coreboot/blob/master/Documentation/security/vboot/measured_boot.md
+> https://github.com/coreboot/coreboot/blob/master/Documentation/security/vboot/measured_boot.md
 
 [^40]:
 
-     https://github.com/coreboot/coreboot/blob/master/Documentation/security/memory_clearing.md
+> https://github.com/coreboot/coreboot/blob/master/Documentation/security/memory_clearing.md
 
 [^41]:
 
-     https://github.com/coreboot/coreboot/blob/master/Documentation/security/intel/txt.md
+> https://github.com/coreboot/coreboot/blob/master/Documentation/security/intel/txt.md
 
 [^42]:
 
-     https://uefi.org/sites/default/files/resources/UEFI_Spec_2_8_final.pdf
+> https://uefi.org/sites/default/files/resources/UEFI_Spec_2_8_final.pdf
 
 [^43]:
 
-     https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/uefi-validation-option-rom-validation-guidance
+> https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/uefi-validation-option-rom-validation-guidance
 
 [^44]:
-     https://github.com/linuxboot/fiano
+
+> https://github.com/linuxboot/fiano
 
 [^45]:
 
-     https://www.kernel.org/
+> https://www.kernel.org/
 
 [^46]:
 
-     https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project/Recommended_Settings
+> https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project/Recommended_Settings
 
 [^47]:
 
-     https://www.intel.com/content/www/us/en/servers/ipmi/ipmi-technical-resources.html
+> https://www.intel.com/content/www/us/en/servers/ipmi/ipmi-technical-resources.html
 
 [^48]:
 
-     https://www.dmtf.org/standards/smash
+> https://www.dmtf.org/standards/smash
 
 [^49]:
 
-     https://www.dmtf.org/standards/redfish
+> https://www.dmtf.org/standards/redfish
 
 [^50]:
-     http://redfish.dmtf.org/schemas/DSP0266_1.7.0.html#security-details-a-id-security-details-a-
+
+> http://redfish.dmtf.org/schemas/DSP0266_1.7.0.html#security-details-a-id-security-details-a-
