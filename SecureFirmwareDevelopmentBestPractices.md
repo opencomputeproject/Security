@@ -217,17 +217,17 @@ Security is best when it’s integrated into the earliest phases of firmware inc
 
 
 
-*   Threat modelling should be performed on all components, as a whole system, at design time and as changes are made, to understand expected trust boundaries and how to mitigate potential exploits.
-*   Trust boundary assumptions should be documented.
-*   Least-privilege, de-privileging.
+- [ ] Threat modelling should be performed on all components, as a whole system, at design time and as changes are made, to understand expected trust boundaries and how to mitigate potential exploits.
+- [ ] Trust boundary assumptions should be documented.
+- [ ] Least-privilege, de-privileging.
     *   Lock critical SPI regions against updates until next reboot.
     *   Block access to key material not needed by subsequent stages of firmware.
     *   Limit the use of SMM / SMI Handlers to the bare-minimum necessary.
-*   Limit the pre-signature validation attack surfaces.
+- [ ] Limit the pre-signature validation attack surfaces.
     *   Avoid the need for complex parsing of image or metadata prior to signature validation (eg. encrypt/compress before signing, instead of signing before encrypt/compress operations)
     *   Do not expose privileged debug, manufacturing, or diagnostic functionality until after successful authentication (when enabled).
-*   Understand the hardware design sufficiently to properly program and configure a secure boot sequence.
-*   Implement event logs for security related events & including common failures (e.g. hardware initialization fails).
+- [ ] Understand the hardware design sufficiently to properly program and configure a secure boot sequence.
+- [ ] Implement event logs for security related events & including common failures (e.g. hardware initialization fails).
 
 
 ### Input Validation
@@ -236,10 +236,10 @@ Security is best when it’s integrated into the earliest phases of firmware inc
 
 
 
-*   External input, including configuration data, must always be sanitized or validated before use.
-*   Normalize strings and characters.
-*   Filter or escape special characters that could allow for directory traversal attacks, etc.
-*   Validation of metadata in updates and on flash storage to ensure malformed metadata cannot be used as an attack vector.
+- [ ] External input, including configuration data, must always be sanitized or validated before use.
+- [ ] Normalize strings and characters.
+- [ ] Filter or escape special characters that could allow for directory traversal attacks, etc.
+- [ ] Validation of metadata in updates and on flash storage to ensure malformed metadata cannot be used as an attack vector.
 
 
 ### Memory Safety
@@ -248,25 +248,19 @@ Probably the most common sources of exploitable vulnerabilities are bugs that al
 
 
 
-*   Use memory safe practices.
+- [ ] Use memory safe practices.
     *   Initialize all variables.
     *   Always [bounds check](https://en.wikipedia.org/wiki/Bounds_checking)[^5] buffers and arrays.
-
-
     *   Check for integer overflows and underflows.
     *   Use safe string and buffer functions.
     *   Memory should never be both writable and executable ([W^X](https://en.wikipedia.org/wiki/W%5EX)[^6]).
 
 
-*   Consider using memory safe languages.
+- [ ] Consider using memory safe languages.
     *   E.g: Rust, or a safer user-space runtime for embedded systems, such as https://github.com/u-root/u-root.
-*   Enable applicable memory corruption exploit-mitigations, such as:
+- [ ] Enable applicable memory corruption exploit-mitigations, such as:
     *   [ASLR - Address Space Layout Randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization)[^7].
-
-
     *   [Stack protections](https://en.wikipedia.org/wiki/Stack_buffer_overflow#Protection_schemes)[^8].
-
-
     *   MRR - Memory Range Registers.
     *   Consider using fault-inducing guard pages between different memory regions, such as stacks, heaps, and code.
     *   Consider the use of [control flow integrity](https://en.wikipedia.org/wiki/Control-flow_integrity)[^9] protections (e.g.: [shadow stack](https://github.com/tianocore/edk2/commit/0aac2f777a688a146050bed47753e2dcf801d3c7)<span style="text-decoration:underline;">)</span>
@@ -277,8 +271,8 @@ Modern devices contain multiple processing cores, either in a symmetric multipro
 
 
 
-*   Leverage hardware interlocks where possible to prevent multiple concurrent accesses to a shared resource.
-*   Make local copies of externally provided data before validating and using it to avoid Time-of-Check-Time-of-Use (TOCTOU) issues. Deep copies of any indirect data structures may be required as well.
+- [ ] Leverage hardware interlocks where possible to prevent multiple concurrent accesses to a shared resource.
+- [ ] Make local copies of externally provided data before validating and using it to avoid Time-of-Check-Time-of-Use (TOCTOU) issues. Deep copies of any indirect data structures may be required as well.
 
 
 ### Source Control
@@ -289,16 +283,14 @@ Acceptable source control systems will include the following features or enable 
 
 
 
-*   Maintain commit history that includes the identity of the committers and intent of the commit. (e.g. by requiring [commit signing](https://help.github.com/en/articles/about-required-commit-signing)[^10])
-
-
-*   Policy enforcement, including:
-*   Code reviews prior to check-ins.
-*   Triggering automated testing hooks and generate testing reports.
-*   Consider CI/CD - Continuous Integration / Continuous Deployment.
-*   Integration with issue tracking.
-*   A bug database should link bugs to associated source code changes.
-*   Ability to reproduce any externally-facing build with the purpose of issuing targeted security fixes.
+- [ ] Maintain commit history that includes the identity of the committers and intent of the commit. (e.g. by requiring [commit signing](https://help.github.com/en/articles/about-required-commit-signing)[^10])
+- [ ] Policy enforcement, including:
+  *   Code reviews prior to check-ins.
+  *   Triggering automated testing hooks and generate testing reports.
+  *   Consider CI/CD - Continuous Integration / Continuous Deployment.
+- [ ] Integration with issue tracking.
+  *   A bug database should link bugs to associated source code changes.
+- [ ] Ability to reproduce any externally-facing build with the purpose of issuing targeted security fixes.
 
 
 ### Security Code Reviews
