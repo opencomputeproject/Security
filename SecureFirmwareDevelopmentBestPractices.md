@@ -693,54 +693,23 @@ Firmware that is not directly executed by a host processor (e.g. firmware embedd
 
 ## Revision History
 
+### 1 - 2019-06-18
 
-<table>
-  <tr>
-   <td>Version
-   </td>
-   <td>Date
-   </td>
-   <td>Description
-   </td>
-  </tr>
-  <tr>
-   <td>1
-   </td>
-   <td>2019-06-18
-   </td>
-   <td>Initial version out of CSIS SCWG
-   </td>
-  </tr>
-  <tr>
-   <td>1.1
-   </td>
-   <td>2019-10-27
-   </td>
-   <td>Added community feedback, including the following:
-<p>
+Initial version out of CSIS SCWG
+
+### 1.1 - 2019-10-27
+
+Added community feedback, including the following:
 - requirements related to pre-signature validation checks
-<p>
 - requirements for memory safety
-<p>
 - requirements for code concurrency in multi-proc systems
-<p>
 - requirements for secure configuration
-<p>
 - component-specific requirements for coreboot support
-<p>
 - improved requirements for post-release processes
-<p>
 - additional useful references for further reading
-<p>
 - many smaller edits and enhancements across the document
-<p>
 - recognized new community contributors.
-<p>
 Document is now published on OCP GitHub. Additional contributions are most welcome there.
-   </td>
-  </tr>
-</table>
-
 
 
 <!-- Footnotes themselves at the bottom. -->
