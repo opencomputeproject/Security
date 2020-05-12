@@ -625,7 +625,7 @@ If rebuilding a UEFI firmware image is not desirable, one may be able to inject 
 
 ### BMC
 
-Baseboard Management Controllers (BMCs) provi out-of-band management services for servers.
+Baseboard Management Controllers (BMCs) provide out-of-band management services for servers.
 
 BMCs have a poor history with respect to security given that their original threat model relied heavily on isolated management networks and well behaved system administrators. The model was that a BMC offered access equivalent to a system administrator's physical presence to the extent that was possible.
 
