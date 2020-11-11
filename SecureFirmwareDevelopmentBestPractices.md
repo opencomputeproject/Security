@@ -255,7 +255,7 @@ Probably the most common sources of exploitable vulnerabilities are bugs that al
     - [ ]   Use safe string and buffer functions.
     - [ ]   Memory should never be both writable and executable ([W^X](https://en.wikipedia.org/wiki/W%5EX)[^6]).
 - [ ] Consider using memory safe languages.
-    - [ ]   E.g: Rust, or a safer user-space runtime for embedded systems, such as https://github.com/u-root/u-root.
+    - [ ]   E.g: Rust, Ada/SPARK, or a safer user-space runtime for embedded systems, such as https://github.com/u-root/u-root.
 - [ ] Enable applicable memory corruption exploit-mitigations, such as:
     - [ ]   [ASLR - Address Space Layout Randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization)[^7].
     - [ ]   [Stack protections](https://en.wikipedia.org/wiki/Stack_buffer_overflow#Protection_schemes)[^8].
