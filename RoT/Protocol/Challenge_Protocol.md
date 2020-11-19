@@ -576,10 +576,6 @@ Null (0) Source and Destination EIDs are typically supported, however AC-RoT dev
 
 An MCTP message consists of one or more MCTP packets.  There are typically two types of Messages, MCTP Control Messages and MCTP Cerberus Messages.  Control Messages are standard MCTP messages with a maximum message body of 64 bytes.  Cerberus Messages are those defined in this specification.  The maximum message body for these messages is 4096 bytes, but this size can be negotiated to be smaller based on device capabilities.
 
-MCTP Control Messages do not contain the per-packet CRC described in section 3.2.
-
-
-
         1. Message Type
 
 The message type should be 0x7E as per the Management Component Transport Protocol (MCTP) Base Specification.   The message type is used to support Vendor Defined Messages where the Vendor is identified by the PCI based Vendor ID.  The initial message header is specified in the Management Component Transport Protocol (MCTP) Base Specification, and detailed below for completeness:
