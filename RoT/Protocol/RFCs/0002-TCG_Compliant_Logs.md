@@ -1,6 +1,6 @@
 * Name: TCG Comliant Measurement Logs
 * Date: 2021-05-07
-* Pull Request: [#NNNN](https://github.com/opencomputeproject/Security/pull/NNNN)
+* Pull Request: [#17](https://github.com/opencomputeproject/Security/pull/17)
 
 # Objective
 
