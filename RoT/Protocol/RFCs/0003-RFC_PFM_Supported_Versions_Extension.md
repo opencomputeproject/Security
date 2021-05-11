@@ -1,6 +1,6 @@
 * Name: Extension for the PFM Supported Versions Command
 * Date: 2021-05-11
-* Pull Request: [#NNNN](https://github.com/opencomputeproject/Security/pull/NNNN)
+* Pull Request: [#18](https://github.com/opencomputeproject/Security/pull/18)
 
 # Objective
 
