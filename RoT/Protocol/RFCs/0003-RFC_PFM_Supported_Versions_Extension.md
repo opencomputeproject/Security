@@ -17,13 +17,15 @@ specific component's supported versions.
 # Proposal
 
 Update the Get Platform Firmware Manifest Supported Firmware command to have
-optional fields added to the request the specify the firmware component ID to
+optional fields added to the request to specify the firmware component ID to
 query.  If these optional fields are not provided, every version for every
 component will be returned.
 
 # Specification Changelist
 
-The request structure in section 6.24 will be updated to include:
+The request structure for Get Platform Firmware Manifest Supported Firmware
+(https://github.com/opencomputeproject/Security/blob/master/RoT/Protocol/Challenge_Protocol.md#get-platform-firmware-manifest-supported-firmware)
+will be updated to include:
 1. A single byte length field that will specify the length of the firmware ID.
 2. A variable length, null-terminated firmware ID string.
 
