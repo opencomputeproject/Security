@@ -28,6 +28,10 @@ Add Log Type '4' to the table of supported types for TCG logs.  The descriptive
 text for the Get Log command would also need to be updated to reflect the addition
 of the new type.
 
+The log structure is defined in Section 10 (Event Logging) of the TCG PC Client
+Specific Platform Firmware Profile Specification:
+https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification
+
 # Implementation Guidance
 
 While it may seem complicated to generate and maintain a full TCG log, it can
