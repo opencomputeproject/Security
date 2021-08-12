@@ -197,11 +197,12 @@ Integrity of messages and challenges.  To facilitate this, AC-RoT are required
 to support certificate authentication.  The Active Component will support a
 component unique CA signed challenge certificate for authentication.
 
-Note:  I2C is a low speed link, there is a performance tradeoff between
-optimizing the protocol messages and strong cryptographic hashing algorithms
-that carry higher bit counts.  RoT’s that cannot support certificate
-authentication are required to support hashing algorithms and either RSA or
-ECDSA signatures of firmware measurements.
+
+> Note:  I2C is a low speed link, there is a performance tradeoff between
+> optimizing the protocol messages and strong cryptographic hashing algorithms
+> that carry higher bit counts.  RoT’s that cannot support certificate
+> authentication are required to support hashing algorithms and either RSA or
+> ECDSA signatures of firmware measurements.
 
 
 ## Power Control
@@ -241,6 +242,7 @@ Certificates.  Derived platform alias public keys are available for use in
 attestation and communication from the AC-RoT’s during the challenge handshake
 for establishing communication.
 
+
 ## RSA/ECDSA Key Generation
 
 The Cerberus platform Active RoT should support the Device Identifier
@@ -277,23 +279,10 @@ verifying the integrity of the key.  During initial provisioning, the Device Id
 Certificate is CA signed by the Microsoft Certificate Authority.  When
 provisioned, the Device Id keys must match the previously signed public key.
 
+> TODO: Figure 2
 
-    Figure 2 RioT Core Key Generation
-
-
-
-<p id="gdcalert3" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image3.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert4">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image3.png "image_tooltip")
-
-
-Note:  The CDI and Device Id private key are security erased before exiting RIoT
-Core.
+> Note:  The CDI and Device Id private key are security erased before exiting
+> RIoT Core.
 
 Each layer of the software can use its private key certificate to sign and issue
 a new certificate for the next layer, each successive layer continues this
@@ -304,33 +293,20 @@ used to sign certificates must be accessible only to the layer they are
 generated.  The Public keys are persisted or passed to upper layers, and
 eventually exchanged with upstream and downstream entities.
 
+
 ## Chained Measurements
 
 The Cerberus firmware measurements are based on the Device Identifier
 Composition Engine (DICE) architecture:
-[https://trustedcomputinggroup.org/work-groups/dice-architectures](https://trustedcomputinggroup.org/work-groups/dice-architectures) 
+<https://trustedcomputinggroup.org/work-groups/dice-architectures>
 
 The first mutable code on the RoT is the Second Bootloader (SBL).  The CDI is a
-measurement of the HMAC(Device Secret Key + Entropy, H(SBL)).  This measurement
-then passes to the second stage boot loader, that calculates the digest of the
-Third Bootloader (TBL).  On the Cerberus RoT this is the Application Firmware:
-HMAC(CDI, H(TBL)).
+measurement of the `HMAC(Device Secret Key + Entropy, H(SBL)`).  This
+measurement then passes to the second stage boot loader, that calculates the
+digest of the Third Bootloader (TBL).  On the Cerberus RoT this is the
+Application Firmware: `HMAC(CDI, H(TBL))`.
 
-
-    Figure 4 Measurement Calculation
-
-
-    
-
-<p id="gdcalert4" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image4.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert5">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image4.png "image_tooltip")
-
+> TODO: Figure 4
 
 The Third Stage Bootloader (TBL) which runs the Cerberus Application Firmware
 will take additional area measurements of the SPI/QSPI flash for the Processor
@@ -346,6 +322,7 @@ The measurements are stored in either firmware or hardware register values
 within the PA-RoT.  The seed is typically transferred to the device using the
 Device Cert, Alias Cert or Attestation Cert.
 
+
 # Protocol and Hierarchy
 
 The following section describes the capabilities and required protocol and
@@ -359,6 +336,7 @@ A limited version of the protocol is defined for devices that do not support
 MCTP.  If an AC-RoT implements the Attestation Protocol over MCTP, it may also
 optionally implement the minimum attestation protocol over native SMBus/I2C.
 
+
 ## Attestation Message Interface
 
 The Attestation Message Interface uses the MCTP over I2C message protocol for
@@ -368,49 +346,60 @@ Transport Protocol (MCTP) Base Specification, in relation to the MCTP SMBus/I2C
 Transport Binding Specification.  The following section outlines additional
 requirements upon the expected behavior of the Management Endpoint:
 
-
-
 *   The Message Interface Request and Response Messages are transported with a
     custom message type.
+
 *   MCTP messages will be transmitted in a synchronous Request and Response
     manner only.  An Endpoint (AC-RoT) should never initiate a Request Message
     to the Controller (PA-RoT).
+
 *   MCTP Endpoints must strictly adhere to the response timeout defined in this
     specification.  When an Endpoint receives a standard message, it should be
     transmitting the response within 100ms.  If the Endpoint has not begun
     transmitting the Response Message within 100ms, it should drop the message
     and not respond.
+
 *   MCTP Endpoints must strictly adhere to the response timeout advertised for
     cryptographic commands.  Cryptographic commands include transmission of
     messages signature generation and verification.  The cryptographic command
     timeout multiplier is negotiated in the Device Capabilities command.
+
 *   MCTP leaves Authentication to the application implementation.  This
     specification partially follows the flow of USB Authentication Specification
     flow, when authentication has been established attestation seeds can be
     exchanged.
+
 *   It is not required that the Management Endpoint response to ARP messages.
     AC-RoT Endpoints should not generate any ARP messages to Notify Master.
     Devices should be aware they are normally behind I2C muxes and should not
     master the I2C bus outside of the allotted time they are provided to
     response to an MCTP Request Message.
+
 *   MCTP Endpoint devices should be response only.
+
 *   Irrespective as to whether Endpoints are ARP capable, they should operate in
     a Non-ARP-capable manner.
+
 *   MCTP specifications use big endian byte ordering while this specification
     uses little endian byte ordering.  This ordering does not change the payload
     order in which bytes are sent out on the physical layer.
+
 *   Endpoints should support Fixed Addresses; Endpoint IDs are supported to
     permit multiple MCTP Endpoints behind a single physical address.
+
 *   As defined in the MCTP SMBus/I2C Transport Binding Specification Endpoints
     should support fast-mode 400KHz.
+
 *   Endpoint devices that do not support multi-master should operate in slave
     mode.  The PA-RoT PCD will identify the mode of the device.  The Master
     will issue SMBUS Write Block in MCTP payload format, the master will then
     issue an I2C Read for the response.  The Master read the initial 12 bytes
     and use byte 3 and the MCTP EOM header bits to determine if additional SMBUS
     read commands are required to collect the remainder of the response message.
+
 *   Endpoints should support EID assignment using the MCTP Set Endpoint ID
     control message.
+
 *   Endpoints should support the MCTP Get Vendor Defined Message Support control
     message to indicate support level for the Cerberus protocol.
 
@@ -422,21 +411,7 @@ are hierarchically established.  The only hierarchy whereby the Active Component
 RoT becomes both Endpoint and Master is when there is a downstream sub-device,
 such as the Host Bus Adapter (HBA) depicted in the following block diagram:
 
-
-    Figure 6 Root of Trust Hierarchy
-
-
-    
-
-<p id="gdcalert5" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image5.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert6">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image5.png "image_tooltip")
-
+> TODO: Figure 6
 
 In this diagram, the HBA RoT is an Endpoint to the Platform Active RoT and
 Master to the downstream HBA Expanders.  To the Platform’s Active RoT, the HBA
@@ -450,43 +425,47 @@ Active RoT as Master.
 ## Protocol Format
 
 All MCTP transactions are based on the SMBus Block Write bus protocol.  The
-following diagram shows MCTP encapsulated message.
+following table shows an MCTP encapsulated message; note that offsets are given
+in bits, rather than bytes.
 
-
-    Figure 7 MCTP Encapsulated Message
-
-
-    
-
-<p id="gdcalert6" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image6.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert7">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image6.png "image_tooltip")
-
+| Payload     | Description                            |
+|-------------|----------------------------------------|
+| 7:0         | I2C destination address.               |
+| 15:8        | Command code; must be `0x0f`.          |
+| 23:16       | Number of bytes in the packet payload. |
+| 31:24       | I2C source address.                    |
+| 35:32       | Reserved (should be zero).             |
+| 39:36       | MCTP Header version.                   |
+| 47:40       | Destination EID.                       |
+| 55:48       | Source EID.                            |
+| 56:56       | Start of message (SOM) flag.           |
+| 57:57       | End of message (EOM) flag.             |
+| 59:58       | Sequence number.                       |
+| 60:60       | Tag owner.                             |
+| 63:61       | Message tag.                           |
+| 64+N:64     | Packet payload.                        |
+| 64+N+8:64+N | PEC                                    |
 
 A package should contain a minimum of 1 byte of payload, with the maximum not to
 exceed the negotiated MCTP Transmission Unit Size.  The byte count indicates the
 number of subsequent bytes in the transaction, excluding the PEC.
 
 The PEC at the end of each transaction is calculated using a standard CRC-8,
-which uses polynomial x<sup>8</sup> + x<sup>2</sup> + x + 1, initial value of 0,
+which uses polynomial `x^8 + x^2 + x + 1`, initial value of 0,
 and final XOR of 0.  This CRC is independent of the message integrity check
 defined by the MCTP protocol.  The CRC is calculated over the entire
 encapsulated MCTP packet, which includes all headers and the destination I2C
 address as it was sent over the I2C bus (bytes 1 through N in Figure 7 MCTP
 Encapsulated Message).  Since the I2C slave address is not typically included as
-part of the transaction data, the CRC is equal to CRC8 (7-bit address &lt;< 1 ||
-I2C payload).  For example, an MCTP packet sent to a device with 7-bit I2C
-address 0x41 would have a CRC calculated as CRC8 (0x82 || packet).
+part of the transaction data, the CRC is equal to CRC8 (`7_bit_address << 1 ||
+i2c_payload`).  For example, an MCTP packet sent to a device with 7-bit I2C
+address `0x41` would have a CRC calculated as CRC8 (`0x82 || packet`).
+
 
 ## Packet Format
 
 The Physical Medium-Specific Header and Physical Medium-Specific Trailer are
-defined by the MCTP \ transport binding specification utilized by the port.
+defined by the MCTP transport binding specification utilized by the port.
 Refer to the MCTP transport binding specifications.
 
 A compliant Management Endpoint shall implement all MCTP required features
@@ -495,76 +474,39 @@ defined in the MCTP base specification.
 The base protocol’s common fields include message type field that identifies the
 higher layer class of message being carried within the MCTP protocol.
 
+
 ## Transport Layer Header
 
-    Figure 8 Transport Layer Header
-
-
-
-
-<p id="gdcalert7" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image7.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert8">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image7.png "image_tooltip")
-
-
 The Management Component Transport Protocol (MCTP) Base Specification defines
-the MCTP packet header (refer to DSP0236 for field descriptions).  The fields of
-an MCTP Packet are shown in Table 1 Field Definitions.
+the MCTP packet header (refer to DSP0236 for field descriptions) as follows.
+Note that offsets are in bits, rather than bytes. This table corresponds to the
+data after bit `31` in the table above.
 
-Table 1 Field Definitions
-
-
-<table> <tr> <td><strong>Field Name</strong> </td>
-<td><strong>Description</strong> </td> <td><strong>Field Size</strong> </td>
-</tr> <tr> <td>Medium-Specific Header </td> <td>This represents the header for
-the protocol that encapsulates MCTP packets over a physical medium </td>
-<td>Variable </td> </tr> <tr> <td>Medium-Specific Trailer </td> <td>This
-represents the trailer fields for the protocol that encapsulates MCTP packets
-over a physical medium </td> <td>Variable </td> </tr> <tr> <td>MCTP Transport
-Header </td> <td>Provides version and addressing for the packet.  </td> <td>32
-bits </td> </tr> <tr> <td>RSVD </td> <td>Reserved </td> <td>4 bits </td> </tr>
-<tr> <td>Header Version </td> <td>Header Version Identifies the format of
-physical framing and data integrity.  </td> <td>4 bits </td> </tr> <tr>
-<td>Destination Endpoint Id </td> <td>The EID to the endpoint to receive the
-MCTP packet.  </td> <td>8 bits </td> </tr> <tr> <td>Source Endpoint Id </td>
-<td>The EID of the originator of the MCTP packet </td> <td>8 bits </td> </tr>
-<tr> <td>SOM </td> <td>Start of Message is set to true (1b) for the first packet
-of a message.  </td> <td>1 bit </td> </tr> <tr> <td>EOM </td> <td>End of Message
-is set to true (1b) for the last packet of a message.  </td> <td>1 bit </td>
-</tr> <tr> <td>Pkt Seq# </td> <td>Packet Sequence Number for messages that span
-multiple packets.  Increments modulo 4 on each successive packet up through the
-packet contained the EOM flag set.  </td> <td>2 bits </td> </tr> <tr>
-<td>Message Tag </td> <td>Combined with Source Endpoint Id and TO field to
-identify unique message at MCTP transport layer.  <p> For messages that are
-split up into multiple packets, the TO and Message Tag bits remain the same for
-all packets from the SOM to the EOM.  </td> <td>3 bits </td> </tr> <tr> <td>TO
-</td> <td>Tag Owner bit identifies whether the message tag was originated by the
-endpoint that is the source of the message or by the endpoint that is the
-destination of the message.  MCTP message types use this for Request/Response
-messages.  </td> <td>1 bit </td> </tr> <tr> <td>Message body </td> <td>Payload
-of the MCTP message, can span multiple MCTP packets </td> <td>Variable </td>
-</tr> <tr> <td>IC </td> <td>MCTP Integrity check bit <p> 0 = No MCTP message
-integrity <p> 1 = MCTP message integrity check is present </td> <td>1 bit </td>
-</tr> <tr> <td>Message Type </td> <td>Defines the type of payload within the
-MCTP message header and data.  Message type codes are defined in the MCTP ID and
-Codes </td> <td>7 bits </td> </tr> <tr> <td>Message header </td> <td>Header data
-for the message type.  </td> <td>Variable </td> </tr> <tr> <td>Message Data
-</td> <td>Data for the message defined by the message type </td> <td>Variable
-</td> </tr> <tr> <td>MCTP Packet Payload </td> <td>Payload of the message body
-carried in the packet.  Limited by the transfer unit size.  Review MCTP Base
-Specification for further details.  </td> <td>Variable </td> </tr> <tr>
-<td>Message Integrity Check </td> <td>Message type specific integrity check over
-the contest of the message body </td> <td>Variable </td> </tr> </table>
+| Payload  | Description                  |
+|----------|------------------------------|
+| 3:0      | Reserved (should be zero).   |
+| 7:4      | MCTP Header version.         |
+| 15:8     | Destination EID.             |
+| 23:16    | Source EID.                  |
+| 24:24    | Start of message (SOM) flag. |
+| 25:25    | End of message (EOM) flag.   |
+| 27:26    | Sequence number.             |
+| 28:28    | Tag owner.                   |
+| 31:29    | Message tag.                 |
+| 32:32    | Integrity check flag.        |
+| 39:33    | MCTP message type.           |
+| Variable | MCTP header.                 |
+| Variable | MCTP message data.           |
+| Variable | Integrity check.             |
 
 
-Null (0) Source and Destination EIDs are typically supported, however AC-RoT
-devices that have multiple MCTP Endpoints may specify an EID value greater than
-7 and less than 255.  The PA-RoT does not broadcast any MCTP messages.
+Null (`0x00`) Source and Destination EIDs are typically supported, however
+AC-RoT devices that have multiple MCTP Endpoints may specify an EID value
+greater than `0x07` and less than `0xff`.  The PA-RoT does not broadcast any
+MCTP messages.
+
+Note that the last three fields above are dependent on the MCTP message type.
+
 
 ## MCTP Messages
 
@@ -575,35 +517,30 @@ Cerberus Messages are those defined in this specification.  The maximum message
 body for these messages is 4096 bytes, but this size can be negotiated to be
 smaller based on device capabilities.
 
-        1. Message Type
 
-The message type should be 0x7e as per the Management Component Transport
+### Message Type
+
+The message type should be `0x7e` as per the Management Component Transport
 Protocol (MCTP) Base Specification.  The message type is used to support Vendor
 Defined Messages where the Vendor is identified by the PCI based Vendor ID.  The
 initial message header is specified in the Management Component Transport
 Protocol (MCTP) Base Specification, and detailed below for completeness:
 
-
-    Table 2 Vendor Defined Message
-
-
-<table> <tr> <td>Message Header </td> <td>Byte </td> <td> </td> </tr> <tr>
-<td>Request Data </td> <td>1:2 </td> <td>PCI/PCIe Vendor ID.  The MCTP Vendor Id
-formatted per 0x00 Vendor ID format offset.  </td> </tr> <tr> <td> </td> <td>3:N
-</td> <td>Vendor-Defined Message Body.  0 to N bytes.  </td> </tr> <tr>
-<td>Response Data </td> <td>1:2 </td> <td>PCI/PCIe Vendor ID, the value is
-formatted per 0x00 Vendor ID offset </td> </tr> <tr> <td> </td> <td>3:M </td>
-<td>Vendor-Defined Message Body.  0 to M bytes </td> </tr> </table>
+| Message Header | Byte |                                                                                     |
+|----------------|------|-------------------------------------------------------------------------------------|
+| Request Data   | 1:2  | PCI/PCIe Vendor ID.  The MCTP Vendor Id formatted per 0x00 Vendor ID format offset. |
+|                | 3:N  | Vendor-Defined Message Body.  0 to N bytes.                                         |
+| Response Data  | 1:2  | PCI/PCIe Vendor ID, the value is formatted per 0x00 Vendor ID offset.               |
+|                | 3:M  | Vendor-Defined Message Body.  0 to M bytes.                                         |
 
 
-The Vendor ID is a 16-bit Unsigned Integer, described in the PCI 2.3
+The Vendor ID is a 16-bit unsigned integer, described in the PCI 2.3
 specification.  The value identifies the device manufacturer.
 
 The message body and content are described in Table 4 MCTP Message Format.
 
 
-
-        2. Message Fields
+### Message Fields
 
 The format of the MCTP message consists of a message header in the first two
 bytes, followed by the message data, and ending with the Message Integrity
@@ -614,31 +551,27 @@ that are defined by the MCTP Base Specification.  The Message Type field
 indicate 
 
 
-
-        3. Message Integrity Check
+### Message Integrity Check
 
 The Message Integrity Check field contains a 32-bit CRC computed over the
-contents of the message
+contents of the message.
 
 
-
-        4. Packet Assembly into Messages
+### Packet Assembly into Messages
 
 An MCTP message may be split into multiple MCTP Packet Payloads and sent as a
 series of packets.  Refer to the MCTP Base Specification for packetization and
 message assembly rules.
 
 
-
-        5. Request Messages
+### Request Messages
 
 Request Messages are messages that are generated by a Master MTCP Controller and
 sent to an MCTP Endpoint.  Request Messages specify an action to be performed by
 the Endpoint.  Request Messages are either Control Messages or Cerberus Messages.
 
 
-
-        6. Response Messages
+### Response Messages
 
 Response Messages are messages that are generated when an MCTP Endpoint
 completes processing of a previously issued Request Message.  The Response
@@ -652,6 +585,7 @@ Active Component RoT devices should support the MCTP Set Endpoint ID control
 request and response messages.  The Platform Active RoT will have a static EID of
 0x0b.
 
+
 # Certificates
 
 The PA-RoT and AC-Rot will have a minimum of two certificates: Device Id
@@ -660,6 +594,7 @@ Certificate (typically CA signed by offline CA) and the Alias Certificate
 Attestation Certificate signed by the Device Id Certificate.
 
 Certificates follow the 9.3 DICE and RIoT Keys and Certificates.
+
 
 ## Format
 
@@ -672,66 +607,56 @@ required by RFC5280 or DICE are allowed so long as they conform to the
 appropriate standards.  Custom extensions must be marked non-critical.
 
 
-
-        7. Textual Format
+### Textual Format
 
 All text ASN.1 objects contained within Certificates, shall be specified as
-either a UTF8String, PrintableString, or IA5String.  The length of any textual
-object shall not exceed 64 bytes excluding the DER type and DER length encoding.
+either a `UTF8String`, `PrintableString`, or `IA5String`.  The length of any
+textual object shall not exceed 64 bytes excluding the DER type and DER length
+encoding.
 
 
-
-        8. Distinguished Name
+### Distinguished Names
 
 The distinguished name consists of many attributes that uniquely identify the
 device.  Distinguished name uniqueness can be accomplished by including
 attributes such as the serial number.
 
 
+### Object Identifiers
 
-        9. Object Identifier
-
-Object Identifier should follow 9.3 DICE and RIoT Keys and Certificates
-
+Object Identifiers should follow 9.3 DICE and RIoT Keys and Certificates
 
 
-        10. Serial Number
+### Serial Numbers
 
-As per 9.3 DICE and RIoT Keys and Certificates, the Certificate _Serial Numbers_
+As per 9.3 DICE and RIoT Keys and Certificates, the Certificate Serial Numbers
 MUST be statistically unique per-Alias Certificate.
 
 If the security processor has an entropy source, an 8-octet random number MAY be
 used.
 
 If the security processor has does not have an entropy source, then an 8-octet
-_Serial Number_ MAY be generated using a cryptographically secure key derivation
+Serial Number MAY be generated using a cryptographically secure key derivation
 function based on a secret key, such as those described in SP800-108 [9.6 NIST
-Special Publication 800-108].  The _Serial Number_ MUST be unique for each
+Special Publication 800-108].  The Serial Number MUST be unique for each
 generated certificate.  For the Alias Certificate, this SHOULD be achieved by
-incorporating the FWID into the key derivation process (e.g.  as the _Context_
+incorporating the FWID into the key derivation process (e.g. as the Context
 value in SP-800-108)
 
 If the 8-octet serial number generated is not a positive number, it may be
 padded with an additional octet to maintain compliance with RFC5280.
 
-## Certificate Chain
+
+## Certificate Chains
 
 The maximum Certificate Chain Size is 4096 bytes.  There is no additional
 encoding necessary for the certificate chain as each certificate can be
 retrieved individually.
 
-The certificate recommended cryptographic methods for interoperability are
-defined in Table 3 Recommended Algorithms for Interoperability
+Certificate signatures should use ECDSA with the NIST P256 `secp256r1` curve in
+uncompressed point form. Hashing should be performed with the `SHA2-256`
+algorithm.
 
-
-    Table 3 Recommended Algorithms for Interoperability
-
-
-<table> <tr> <td><strong>Method</strong> </td> <td><strong>Use</strong> </td>
-</tr> <tr> <td>X509v3, DER encoding </td> <td>Certificate format </td> </tr>
-<tr> <td>ECDSA, NIST P256, secp256r1 curve, uncompressed point </td> <td>Digital
-signing of Certificate </td> </tr> <tr> <td>SHA256 </td> <td>Hash algorithm
-</td> </tr> </table>
 
 # Authentication
 
@@ -745,18 +670,18 @@ functionality.
 A device only needs to support a single session from another endpoint.  In
 single session devices, the establishment of a new session will supersede and
 terminate the existing session to permit the new session.  The previous session
-will be terminated upon receiving an out of session (unencrypted) Get Digests
-request specifying a requested key exchange.  Get Digests requests received in
+will be terminated upon receiving an out of session (unencrypted) `GET_DIGESTS`
+request specifying a requested key exchange.  `GET_DIGESTS` requests received in
 session (encrypted) or without requesting key exchange will not cause the active
 session to terminate.
+
 
 ## PA-RoT and AC-RoT Authentication
 
 Devices are authenticated using the Alias certificate chain and signed firmware
 measurements.  The certificate chain is endorsed by the Certificate Authority
 signing the Device Id Certificate.  The certificate hierarchy is explained in
-the TCG [Implicit Identity Based Device
-Attestation](https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Arch-Implicit-Identity-Based-Device-Attestation-v1-rev93.pdf)
+the TCG [Implicit Identity Based Device Attestation](https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Arch-Implicit-Identity-Based-Device-Attestation-v1-rev93.pdf)
 Reference.
 
 The certificate authentication flow closely follows the USB Authentication
@@ -764,11 +689,11 @@ Architecture and Authentication Messages.  The command structures defined in
 this specification are derived from the USB-C Authentication Protocol.  Relevant
 sections of the specification are as follows:
 
-Section 3 Authentication Architecture of USB Authentication Specification
+- Section 3: Authentication Architecture, *USB Authentication Specification*
 
-Section 4 Authentication Protocol of USB Authentication Specification
+- Section 4: Authentication Protocol, *USB Authentication Specification*
 
-Section 5 Authentication Messages of USB Authentication Specification
+- Section 5: Authentication Messages, *USB Authentication Specification*
 
 The authentication sequence starts with the master (e.g.  PA-RoT) issuing a Get
 Digests command.  The slave (e.g.  AC-RoT) responds with a list of SHA256 hashes
@@ -777,7 +702,7 @@ cached the certificate chain, it may optionally skip requesting these
 certificates.
 
 If the master does not have the correct certificates, it will issue a Get
-Certificate request for each certificate in the slave’s Alias certificate chain.
+Certificate request for each certificate in the slave’s Alias Certificate chain.
 The slave will respond with the requested certificates, which must have
 origination from a trusted CA.
 
@@ -793,38 +718,24 @@ device firmware.  The master can verify this measurement against a Component
 Firmware Manifest (CFM) or some other reference to confirm the firmware is
 valid.
 
+The authentication flow is as follows:
 
+1.  Master issues `GET_DIGESTS` command for Slot 0
+2.  Slave responds with digests for the Alias certificate chain
+3.  For each certificate in the chain, Master checks if the certificate has been
+    cached.
+4.  If the certificate has not been cached, Master issues `GET_CERTIFICATE`
+    request.
+5.  Slave responds with the requested certificate.
+6.  Master verifies the Alias certificate chain against a trusted root CA.
+7.  Master issues Challenge command containing a nonce `RN1`.
+8.  Slave generates a response containing
+    *   Random nonce, `RN2`.
+    *   Collective firmware measurement, `PMR0`.
+    *   Signature over (`request || response`) pair using the Alias key.
+9.  Master verifies the signature and firmware measurement
 
-        11. Authentication Sequence
-1. Master issues Get Digests command for Slot 0
-2. Slave responds with digests for the Alias certificate chain
-3. For each certificate in the chain, Master checks if the certificate has been
-cached
-4. If the certificate has not been cached, Master issues Get Certificate request
-5. Slave responds with the request certificate
-6. Master verifies the Alias certificate chain against a trusted root CA
-7. Master issues Challenge command containing a nonce (RN1)
-8. Slave generates a response containing
-    *   Random nonce (RN2)
-    *   Collective firmware measurement (PMR0)
-    *   Signature over request/response pair using the Alias key
-9. Master verifies the signature and firmware measurement
-
-    Figure 9 Authentication
-
-
-
-
-<p id="gdcalert8" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image8.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert9">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image8.png "image_tooltip")
-
-
+> TODO: Figure 9
 
 
 ## Secure Session Establishment
@@ -839,8 +750,8 @@ determine if a device supports secure sessions.
 
 After querying the for the device capabilities, the master will begin the
 authentication sequence by issuing a Get Digests request.  When using
-authentication to establish a secure session, the Digests request will also
-indicate the type of key exchange that will be ultimately be used.  If the
+authentication to establish a secure session, the `GET_DIGESTS` request will
+also indicate the type of key exchange that will be ultimately be used.  If the
 device does not support the requested key exchange, it will respond with an
 error.
 
@@ -854,54 +765,40 @@ The KDF used for deriving session and HMAC keys is NIST SP800-108 Counter Mode.
 Session state is volatile.  Each end of the session must be able to handle a
 loss of session context and support session re-establishment.
 
-
-
-        12. Session Establishment Sequence
+### Session Establishment Sequence
 
 The session establishment flow starts with standard authentication described is
 Section 5.1.1.  Once the slave has been authenticated, the key exchange is used
 to establish the session.
 
+1.  Master generates an ephemeral ECC key pair and sends a `Key Exchange`
+    request with Type 0 that includes the public key (`PKreq`).
+2.  Slave generates an ephemeral ECC key pair of equivalent strength (`PKresp`).
+3.  Slave generates a 256-bit AES session key (`K_S`) using NIST SP800-108
+    Counter Mode with the following parameters:
+    *   `K_I = ECDH(PKreq, PKresp)`
+    *   `label = RN1`
+    *   `context = RN2`
+    *   `r = 32`
+4.  Slave generates a 256-bit MAC key (`K_M`) using NIST SP800-108
+    Counter Mode with the following parameters (note `label` and `context` are
+    swapped):
+    *   `K_I = ECDH(PKreq, PKresp)`
+    *   `label = RN2`
+    *   `context = RN1`
+    *   `r = 32`
+5.  Slave sends a Key Exchange response that includes:
+    1.  The slave session public key (`PKresp`).
+    2.  A signature using the Alias key over `PKreq` and `PKresp`.
+    3.  An HMAC of its Alias key certificate using `K_M`.
+6.  Master generates the same session and MAC keys using the public key in the
+    Key Exchange response.
+7.  Master validates the signature and HMAC on the response.
+8.  Messages can now be encrypted with 256-bit AES-GCM using the shared session
+    key.
 
+> TODO: Figure 10
 
-1. Master generates an ephemeral ECC key pair and sends a Key Exchange request
-with Type 0 that includes the public key (PKreq).
-2. Slave generates an ephemeral ECC key pair of equivalent strength (PKresp).
-3. Slave generates a 256-bit AES session key (K<sub>S</sub>) using NIST
-SP800-108 Counter Mode
-    1. K<sub>I</sub> = ECDH (PKreq, PKresp)
-    2. Label = RN1
-    3. Context = RN2
-    4. r = 32
-4. Slave generates a 256-bit MAC key (K<sub>M</sub>) using NIST SP800-108
-Counter Mode
-    5. K<sub>I</sub> = ECDH (PKreq, PKresp)
-    6. Label = RN2
-    7. Context = RN1
-    8. r = 32
-5. Slave sends a Key Exchange response that includes:
-    9. The slave session public key (PKresp).
-    10. A signature using the Alias key over PKreq and PKresp.
-    11. An HMAC of its Alias key certificate using K<sub>M</sub>.
-6. Master generates the same session and MAC keys using the public key in the
-Key Exchange response.
-7. Master validates the signature and HMAC on the response.
-8. Messages can now be encrypted with 256-bit AES-GCM using the shared session
-key.
-
-    Figure 10 Session Establishment
-
-
-
-
-<p id="gdcalert9" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image9.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert10">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image9.png "image_tooltip")
 
 ## Secure Device Binding
 
@@ -917,62 +814,48 @@ common HMAC key is derived from session data available the first time the two
 devices establish a secure session.
 
 
-
-        13. Secure Device Binding Sequence
+### Secure Device Binding Sequence
 
 A paired session with device binding begins with a standard secure session.
 Once the session has been established, an additional key exchange is used to
 update the session key.  This additional key exchange must be encrypted.
 
 
+1.  Master loads the pairing key `K_P`.
+    1.  If this is the first pairing request, the Master generates the key using
+        NIST SP800-108 Counter Mode with the following paramters:
+        *   `K_I = K_S`
+        *   `label = "pairing"`
+        *   No `context`
+        *   `r = 32`
+    2.  If the Master has already been paired to the Slave, the Master loads key
+        from secure storage.
+2.  Master generates a new session key `K_S'` using NIST SP800-108 Counter Mode.
+    *   `K_I = K_P`
+    *   `label = K_S`
+    *   No `context`
+    *   `r = 32`
+3.  Master sends a Key Exchange request with Type 1 that includes the length and
+    HMAC of the pairing key using `K_M`.  This message is encrypted with the
+    current session key `K_S`.
+4. Slave loads `K_P`
+    1.  If this is the first paring request from this Master, the Slave
+        generates the key using the same inputs as the Master.
+    2.  If the Slave has already paired with the Master, the Slave loads the key
+        from secure storage.
+5.  Slave calculates the pairing key HMAC and compares it to the received data.
+    *   If this is the first paring request from this Master, Slave securely
+        stores `K_P`.
+7.  Slave generates a new session key (`K_S'`).
+8.  Slave generates a Key Exchange response encrypted with `K_S'`.
+9.  Master verifies the response using `K_S'`.  Failure to decrypt with `K_S'`
+    will require the Master to decrypt with `K_S` since the Slave will not
+    update the session key on failure.
+10. The secure session continues using `K_S'`.  Messages encrypted with
+    `K_S` will not be processed by either side.
 
-1. Master loads the pairing key (K<sub>P</sub>)
-    1. If this is the first pairing request, the Master generates the key using
-    NIST SP800-108 Counter Mode
-        1. K<sub>I</sub> = K<sub>S</sub>
-        2. Label = pairing
-        3. No Context
-        4. r = 32
-    2. If the Master has already been paired to the Slave, the Master loads key
-    from secure storage.
-2. Master generates a new session key (K<sub>S’</sub>) using NIST SP800-108
-Counter Mode.
-    3. K<sub>I</sub> = K<sub>P</sub>
-    4. Label = K<sub>S</sub>
-    5. No Context
-    6. r = 32
-3. Master sends a Key Exchange request with Type 1 that includes the length and
-HMAC of the pairing key using K<sub>M</sub>.  This message is encrypted with the
-current session key (K<sub>S</sub>).
-4. Slave loads K<sub>P</sub>
-    7. If this is the first paring request from this Master, the Slave generates
-    the key using the same inputs as the Master.
-    8. If the Slave has already paired with the Master, the Slave loads the key
-    from secure storage.
-5. Slave calculates the pairing key HMAC and compares it to the received data.
-6. If this is the first paring request from this Master, Slave securely stores
-K<sub>P</sub>.
-7. Slave generates a new session key (K<sub>S’</sub>).
-8. Slave generates a Key Exchange response encrypted with K<sub>S’</sub>.
-9. Master verifies the response using K<sub>S’</sub>.  Failure to decrypt with
-K<sub>S’</sub> will require the Master to decrypt with K<sub>S</sub> since the
-Slave will not update the session key on failure.
-10. The secure session continues using K<sub>S’</sub>.  Messages encrypted with
-K<sub>S</sub> will not be processed by either side.
+> TODO: Figure 11
 
-    Figure 11 Secure Device Binding
-
-
-
-
-<p id="gdcalert10" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image10.png).  Store image on
-your image server and adjust path/filename/extension if necessary.
-</span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert11">Next
-alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image10.png "image_tooltip")
 
 # Command Format
 
