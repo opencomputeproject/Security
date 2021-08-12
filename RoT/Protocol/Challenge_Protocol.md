@@ -530,12 +530,12 @@ Protocol (MCTP) Base Specification, and detailed below for completeness:
     Table 2 Vendor Defined Message
 
 
-| -------------- | ---- | --- |
-| Message Header | Byte |     |
+| Message Header | Byte | Description                                                                         |
+|----------------|------|-------------------------------------------------------------------------------------|
 | Request Data   | 1:2  | PCI/PCIe Vendor ID.  The MCTP Vendor Id formatted per 0x00 Vendor ID format offset. |
-|                | 3:N  | Vendor-Defined Message Body.  0 to N bytes. |
-| Response Data  | 1:2  | PCI/PCIe Vendor ID, the value is formatted per 00h Vendor ID offset. |
-|                | 3:M  | Vendor-Defined Message Body.  0 to M bytes. |
+|                | 3:N  | Vendor-Defined Message Body.  0 to N bytes.                                         |
+| Response Data  | 1:2  | PCI/PCIe Vendor ID, the value is formatted per 0x00 Vendor ID offset.               |
+|                | 3:M  | Vendor-Defined Message Body.  0 to M bytes.                                         |
 
 
 The Vendor ID is a 16-bit unsigned integer, described in the PCI 2.3
@@ -1006,7 +1006,7 @@ be treated as a "private use" area.
 A note on required messages:
 1. `Key Exchange` and `Session Sync` are required if any "Enc" messages are supported.
 2. `Get Attestation Data` is required if an Attestation Log is supported.
-3. If any update command (e.g., `Prepare`/`Update/`Activate` commands) are
+3. If any update command (e.g., `Prepare`/`Update`/`Activate` commands) are
    supported, `Update Status` and `Extended Update Status` are required.
 4. If any manifest types are supported, `Get Config IDs` is required.
 
@@ -1020,283 +1020,309 @@ The following section describes the structures of the MCTP message body.
 
 The error command is returned for command responses when the command was not
 completed as proposed, it also acts as a generic status for commands without
-response whereby "No Error" code would indicate success.  The Msg Tag, Seq and
-Command match the response to the corresponding request.  The Message Body is
-returned as follows:
+response whereby "No Error" code would indicate success.  The Message Tag,
+Sequence Number and Command match the response to the corresponding request.
+The Message Body is returned as follows:
 
+| Payload | Description |
+|---------|-------------|
+| 1       | Error code  |
+| 2:5     | Error data  |
 
-    Table 8 Error Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Error Code </td> </tr> <tr> <td>2:5 </td>
-<td>Error Data </td> </tr> </table>
-
+"Error code" is one of the following:
 
 
     Table 9 Error Codes
 
 
-<table> <tr> <td><strong>Error Code</strong> </td> <td><strong>Value</strong>
-</td> <td><strong>Description</strong> </td> <td><strong>Data</strong> </td>
-</tr> <tr> <td>No Error </td> <td>0h </td> <td>Success [Reserved in USB Type C
-<p> Authentication Specification] </td> <td>00h </td> </tr> <tr> <td>Invalid
-Request </td> <td>01h </td> <td>Invalidated data in the request </td> <td>00h
-</td> </tr> <tr> <td>Busy </td> <td>03h </td> <td>Device cannot response as it
-is busy processing other commands </td> <td>00h </td> </tr> <tr> <td>Unspecified
-</td> <td>04h </td> <td>Unspecified error occurred </td> <td>Vendor defined
-</td> </tr> <tr> <td>Reserved </td> <td>05h-EFh </td> <td>Reserved </td>
-<td>Reserved </td> </tr> <tr> <td>Invalid Checksum </td> <td>F0h </td>
-<td>Invalid checksum </td> <td>Checksum </td> </tr> <tr> <td>Out of Order
-Message </td> <td>F1h </td> <td>EOM before SOM </td> <td>00h </td> </tr> <tr>
-<td>Authentication </td> <td>F2h </td> <td>Authentication not established </td>
-<td>00h </td> </tr> <tr> <td>Out of Sequence Window </td> <td>F3h </td>
-<td>Message received out of Sequence Window </td> <td>00h </td> </tr> <tr>
-<td>Invalid Packet Length </td> <td>F4h </td> <td>Packet received with
-unexpected size </td> <td>Packet Length </td> </tr> <tr> <td>Message Overflow
-</td> <td>F5h </td> <td>Message exceeded maximum length </td> <td>Message Length
-</td> </tr> </table>
-
+| Error Code             | Value | Description                              | Data           |
+|------------------------|-------|------------------------------------------|----------------|
+| No Error               | 0x00  | Success                                  | 0x00           |
+| Invalid Request        | 0x01  | Invalidated data in the request          | 0x00           |
+| Busy                   | 0x03  | Device is busy processing other commands | 0x00           |
+| Unspecified            | 0x04  | Unspecified error occurred               | Vendor defined |
+| Invalid Checksum       | 0xf0  | Invalid checksum                         | Checksum       |
+| Out of Order Message   | 0xf1  | EOM before SOM                           | 0x00           |
+| Authentication         | 0xf2  | Authentication not established           | 0x00           |
+| Out of Sequence Window | 0xf3  | Message received out of Sequence Window  | 0x00           |
+| Invalid Packet Length  | 0xf4  | Packet received with unexpected size     | Packet Length  |
+| Message Overflow       | 0xf5  | Message exceeded maximum length          | Message Length |
 
 If an explicit response is not defined for the command definitions in the
 following sections, the Error Message is the expected response with "No Error".
 The Error Message can occur as the response for any command that fails
 processing.
 
-## Firmware Version
+### Firmware Version
 
 This command gets the target firmware the version.
 
+#### Request
 
-    Table 10 Firmware Version Request
+| Payload | Description |
+|---------|-------------|
+| 1       | Area Index  |
+
+Area indexes are as follows:
+*   0x00: Entire Firmware
+*   0x01: RIoT Core
+*   Additional indexes are vendor-defined.
+
+#### Resposne
+
+| Payload | Description                     |
+|---------|---------------------------------|
+| 1:32    | Firmware Version Number (ASCII) |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Area Index: <p> 00h = Entire Firmware <p> 01h =
-RIoT Core <p> Additional indexes are firmware specific </td> </tr> </table>
-
-
-
-    Table 11 Firmware Version Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:32 </td> <td>Firmware Version Number ASCII Formatted
-</td> </tr> </table>
-
-## Device Capabilities
+### Device Capabilities
 
 Device Capabilities provides information on device functionality.  The message
 and packet maximums are negotiated based on the shared capabilities.  Some
 additional considerations apply when determining appropriate maximum sizes:
 
 
+1.  Per the MCTP specification, the packet payload size must be no less than 64
+    bytes.
 
-1. Per the MCTP specification, the packet payload size must be no less than 64
-bytes.
-2. Per section 3.5, the message payload size must be no more than 4096 bytes.
-3. The total packet size supported by the device will include the encapsulation
-defined in section 3.2, excluding the first byte of destination address.  For
-example, a maximum packet payload of 247 bytes will result in 256 bytes being
-transmitted for every packet:  1 byte destination address, 3 bytes SMBus header,
-4 bytes MCTP header, 247 bytes payload, and 1 byte CRC-8.
-4. Some commands do not support being separated across messages.  Devices must
-support a maximum message size that is compatible with the expected payloads for
-supported commands.
-5. Master devices, such as PA-RoTs, should support the maximum message size of
-4096 bytes to ensure full compatibility with any slave device.
+2.  Per section 3.5, the message payload size must be no more than 4096 bytes.
 
-    Table 12 Device Capabilities Request
+3.  The total packet size supported by the device will include the encapsulation
+    defined in section 3.2, excluding the first byte of destination address.
+    For example, a maximum packet payload of 247 bytes will result in 256 bytes
+    being transmitted for every packet:
+    *   1 byte destination address.
+    *   3 bytes SMBus header.
+    *   4 bytes MCTP header.
+    *   247 bytes payload.
+    *   1 byte CRC-8.
 
+4.  Some commands do not support being separated across messages.  Devices must
+    support a maximum message size that is compatible with the expected payloads
+    for supported commands.
 
-<table> <tr> <td> <strong>Payload</strong> </td>
-<td><strong>Description</strong> </td> </tr> <tr> <td>1:2 </td> <td>Maximum
-Message Payload Size </td> </tr> <tr> <td>3:4 </td> <td>Maximum Packet Payload
-Size </td> </tr> <tr> <td>5 </td> <td>Mode: <p> [7:6] <p>
+5.  Master devices, such as PA-RoTs, should support the maximum message size of
+    4096 bytes to ensure full compatibility with any slave device.
 
-    00 = AC-RoT <p>
-
-    01 = PA-RoT <p>
-
-    10 = External <p>
-
-    11 = Reserved <p> [5:4] Master/Slave <p>
-
-    00 = Unknown <p>
-
-    01 = Master <p>
-
-    10 = Slave <p>
-
-    11 = both master and slave <p> [3] Reserved <p> [2:0] Security <p>
-
-    000 = None <p>
-
-    001 = Hash/KDF <p>
-
-    010 = Authentication [Certificate Auth] <p>
-
-    100 = Confidentiality [AES] </td> </tr> <tr> <td>6 </td> <td>[7] PFM support
-    <p> [6] Policy Support <p> [5] Firmware Protection <p> [4-0] Reserved </td>
-    </tr> <tr> <td>7 </td> <td>PK Key Strength: <p> [7] RSA <p> [6] ECDSA <p>
-    [5:3] ECC <p>
-
-    000: None <p>
-
-    001: 160bit <p>
-
-    010: 256bit <p>
-
-    100: Reserved <p> [2:0] RSA: <p>
-
-    000: None <p>
-
-    001: RSA 2048 <p>
-
-    010: RSA 3072 <p>
-
-    100: RSA 4096 </td> </tr> <tr> <td>8 </td> <td>Encryption Key Strength: <p>
-    [7] ECC <p> [6:3] Reserved <p> [2:0] AES: <p>
-
-    000: None <p>
-
-    001: 128 bit <p>
-
-    010: 256 bit <p>
-
-    100: 384 bit </td> </tr> </table>
+<!-- TODO: convert these to a proper markdown table. As it is, it's a bit too
+    complex to do mechnaically. -->
 
 
+#### Request
 
-    Table 13 Device Capabilities Response
+<table>
+    <tr>
+        <td> <strong>Payload</strong> </td>
+        <td><strong>Description</strong> </td>
+    </tr>
+    <tr>
+        <td>1:2 </td>
+        <td>Maximum Message Payload Size </td>
+    </tr>
+    <tr>
+        <td>3:4 </td>
+        <td>Maximum Packet Payload Size </td>
+    </tr>
+    <tr>
+        <td>5 </td>
+        <td>Mode:
+            <br> [7:6]
+            <br> 00 = AC-RoT
+            <br> 01 = PA-RoT
+            <br> 10 = External
+            <br> 11 = Reserved
+            <br> [5:4] Master/Slave
+            <br> 00 = Unknown
+            <br> 01 = Master
+            <br> 10 = Slave
+            <br> 11 = both master and slave
+            <br> [3] Reserved
+            <br> [2:0] Security
+            <br> 000 = None
+            <br> 001 = Hash/KDF
+            <br> 010 = Authentication [Certificate Auth]
+            <br> 100 = Confidentiality [AES] </td>
+    </tr>
+    <tr>
+        <td>6 </td>
+        <td>[7] PFM support
+            <br> [6] Policy Support
+            <br> [5] Firmware Protection
+            <br> [4-0] Reserved </td>
+    </tr>
+    <tr>
+        <td>7 </td>
+        <td>PK Key Strength:
+            <br> [7] RSA
+            <br> [6] ECDSA
+            <br> [5:3] ECC
+            <br> 000: None
+            <br> 001: 160bit
+            <br> 010: 256bit
+            <br> 100: Reserved
+            <br> [2:0] RSA:
+            <br> 000: None
+            <br> 001: RSA 2048
+            <br> 010: RSA 3072
+            <br> 100: RSA 4096 </td>
+    </tr>
+    <tr>
+        <td>8 </td>
+        <td>Encryption Key Strength:
+            <br> [7] ECC
+            <br> [6:3] Reserved
+            <br> [2:0] AES:
+            <br> 000: None
+            <br> 001: 128 bit
+            <br> 010: 256 bit
+            <br> 100: 384 bit </td>
+    </tr>
+</table>
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:2 </td> <td>Maximum Message Payload Size </td> </tr> <tr>
-<td>3:4 </td> <td>Maximum Packet Payload Size </td> </tr> <tr> <td>5 </td>
-<td>Mode: <p> [7:6] <p>
+#### Response
 
-    00 = AC-RoT <p>
+<table>
+    <tr>
+        <td><strong>Payload</strong> </td>
+        <td><strong>Description</strong> </td>
+    </tr>
+    <tr>
+        <td>1:2 </td>
+        <td>Maximum Message Payload Size </td>
+    </tr>
+    <tr>
+        <td>3:4 </td>
+        <td>Maximum Packet Payload Size </td>
+    </tr>
+    <tr>
+        <td>5 </td>
+        <td>Mode:
+            <br> [7:6]
+            <br> 00 = AC-RoT
+            <br> 01 = PA-RoT
+            <br> 10 = External
+            <br> 11 = Reserved
+            <br> [5:4] Master/Slave
+            <br> 00 = Unknown
+            <br> 01 = Master
+            <br> 10 = Slave
+            <br> 11 = both master and slave
+            <br> [3] Reserved
+            <br> [2:0] Security
+            <br> 000 = None
+            <br> 001 = Hash/KDF
+            <br> 010 = Authentication [Certificate Auth]
+            <br> 100 = Confidentiality [AES] </td>
+    </tr>
+    <tr>
+        <td>6 </td>
+        <td>[7] PFM support
+            <br> [6] Policy Support
+            <br> [5] Firmware Protection
+            <br> [4-0] Reserved </td>
+    </tr>
+    <tr>
+        <td>7 </td>
+        <td>PK Key Strength:
+            <br> [7] RSA
+            <br> [6] ECDSA
+            <br> [5:3] ECC
+            <br> 000: None
+            <br> 001: 160bit
+            <br> 010: 256bit
+            <br> 100: Reserved
+            <br> [2:0] RSA:
+            <br> 000: None
+            <br> 001: RSA 2048
+            <br> 010: RSA 3072
+            <br> 100: RSA 4096 </td>
+    </tr>
+    <tr>
+        <td>8 </td>
+        <td>Encryption Key Strength:
+            <br> [7] ECC
+            <br> [6:3] Reserved
+            <br> [2:0] AES:
+            <br> 000: None
+            <br> 001: 128 bit
+            <br> 010: 256 bit
+            <br> 100: 384 bit </td>
+    </tr>
+    <tr>
+        <td>9 </td>
+        <td>Maximum Message timeout: multiple of 10ms </td>
+    </tr>
+    <tr>
+        <td>10 </td>
+        <td>Maximum Cryptographic Message timeout: multiple of 100ms </td>
+    </tr>
+</table>
 
-    01 = PA-RoT <p>
 
-    10 = External <p>
-
-    11 = Reserved <p> [5:4] Master/Slave <p>
-
-    00 = Unknown <p>
-
-    01 = Master <p>
-
-    10 = Slave <p>
-
-    11 = both master and slave <p> [3] Reserved <p> [2:0] Security <p>
-
-    000 = None <p>
-
-    001 = Hash/KDF <p>
-
-    010 = Authentication [Certificate Auth] <p>
-
-    100 = Confidentiality [AES] </td> </tr> <tr> <td>6 </td> <td>[7] PFM support
-    <p> [6] Policy Support <p> [5] Firmware Protection <p> [4-0] Reserved </td>
-    </tr> <tr> <td>7 </td> <td>PK Key Strength: <p> [7] RSA <p> [6] ECDSA <p>
-    [5:3] ECC <p>
-
-    000: None <p>
-
-    001: 160bit <p>
-
-    010: 256bit <p>
-
-    100: Reserved <p> [2:0] RSA: <p>
-
-    000: None <p>
-
-    001: RSA 2048 <p>
-
-    010: RSA 3072 <p>
-
-    100: RSA 4096 </td> </tr> <tr> <td>8 </td> <td>Encryption Key Strength: <p>
-    [7] ECC <p> [6:3] Reserved <p> [2:0] AES: <p>
-
-    000: None <p>
-
-    001: 128 bit <p>
-
-    010: 256 bit <p>
-
-    100: 384 bit </td> </tr> <tr> <td>9 </td> <td>Maximum Message timeout:
-    multiple of 10ms </td> </tr> <tr> <td>10 </td> <td>Maximum Cryptographic
-    Message timeout:  multiple of 100ms </td> </tr> </table>
-
-## Device Id
+### Device Id
 
 Eight bytes response.
 
+#### Request
 
-    Table 14 Device Id Request
+Empty body.
+
+### Response
+
+| Payload | Description              |
+|---------|--------------------------|
+| 1:2     | Vendor ID; LSB           |
+| 3:4     | Device ID; LSB           |
+| 5:6     | Subsystem Vendor ID; LSB |
+| 7:8     | Subsystem ID; LSB        |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
-
-
-
-    Table 15 Device Id Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:2 </td> <td>Vendor ID; LSB </td> </tr> <tr> <td>3:4 </td>
-<td>Device ID; LSB </td> </tr> <tr> <td>5:6 </td> <td>Subsystem Vendor ID; LSB
-</td> </tr> <tr> <td>7:8 </td> <td>Subsystem ID; LSB </td> </tr> </table>
-
-## Device Information
+### Device Information
 
 This command gets information about the target device.
 
+#### Request
 
-    Table 16 Device Information Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Information Index: <p> 00h = Unique Chip
-Identifier <p> Additional indexes are firmware specific </td> </tr> </table>
+| Payload | Description       |
+|---------|-------------------|
+| 1       | Information Index |
 
 
+Information indexes are as follows:
+*   0x00: Unique Chip Identifier.
+*   Additional indexes are vendor-defined.
 
-    Table 17 Device Information Response
+#### Response
+
+| Payload | Description               |
+|---------|---------------------------|
+| 1:N     | Requested identifier blob |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>Requested information in binary format </td>
-</tr> </table>
-
-## Export CSR
+### Export CSR
 
 Exports the Device Identification Certificate Self Signed Certificate Signing
 Request.  The initial Certificate is self-signed, until CA signed and imported.
 Once the CA signed version of the certificate has been imported to the device,
 the self-signed certificate is replaced.
 
+#### Request
 
-    Table 18 Export CSR Request
+| Payload | Description        |
+|---------|--------------------|
+| 1       | Index: Default = 0 |
+
+#### Response
+
+| Payload | Description                 |
+|---------|-----------------------------|
+| 1:N     | Certificate Signing Request |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Index: Default = 0 </td> </tr> </table>
+### Import Certificate
 
-
-
-    Table 19 Export CSR Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>Certificate </td> </tr> </table>
-
-## Import Certificate
-
-Imports the signed Device Identification certificate chain into the device.
+Imports the signed Device Id certificate chain into the device.
 Each import command sends a single certificate in the chain to the device, and
 there is no requirement on the order in which these certificates must be
 imported.  Upon verification of a complete chain, the device is sealed, and no
@@ -1312,42 +1338,44 @@ ensure the previous authentication step has completed before sending a new
 certificate.  The authentication status can be checked with the Get Certificate
 State command.
 
+#### Request
 
-    Table 20 Import Certificate Request
+| Payload | Description        |
+|---------|--------------------|
+| 1       | Type               |
+| 2:3     | Certificate Length |
+| 4:N     | Certificate        |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Index: <p> 0 = Device Identification
-Certificate <p> 1 = Root CA Certificate <p> 2 = Intermediate CA Certificate <p>
-Additional certificate indices are implementation specific.  </td> </tr> <tr>
-<td>2:3 </td> <td>Certificate Length </td> </tr> <tr> <td>4:N </td>
-<td>Certificate </td> </tr> </table>
+Certificate types are as follows:
+*   0x00: Device Id Certificate
+*   0x01: Root CA Certificate
+*   0x02: Intermediate CA Certificate
 
-## Get Certificate State
+
+### Get Certificate State
 
 Determine the state of the certificate chain for signed certificates that have
 been sent to the device.  The request for this command contains no additional
 payload.
 
+#### Request
 
-    Table 21 Get Certificate State Request
+Empty body.
 
+#### Response
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
+| Payload | Description                                    |
+|---------|------------------------------------------------|
+| 1       | State                                          |
+| 2:4     | Error details, if chain validation has failed. |
 
+Possible states:
+*   0x00: A valid chain has been provisioned.
+*   0x01: A valid chain has not yet been provisioned.
+*   0x02: The stored chain is being validated.
 
-
-    Table 22 Get Certificate State Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>State: <p> 0 = A valid chain has been
-provisioned.  <p> 1 = A valid chain has not been provisioned.  <p> 2 = The
-stored chain is being validated.  </td> </tr> <tr> <td>2:4 </td> <td>Error
-details if chain validation has failed.  </td> </tr> </table>
-
-## GET DIGESTS
+### GET DIGESTS
 
 This command is derived from the similar USB Type C-Authentication Message.  The
 Protocol Version byte is not included, the Message Type is present in the
@@ -1364,34 +1392,27 @@ when the requester and responder support multiple key exchange algorithms.
 Slots that do not contain a valid certificate chain will generate a response
 with 0 digests.  Payload byte 2 will indicate that no digests are returned.
 
+#### Request
 
-    Table 23 GET DIGEST Request
+| Payload | Description                                                   |
+|---------|---------------------------------------------------------------|
+| 1       | Slot Number (0 to 7) of the target Certificate Chain to read. |
+| 2       | Key Exchange Algorithm                                        |
+
+Potential key exchange algorithms are:
+*   0x00: None
+*   0x01: ECDH
+
+#### Response
+
+| Payload | Description                                                              |
+|---------|--------------------------------------------------------------------------|
+| 1       | Capabilities Field (always 0x01).                                        |
+| 2       | Number of digests returned.                                              |
+| 3:N     | SHA256 digests of the certificates in the chain, starting from the root. |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Param1: Slot Number of the target Certificate
-Chain to read.  The value should be 0-7.  </td> </tr> <tr> <td>2 </td> <td>Key
-Exchange Algorithm: <p>
-
-    0 = None <p>
-
-    1 = ECDH </td> </tr> </table>
-
-
-
-    Table 24 GET DIGEST Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Capabilities Field; shall be set to 01 </td>
-</tr> <tr> <td>2 </td> <td>The number of certificate digests returned.  Each
-digest represents a single certificate in the chain, starting from the
-certificate closest to the root.  </td> </tr> <tr> <td>3:N </td> <td>Digest[0]
-32 byte SHA256 digest of the root Certificate in the Chain </td> </tr> <tr>
-<td>N+ </td> <td>Digest[1] 32 byte SHA256  digest of N Certificate in the Chain
-</td> </tr> </table>
-
-## GET CERTIFICATE
+### GET CERTIFICATE
 
 This command retrieves the public attestation certificate chain for the AC-RoT.
 It follows closely the USB Type C Authentication Specification.
@@ -1399,62 +1420,50 @@ It follows closely the USB Type C Authentication Specification.
 If the device does not have a certificate for the requested slot or index, the
 certificate contents in the response will be empty.
 
+#### Request
 
-    Table 25 GET CERTIFICATE Request
+| Payload | Description                                                    |
+|---------|----------------------------------------------------------------|
+| 1       | Slot Number (0 to 7) of the target Certificate Chain to read.  |
+| 2       | Certificate to read, zero-indexed from the root Certificate.   |
+| 3:4     | Offset: offset in bytes from start of the Certificate to read. |
+| 5:6     | Length: number of bytes to read.                               |
+
+#### Resposne
+
+| Payload | Description                                           |
+|---------|-------------------------------------------------------|
+| 1       | Slot Number of the target Certificate Chain returned. |
+| 2       | Certificate index of the returned certificate         |
+| 3:N     | Requested contents of target Certificate Chain.       |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Param1: Slot Number of the target Certificate
-Chain to read.  The value should be 0-7.  </td> </tr> <tr> <td>2 </td>
-<td>Certificate number.  This a 0-based index starting with the root certificate
-in the chain.  </td> </tr> <tr> <td>3:4 </td> <td>Offset: offset in bytes from
-start of the Certificate chain where read request begins.  </td> </tr> <tr>
-<td>5:6 </td> <td>Length: number of bytes to read </td> </tr> </table>
-
-
-
-    Table 26 GET CERTIFICATE Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Param1: Slot Number of the target Certificate
-Chain returned.  </td> </tr> <tr> <td>2 </td> <td>Certificate number of the
-returned certificate </td> </tr> <tr> <td>3:N </td> <td>Requested contents of
-target Certificate Chain.  See section 4 Certificates.  </td> </tr> </table>
-
-## CHALLENGE
+### CHALLENGE
 
 The PA-RoT will send this command providing the first nonce in the key exchange.
 
+#### Request
 
-    Table 27 CHALLENGE Request
+| Payload | Description                                                   |
+|---------|---------------------------------------------------------------|
+| 1       | Slot Number (0 to 7) of the target Certificate Chain to read. |
+| 2       | Reserved                                                      |
+| 3:35    | Random nonce                                                  |
 
+#### Resposne
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Slot number of the recipient’s Certificate
-Chain that will be used for Authentication.  The value should be 0-7.  </td>
-</tr> <tr> <td>2 </td> <td>Reserved </td> </tr> <tr> <td>3:35 </td> <td>Random
-32 byte nonce chosen by PA-RoT </td> </tr> </table>
-
-
-
-    Table 28 CHALLENGE Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Shall contain the Slot number in the Param1
-field of the corresponding CHALLENGE Request </td> </tr> <tr> <td>2 </td>
-<td>Certificate slot mask </td> </tr> <tr> <td>3 </td> <td>MinProtocolVersion
-supported by device </td> </tr> <tr> <td>4 </td> <td>MaxProtocolVersion
-supported by device </td> </tr> <tr> <td>5:6 </td> <td>Reserved </td> </tr> <tr>
-<td>7:38 </td> <td>Random number chosen by AC-RoT (<sup>RN2</sup>) </td> </tr>
-<tr> <td>39 </td> <td>Number of components used to generate the PMR0 measurement
-</td> </tr> <tr> <td>40 </td> <td>Length of each digest in PMR0 (L) </td> </tr>
-<tr> <td>41:40+L </td> <td>Value of Platform Measurement Register 0 (Aggregated
-Firmware Digest) </td> </tr> <tr> <td>41+L:N </td> <td>Signature of combined
-request and response message payloads.  See USB Type C Authentication Protocol
-for details of request/response signature.  </td> </tr> </table>
-
+| Payload | Description                                                        |
+|---------|--------------------------------------------------------------------|
+| 1       | Slot Number of the Certificate Chain used.                         |
+| 2       | Certificate slot mask                                              |
+| 3       | MinProtocolVersion supported by device                             |
+| 4       | MaxProtocolVersion supported by device                             |
+| 5:6     | Reserved                                                           |
+| 7:38    | Random nonce                                                       |
+| 39      | Number of components used to generate the PMR0 measurement         |
+| 40      | Length of PMR0 (L)                                                 |
+| 41:40+L | Value of PMR0 (Aggregated Firmware Digest)                         |
+| 41+L:N  | Signature over concatenated request and response message payloads. |
 
 The firmware digests are measurements of the security descriptors and the
 firmware of the target components.  This firmware measurement data does not
@@ -1466,7 +1475,8 @@ measurement of firmware and security descriptors.  PMR0 is anticipated to be
 the least changing PMR as it contains the measurement of security descriptors
 and device initial boot loader.
 
-## Key Exchange
+
+### Key Exchange
 
 Key Exchange is used to establish an encrypted channel with a device.  The
 session establishment flow is detailed in Section 5 Authentication.
@@ -1482,163 +1492,135 @@ will be used with the KDF.
 When closing an established session (Key Type 2), the response will be
 transmitted in plain text if the session was successfully terminated.
 
+#### Request
 
-    Table 29 Key Exchange Request
+| Payload | Description                                          |
+|---------|------------------------------------------------------|
+| 1       | Key Type                                             |
+| 2:N     | Key data.  Format is defined by the type of request. |
 
+Possible key types:
+*   0x00: Session key.
+*   0x01: Paired-Key HMAC.
+*   0x02: Destroy Session.
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Key Type: <p> 0 = Session Key <p> 1 = Paired
-Key HMAC <p> 2 = Delete Session Key (close session) </td> </tr> <tr> <td>2:N
-</td> <td>Key data.  Format is defined by the type of request.  </td> </tr>
-</table>
+##### Session Key Data
 
+| Payload | Description                                |
+|---------|--------------------------------------------|
+| 1       | HMAC Algorithm                             |
+| 2:N     | ASN.1 DER encoded ECC public key (`PKreq`) |
 
+Possible HMAC Hash Algorithms:
+*   0x00: SHA-256
+*   0x01: SHA-384
+*   0x02: SHA-512
 
-    Table 30 Key Exchange Response
+The HMAC type specified in this message applies to all HMAC operations for the
+established session, including any subsequent pairing messages.  Since session
+keys (`K_S` and `K_M`) are 256-bit keys, they will always be generated using
+SHA-256 regardless of the type of HMAC used for key exchange messages.
 
+##### Paired-Key HMAC Data
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Key Type: <p> 0 = Session Key <p> 1 = Paired
-Key HMAC </td> </tr> <tr> <td>2:N </td> <td>Response data.  Format is defined by
-the type of request.  </td> </tr> </table>
+| Payload | Description                               |
+|---------|-------------------------------------------|
+| 1:2     | Length in bytes of the pairing key        |
+| 3:N     | HMAC of the pairing key: `HMAC(K_M, K_P)` |
 
+##### Destroy Session Data
 
+| Payload | Description                           |
+|---------|---------------------------------------|
+| 1:N     | HMAC of session key: `HMAC(K_M, K_S)` |
 
-    Table 31 Key Exchange Type 0 Request Data
+#### Response
 
+| Payload | Description                                               |
+|---------|-----------------------------------------------------------|
+| 1       | Key Type from request                                     |
+| 2:N     | Response data.  Format is defined by the type of request. |
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>HMAC Type: <p> 0 = SHA256 <p> 1 = SHA384 <p> 2
-= SHA512 <p> The HMAC type specified in this message applies to all HMAC
-operations for the established session, including any subsequent pairing
-messages.  <p> Since session keys (K<sub>S</sub> and K<sub>M</sub>) are 256-bit
-keys, they will always be generated using SHA256 regardless of the type of HMAC
-used for key exchange messages.  </td> </tr> <tr> <td>2:N </td> <td>ASN.1 DER
-encoded ECC public key (PKreq) </td> </tr> </table>
+##### Session Key Data 
 
+| Payload | Description                                           |
+|---------|-------------------------------------------------------|
+| 1       | Reserved.  Set to 0.                                  |
+| 2:3     | Key Length                                            |
+| 4:N     | DER-encoded ECC public key (`PKresp`)                 |
+| N+1:N+2 | Signature Length                                      |
+| N+3:M   | Signature over session keys: `SIGN(PKreq || PKresp)`  |
+| M+1:M+2 | HMAC Length                                           |
+| M+3:H   | HMAC of the Alias certificate: `HMAC(KM, alias_cert)` |
 
+##### Paired-Key HMAC Data
 
-    Table 32 Key Exchange Type 0 Response Data
+Empty body.
 
+##### Destory Session Data
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Reserved.  Set to 0.  </td> </tr> <tr> <td>2:3
-</td> <td>Key Length </td> </tr> <tr> <td>4:N </td> <td>ASN.1 DER encoded ECC
-public key (PKresp) </td> </tr> <tr> <td>N+1:N+2 </td> <td>Signature Length
-</td> </tr> <tr> <td>N+3:M </td> <td>Signature using Alias Key over ephemeral
-session keys: <p> SGN<sup>(Alias)</sup>(PKreq || PKresp) </td> </tr> <tr>
-<td>M+1:M+2 </td> <td>HMAC Length </td> </tr> <tr> <td>M+3:H </td> <td>HMAC of
-the Alias Key certificate: <p> HMAC (K<sub>M</sub>, ASN.1 DER encoded Alias
-Certificate) </td> </tr> </table>
-
-
-
-    Table 33 Key Exchange Type 1 Request Data
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:2 </td> <td>Length in bytes of the pairing key </td>
-</tr> <tr> <td>3:N </td> <td>HMAC of the pairing key: <p> HMAC (K<sub>M</sub>,
-K<sub>P</sub>) </td> </tr> </table>
-
-
-
-    Table 34 Key Exchange Type 1 Response Data
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
-
-
-
-    Table 35 Key Exchange Type 2 Request Data
+Empty body.
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>HMAC of session key: <p> HMAC (K<sub>M</sub>,
-K<sub>S</sub>) </td> </tr> </table>
+### Session Sync
+
+Check the state of an encrypted session.
+The message must always be encrypted.
+
+#### Request.
+
+| Payload | Description             |
+|---------|-------------------------|
+| 1:4     | Random number (`RNreq`) |
+
+#### Response.
+
+| Payload | Description                           |
+|---------|---------------------------------------|
+| 1:N     | HMAC of the nonce:  `HMAC(KM, RNreq)` |
 
 
-
-    Table 36 Key Exchange Type 2 Response Data
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
-
-## Session Sync
-
-Check the state of an encrypted session.  The message must always be encrypted.
-
-
-    Table 37 Session Sync Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Random number (RNreq) </td> </tr> </table>
-
-
-
-    Table 38 Session Sync Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>HMAC of the request number: <p> HMAC
-(K<sub>M</sub>, RNreq) </td> </tr> </table>
-
-## Get Log Info
+### Get Log Info
 
 Get the internal log information for the RoT.
 
+#### Request
 
-    Table 39 Get Log Info Request
+Empty body.
+
+#### Response
+
+| Payload | Description                            |
+|---------|----------------------------------------|
+| 1:4     | Debug Log (0x01) Length in bytes       |
+| 5:8     | Attestation Log (0x02) Length in bytes |
+| 9:12    | Tamper Log (0x03) Length in bytes      |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
+### Get Log
 
-
-
-    Table 40 Get Log Info Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Debug Log (01h) Length in bytes </td> </tr>
-<tr> <td>5:8 </td> <td>Attestation Log (02h) Length in bytes </td> </tr> <tr>
-<td>9:12 </td> <td>Tamper Log (03h) Length in bytes </td> </tr> </table>
-
-## Get Log
-
-Get the internal log for the RoT.  There are 3 types of logs available:  The
+Get the internal logs for the RoT.  There are 3 types of logs available:  The
 Debug Log, which contains Cerberus application information and machine state.
 The Attestation measurement log, this log format is like the TCG log, and the
 Tamper log.  It is not possible to clear or reset the tamper counter.
 
+#### Request
 
-    Table 41 Log Types
+| Payload | Description |
+|---------|-------------|
+| 1       | Log Type    |
+| 2:5     | Offset      |
 
+Possible log types:
+*   0x01: Debug Log.
+*   0x02: Attestation Log.
+*   0x03: Tamper Log.
 
-<table> <tr> <td><strong>Log Type</strong> </td>
-<td><strong>Description</strong> </td> </tr> <tr> <td>1 </td> <td>Debug Log
-</td> </tr> <tr> <td>2 </td> <td>Attestation Log </td> </tr> <tr> <td>3 </td>
-<td>Tamper Log </td> </tr> </table>
+#### Response 
 
-
-
-    Table 42 Get Log Section Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Log Type </td> </tr> <tr> <td>2:5 </td>
-<td>Offset </td> </tr> </table>
-
-
-
-    Table 43 Get Debug/Attestation Log Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>The contents of the log </td> </tr> </table>
+| Payload | Description          |
+|---------|----------------------|
+| 1:N     | Contents of the log. |
 
 
 Length determined by end of log, or packet size based on device capabilities see
@@ -1648,9 +1630,7 @@ maximum payload supported by both devices.  To guarantee a response will never
 fall exactly on the max payload boundary, the responder must send back an extra
 packet with zero payload.
 
-
-
-        15. Attestation Log Format
+#### Attestation Log Format
 
 The attestation log will report individual measurements for all components of
 each PMR.  Each measurement will be a single entry in the log.  The entire log
@@ -1658,71 +1638,65 @@ consists of each entry sequentially concatenated.  The structure of the entry
 closely resembles TCG events.  See TCG PC Client Platform Firmware Profile
 Specification.
 
+Log Entry Header:
 
-    Table 44 Log Entry Header
+| Offset | Description                                                                             |
+|--------|-----------------------------------------------------------------------------------------|
+| 1      | Log entry start marker:  [7:4]: 0x0c [3:0]: Header format, 0x0b per this specification. |
+| 2:3    | Total length of the entry, including the header                                         |
+| 4:7    | Unique entry identifier                                                                 |
 
+Attestation Entry format:
 
-<table> <tr> <td><strong>Offset</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Log entry start marker: <p> [7:4]: 0xC <p>
-[3:0]: Header format, 0xB per this specification.  </td> </tr> <tr> <td>2:3
-</td> <td>Total length of the entry, including the header </td> </tr> <tr>
-<td>4:7 </td> <td>Unique entry identifier </td> </tr> </table>
+| Offset | Description                                    |
+|--------|------------------------------------------------|
+| 1:7    | Log Entry Header                               |
+| 8:11   | TCG Event Type                                 |
+| 12     | Measurement index within a single PMR.         |
+| 13     | Index of the PMR for the measurement.          |
+| 14:15  | Reserved, set to 0.                            |
+| 16     | Number of digests                              |
+| 17:19  | Reserved, set to 0.                            |
+| 20:21  | Digest algorithm Id (`0x0b`, SHA-256)          |
+| 22:53  | SHA-256 digest used to extend the measurement. |
+| 54:57  | Measurement length                             |
+| 58:89  | Measurement                                    |
 
-
-
-    Table 45 Attestation Entry Format
-
-
-<table> <tr> <td><strong>Offset</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:7 </td> <td>Log Entry Header </td> </tr> <tr> <td>8:11
-</td> <td>TCG Event Type </td> </tr> <tr> <td>12 </td> <td>Measurement index
-within a single PMR </td> </tr> <tr> <td>13 </td> <td>Index of the PMR for the
-measurement </td> </tr> <tr> <td>14:15 </td> <td>Reserved, set to 0 </td> </tr>
-<tr> <td>16 </td> <td>Number of digests (1) </td> </tr> <tr> <td>17:19 </td>
-<td>Reserved, set to 0 </td> </tr> <tr> <td>20:21 </td> <td>Digest algorithm Id
-(0x0B, SHA256) </td> </tr> <tr> <td>22:53 </td> <td>SHA256 digest used to extend
-the measurement </td> </tr> <tr> <td>54:57 </td> <td>Measurement size (32) </td>
-</tr> <tr> <td>58:89 </td> <td>Measurement </td> </tr> </table>
-
-
-
-
-        16. Debug Log Format
+#### Debug Log Format
 
 The debug log reported by the device has no specified format, as this can vary
 between different devices and it is not necessary for attestation.  It is
 expected that diagnostic utilities for the device will be able to understand the
 exposed log information.  A recommended entry format is provided here.
 
+Suggested Debug Entry format:
 
-    Table 46 Debug Entry Format
+| Offset | Description                      |
+|--------|----------------------------------|
+| 1:7    | Log Entry Header                 |
+| 8:9    | Format version of the entry.     |
+| 10     | Severity of the entry.           |
+| 11     | ID of the source of the message. |
+| 12     | ID for the entry message type.   |
+| 13:16  | Message specific argument.       |
+| 17:20  | Message specific argument.       |
 
+### Clear Debug/Attestation Log
 
-<table> <tr> <td><strong>Offset</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:7 </td> <td>Log Entry Header </td> </tr> <tr> <td>8:9
-</td> <td>Format of the entry, currently 1 </td> </tr> <tr> <td>10 </td>
-<td>Severity of the entry </td> </tr> <tr> <td>11 </td> <td>Identifier for the
-component that generated the message </td> </tr> <tr> <td>12 </td>
-<td>Identifier for the entry message </td> </tr> <tr> <td>13:16 </td>
-<td>Message specific argument </td> </tr> <tr> <td>17:20 </td> <td>Message
-specific argument </td> </tr> </table>
+Clear the log in the RoT. Note that the tamper log cannot be cleared.
 
-## Clear Debug/Attestation Log
+#### Request
 
-Clear the log in the RoT.
-
-
-    Table 47 Clear Debug/Attestation Log Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Type: 01 or 02 </td> </tr> </table>
+| Payload | Description |
+|---------|-------------|
+| 1       | Log Type    |
 
 
 Note: in clearing the attestation log, it is automatically recreated using
 current measurements.
 
-## Get Attestation Data
+
+### Get Attestation Data
 
 Get the raw data used to generate measurements reported in the attestation log.
 Not all measurements will have raw data available, as this is mostly intended
@@ -1735,126 +1709,112 @@ While this command is intended to support small pieces of that data that should
 fit into a single MCTP message, an offset parameter is included in the request
 to support scenarios where the required data is too large.
 
+#### Request
 
-    Table 48 Get Attestation Data Request
+| Payload | Description                   |
+|---------|-------------------------------|
+| 1       | Platform Measurement Register |
+| 2       | Entry Index                   |
+| 3:6     | Offset                        |
+
+#### Response
+
+| Payload | Description        |
+|---------|--------------------|
+| 1:N     | The measured data. |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Platform Measurement Register </td> </tr> <tr>
-<td>2 </td> <td>Entry Index </td> </tr> <tr> <td>3:6 </td> <td>Offset </td>
-</tr> </table>
-
-
-
-    Table 49 Get Attestation Data Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>The measured data </td> </tr> </table>
-
-## Get Host State
+### Get Host State
 
 Retrieve the reset state of the host processor being protected by Cerberus.
 
 
-    Table 50 Get Host State Request
+#### Request
 
+| Payload | Description |
+|---------|-------------|
+| 1       | Port Id     |
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> </table>
+#### Response
+| Payload | Description      |
+|---------|------------------|
+| 1       | Host Reset State |
 
+Possible states:
+*   0x00 - Host is running.
+*   0x01 - Host is held in reset.
+*   0x02 - Host is not running, nor held in reset.
 
-
-    Table 51 Get Host State Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Host Reset State: <p> 00h – Host is running
-(out of reset) <p> 01h – Host is being held in reset <p> 02h – Host is not being
-held in reset, but is not running </td> </tr> </table>
-
-## Get Platform Firmware Manifest Id
+### Get PFM Id
 
 Retrieves PFM identifiers.
 
+#### Request
 
-    Table 52 PFM Information Request
+| Payload      | Description                                                  |
+|--------------|--------------------------------------------------------------|
+| 1            | Port Id                                                      |
+| 2            | PFM Region:  0x00 = Active, 0x01 = Pending                   |
+| 3 (optional) | Identifier:  0x00 = Version Id (default), 0x01 = Platform Id |
 
+#### Response
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2 </td> <td>PFM
-Region: <p> 0 = Active <p> 1 = Pending </td> </tr> <tr> <td>3 (optional) </td>
-<td>Identifier: <p> 0 = Version Id (default) <p> 1 = Platform Id </td> </tr>
-</table>
+| Payload | Description              |
+|---------|--------------------------|
+| 1       | PFM Valid (0x00 or 0x01) |
+| 2:5     | PFM Version Id           |
 
-
-
-    Table 53 PFM Version Id Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>PFM Valid (0 or 1) </td> </tr> <tr> <td>2:5
-</td> <td>PFM Version Id </td> </tr> </table>
-
-
-
-    Table 54 PFM Platform Id Response
+| Payload | Description                              |
+|---------|------------------------------------------|
+| 1       | PFM Valid (0 or 1)                       |
+| 2:N     | PFM Platform Id as null-terminated ASCII |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>PFM Valid (0 or 1) </td> </tr> <tr> <td>2:N
-</td> <td>PFM Platform Id as null-terminated ASCII </td> </tr> </table>
+### Get PFM Supported Firmware 
 
-## Get Platform Firmware Manifest Supported Firmware 
+#### Request
 
-    Table 55 PFM Supported Firmware Request
+| Payload | Description                               |
+|---------|-------------------------------------------|
+| 1       | Port Id                                   |
+| 2       | PFM Region: 0x00 = Active, 0x01 = Pending |
+| 3:6     | Offset                                    |
 
+#### Response
 
-<table> <tr> <td> <strong>Payload</strong> </td>
-<td><strong>Description</strong> </td> </tr> <tr> <td>1 </td> <td>Port Id </td>
-</tr> <tr> <td>2 </td> <td>PFM Region: <p> 0 = Active <p> 1 = Pending </td>
-</tr> <tr> <td>3:6 </td> <td>Offset </td> </tr> </table>
-
-
-
-    Table 56 Supported Firmware Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>PFM Valid (0 or 1) </td> </tr> <tr> <td>2:5
-</td> <td>PFM Version Id </td> </tr> <tr> <td>6:N </td> <td>PFM supported FW
-versions </td> </tr> </table>
-
+| Payload | Description               |
+|---------|---------------------------|
+| 1       | PFM Valid (0x00 or 0x01)  |
+| 2:5     | PFM Version Id            |
+| 6:N     | PFM supported FW versions |
 
 If response spans multiple MCTP messages, end of response will be determined by
 an MCTP packet which has payload less than maximum payload supported by both
 devices.  To guarantee a response will never fall exactly on the max payload
 boundary, the responder should send back an extra packet with zero payload.
 
-## Prepare Platform Firmware Manifest
+
+### Prepare PFM
 
 Provisions RoT for incoming PFM.
 
+#### Request
 
-    Table 57 Prepare PFM Request
+| Payload | Description |
+|---------|-------------|
+| 1       | Port Id     |
+| 2:5     | Total size  |
 
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2:5 </td>
-<td>Total size </td> </tr> </table>
-
-## Update Platform Firmware Manifest
+#### Update PFM
 
 The flash descriptor structure describes the regions of flash for the device.
 
+#### Request
 
-    Table 58 Update PFM Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2:N </td> <td>PFM
-Payload </td> </tr> </table>
-
+| Payload | Description |
+|---------|-------------|
+| 1       | Port Id     |
+| 2:N     | PFM Payload |
 
 PFM payload includes PFM signature and monotonic forward only Id.  PFM signature
 is verified upon receipt of all PFM payloads.  PFMs are activated upon the
@@ -1862,76 +1822,70 @@ activation command.  Note if a system is rebooted after receiving a PFM, the
 PFM is atomically activated.  To activate before reboot, issue the Activate PFM
 command.
 
-## Activate Platform Firmware Manifest
+
+## Activate PFM
 
 Upon valid PFM update, the update command seals the PFM committal method.  If
 committing immediately, flash reads and writes should be suspended when this
 command is issued.  The RoT will master the SPI bus and verify the newly updated
 PFM.  This command can only follow a valid PFM update.
 
+#### Request
 
-    Table 59 Update PFM Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2 </td>
-<td>Activation: <p> 0 = Reboot only <p> 1 = Immediately </td> </tr> </table>
-
+| Payload | Description                                         |
+|---------|-----------------------------------------------------|
+| 1       | Port Id                                             |
+| 2       | Activation:  0x00 = Reboot only, 0x01 = Immediately |
 
 If reboot only has been issued, the option for "Immediately" committing the PFM
 is not available until a new PFM is updated.
 
-## Get Component Firmware Manifest Id
+
+### Get CFM Id
 
 Retrieves the Component Firmware Manifest Id
 
+#### Request
 
-    Table 60 Get CFM Id Request
+| Payload      | Description                                                  |
+|--------------|--------------------------------------------------------------|
+| 1            | Port Id                                                      |
+| 2            | CFM Region:  0x00 = Active, 0x01 = Pending                   |
+| 3 (optional) | Identifier:  0x00 = Version Id (default), 0x01 = Platform Id |
 
+#### Response
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>CFM Region: <p> 0 = Active <p> 1 = Pending
-</td> </tr> <tr> <td>2 (optional) </td> <td>Identifier: <p> 0 = Version Id
-(default) <p> 1 = Platform Id </td> </tr> </table>
+| Payload | Description              |
+|---------|--------------------------|
+| 1       | CFM Valid (0x00 or 0x01) |
+| 2:5     | CFM Version Id           |
 
-
-
-    Table 61 CFM Version Id Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>CFM Valid (0 or 1) </td> </tr> <tr> <td>2:5
-</td> <td>CFM Version Id </td> </tr> </table>
-
-
-
-    Table 62 CFM Platform Id Response
+| Payload | Description                              |
+|---------|------------------------------------------|
+| 1       | CFM Valid (0 or 1)                       |
+| 2:N     | CFM Platform Id as null-terminated ASCII |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>CFM Valid (0 or 1) </td> </tr> <tr> <td>2:N
-</td> <td>CFM Platform Id as null-terminated ASCII </td> </tr> </table>
-
-## Prepare Component Firmware Manifest
+### Prepare CFM
 
 Provisions RoT for incoming Component Firmware Manifest.
 
+#### Request
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Total size </td> </tr> </table>
+| Payload | Description |
+|---------|-------------|
+| 1:5     | Total size  |
 
-## Update Component Firmware Manifest
+
+### Update CFM
 
 The flash descriptor structure describes the regions of flash for the device.
 
+#### Request
 
-    Table 63 Update Component Firmware Manifest Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>Component Firmware Manifest Payload </td>
-</tr> </table>
-
+| Payload | Description |
+|---------|-------------|
+| 1:N     | CFM Payload |
 
 The CFM payload includes CFM signature and monotonic forward only Id.  CFM
 signature is verified upon receipt of all CFM payloads.  CFMs are activated
@@ -1939,282 +1893,289 @@ upon the activation command.  Note if a system is rebooted after receiving a
 CFM, the pending CFM is verified and atomically activated.  To activate before
 reboot, issue the Activate CFM command.
 
-## Activate Component Firmware Manifest
+
+### Activate CFM
 
 Upon valid CFM update, the update command seals the CFM committal method.  The
 RoT will master I2C and attest Components in the Platform Configuration Data
 against the CFM.
 
+#### Request
 
-    Table 64 Active CFM Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Activation: <p> 0 = Reboot only <p> 1 =
-Immediately </td> </tr> </table>
-
-## Get Component Firmware Manifest Component IDs
-
-    CFM Supported component IDs Request
+| Payload | Description                                         |
+|---------|-----------------------------------------------------|
+| 1       | Activation:  0x00 = Reboot only, 0x01 = Immediately |
 
 
-<table> <tr> <td> <strong>Payload</strong> </td>
-<td><strong>Description</strong> </td> </tr> <tr> <td>1 </td> <td>CFM Region:
-<p> 0 = Active <p> 1 = Pending </td> </tr> <tr> <td>2:5 </td> <td>Offset </td>
-</tr> </table>
+### Get CFM Component IDs
+
+#### Request
+
+| Payload | Description                                |
+|---------|--------------------------------------------|
+| 1       | CFM Region: 0x00 = Active,  0x01 = Pending |
+| 2:5     | Offset                                     |
 
 
+#### Response
 
-    CFM Supported component IDs Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>CFM Valid (0 or 1) </td> </tr> <tr> <td>2:5
-</td> <td>CFM Version Id </td> </tr> <tr> <td>6:N </td> <td>CFM supported
-component IDs </td> </tr> </table>
-
+| Payload | Description                 |
+|---------|-----------------------------|
+| 1       | CFM Valid (0x00 or 0x01)    |
+| 2:5     | CFM Version Id              |
+| 6:N     | CFM supported component IDs |
 
 If response spans multiple MCTP messages, end of response will be determined by
 an MCTP packet which has payload less than maximum payload supported by both
 devices.  To guarantee a response will never fall exactly on the max payload
 boundary, the responder should send back an extra packet with zero payload.
 
-## Get Platform Configuration Data Id
 
-Retrieves the PCD Id
+### Get PCD Id
 
+Retrieves the PCD Id.
 
-    Table 65 Get Platform Configuration Data Request
+#### Request
 
+| Payload      | Description                                                 |
+|--------------|-------------------------------------------------------------|
+| 1 (optional) | Identifier: 0x00 = Version Id (default), 0x01 = Platform Id |
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 (optional) </td> <td>Identifier: <p> 0 = Version Id
-(default) <p> 1 = Platform Id </td> </tr> </table>
+#### Response
 
+| Payload | Description              |
+|---------|--------------------------|
+| 1       | PCD Valid (0x00 or 0x01) |
+| 2:5     | PCD Version Id           |
 
-
-    Table 66 Get Platform Configuration Data Version Id Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>PCD Valid (0 or 1) </td> </tr> <tr> <td>2:5
-</td> <td>PCD Version Id </td> </tr> </table>
-
-
-
-    Table 67 Get Platform Configuration Data Platform Id Response
+| Payload | Description                              |
+|---------|------------------------------------------|
+| 1       | PCD Valid (0x00 or 0x01)                 |
+| 2:N     | PCD Platform Id as null-terminated ASCII |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>PCD Valid (0 or 1) </td> </tr> <tr> <td>2:N
-</td> <td>PCD Platform Id as null-terminated ASCII </td> </tr> </table>
-
-## Prepare Platform Configuration Data
+### Prepare PCD
 
 Provisions RoT for incoming Platform Configuration Data.
 
+#### Request
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Total size </td> </tr> </table>
+| Payload | Description |
+|---------|-------------|
+| 1:4     | Total size  |
 
-## Update Platform Configuration Data
+
+### Update PCD
 
 The flash descriptor structure describes the regions of flash for the device.
 
+#### Request
 
-    Table 68 Update Platform Configuration Data Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>PCD Payload </td> </tr> </table>
+| Payload | Description |
+|---------|-------------|
+| 1:N     | PCD Payload |
 
 
 The PCD payload includes PCD signature and monotonic forward only Id.  PCD
 signature is verified upon receipt of all PCD payloads.  PCD is activated upon
 the activation command.  Note if a system is rebooted after receiving a PCD.
 
-## Activate Platform Configuration Data
+
+### Activate PCD
 
 Upon valid PCD update, the activate command seals the PCD committal.
 
+#### Request
 
-    Table 69 Active PCD Request
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
-
-## Platform Configuration
-
-The following table describes the Platform Configuration Data Structure
+Empty body.
 
 
-    Table 70 PCD Structure
+### Platform Configuration
 
+The following table describes the Platform Configuration Data Structure.
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:3 </td> <td>Platform Configuration Data Id </td> </tr>
-<tr> <td>4:5 </td> <td>Length </td> </tr> <tr> <td>6 </td> <td>Policy Count
-</td> </tr> <tr> <td>7:N </td> <td>Each AC-RoT has 1 entry.  The Configuration
-Data determines the feature enablement and attestation <p>
- 
-
-<table> <tr> <td>Byte </td> <td>Description </td> </tr> <tr> <td>1 </td>
-<td>Device Id </td> </tr> <tr> <td>4 </td> <td>Channel </td> </tr> <tr> <td>5
-</td> <td>Slave Address </td> </tr> <tr> <td>6 </td> <td>[7:5] Threshold Count
-<p> [4] Power Control <p>
-
-    0 = Disabled <p>
-
-    1 = Enabled <p> [3] Debug Enabled <p>
-
-    0 = Disabled <p>
-
-    1 = Enabled <p> [2] Auto Recovery <p>
-
-    0 = Disabled <p>
-
-    1 = Enabled <p> [1] Policy Active <p>
-
-    0 = Disabled <p>
-
-    1 = Enabled <p> [0] Threshold Active <p>
-
-    0 = Disabled <p>
-
-    1 = Enabled </td> </tr> <tr> <td>7 </td> <td>Power Ctrl Index </td> </tr>
-    <tr> <td>8 </td> <td>Failure Action </td> </tr> </table>
-
-
- 
-
-   </td> </tr> <tr> <td>N:N
-
-   </td> <td>Signature of payload 
-
-   </td> </tr> </table>
-
+<!-- TODO: convert this to a proper table -->
+<table>
+    <tr>
+        <td><strong>Payload</strong> </td>
+        <td><strong>Description</strong> </td>
+    </tr>
+    <tr>
+        <td>1:3 </td>
+        <td>Platform Configuration Data Id </td>
+    </tr>
+    <tr>
+        <td>4:5 </td>
+        <td>Length </td>
+    </tr>
+    <tr>
+        <td>6 </td>
+        <td>Policy Count </td>
+    </tr>
+    <tr>
+        <td>7:N </td>
+        <td>Each AC-RoT has 1 entry.
+            The Configuration Data determines the feature
+            enablement and attestation
+            <br>
+            <table>
+                <tr>
+                    <td>Byte </td>
+                    <td>Description </td>
+                </tr>
+                <tr>
+                    <td>1 </td>
+                    <td>Device Id </td>
+                </tr>
+                <tr>
+                    <td>4 </td>
+                    <td>Channel </td>
+                </tr>
+                <tr>
+                    <td>5 </td>
+                    <td>Slave Address </td>
+                </tr>
+                <tr>
+                    <td>6 </td>
+                    <td>[7:5] Threshold Count
+                        <br> [4] Power Control
+                        <br> 0 = Disabled
+                        <br> 1 = Enabled
+                        <br> [3] Debug Enabled
+                        <br> 0 = Disabled
+                        <br> 1 = Enabled
+                        <br> [2] Auto Recovery
+                        <br> 0 = Disabled
+                        <br> 1 = Enabled
+                        <br> [1] Policy Active
+                        <br> 0 = Disabled
+                        <br> 1 = Enabled
+                        <br> [0] Threshold Active
+                        <br> 0 = Disabled
+                        <br> 1 = Enabled </td>
+                </tr>
+                <tr>
+                    <td>7 </td>
+                    <td>Power Ctrl Index </td>
+                </tr>
+                <tr>
+                    <td>8 </td>
+                    <td>Failure Action </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>N:N </td>
+        <td>Signature of payload </td>
+    </tr>
+</table>
 
 The Power Control Index informs the PA-RoT of the index assigned to power
 sequence the Component.  This informs the PA-RoT which control register needs
 to be asserted in the platform power sequencer.
 
-The Failure Action: 0 = Platform Defined, 1 = Report Only, 2 = Auto Recover 3 =
-Power Control.
+Possible failure actions:
+*   0x00: Platform defined.
+*   0x01: Report only.
+*   0x02: Automatic recovery.
+*   0x03: Power control.
 
-## Prepare Firmware Update
+
+### Prepare Firmware Update
 
 Provisions RoT for incoming firmware update.
 
+#### Request
 
-    Table 71 Prepare Firmware Update
+| Payload | Description |
+|---------|-------------|
+| 1:4     | Total size  |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Total size </td> </tr> </table>
-
-## Update Firmware
+### Update Firmware
 
 The flash descriptor structure describes the regions of flash for the device.
 
+#### Request
 
-    Table 72 Update Firmware Request
+| Payload | Description                                |
+|---------|--------------------------------------------|
+| 1:N     | Firmware Update payload, header signature. |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>Firmware Update payload, header signature.
-See firmware update specification.  </td> </tr> </table>
-
-## Update Status
+### Update Status
 
 The Update Status reports the update payload status.  The update status will be
 status for the last operation that was requested.  This status will remain the
 same until another operation is performed or Cerberus is reset.
 
+#### Request
 
-    Table 73 Update Status Request
+| Payload | Description |
+|---------|-------------|
+| 1       | Update Type |
+| 2       | Port Id     |
 
+Possible update type:
+*   0x00: Firmware
+*   0x01: PFM
+*   0x02: CFM
+*   0x03: PCD
+*   0x04: Host Firmware
+*   0x05: Recovery Firmware
+*   0x06: Reset Configuration
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Update Type <p>
+#### Response
 
-    00 = Firmware <p>
-
-    01 = Platform Firmware Manifest <p>
-
-    02 = Component Firmware Manifest <p>
-
-    03 = Platform Configuration Data <p>
-
-    04 = Host Firmware <p>
-
-    05 = Recovery Firmware <p>
-
-    06 = Reset Configuration </td> </tr> <tr> <td>2 </td> <td>Port Id </td>
-    </tr> </table>
-
-
-
-    Table 74 Update Status Response
+| Payload | Description                                                    |
+|---------|----------------------------------------------------------------|
+| 1:4     | Update Status.  See firmware update specification for details. |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Update Status.  See firmware update
-specification for details.  </td> </tr> </table>
-
-## Extended Update Status
+### Extended Update Status
 
 The Extended Update Status reports the update payload status along with the
 remaining number of update bytes expected.  The update status will be status for
 the last operation that was requested.  This status will remain the same until
 another operation is performed or Cerberus is reset.
 
+#### Request
 
-    Table 75 Extended Update Status Request
+| Payload | Description |
+|---------|-------------|
+| 1       | Update Type |
+| 2       | Port Id     |
 
+Possible update type:
+*   0x00: Firmware
+*   0x01: PFM
+*   0x02: CFM
+*   0x03: PCD
+*   0x04: Host Firmware
+*   0x05: Recovery Firmware
+*   0x06: Reset Configuration
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Update Type <p>
+#### Response
 
-    00 = Firmware <p>
-
-    01 = Platform Firmware Manifest <p>
-
-    02 = Component Firmware Manifest <p>
-
-    03 = Configuration Data <p>
-
-    04 = Host Firmware <p>
-
-    05 = Recovery Firmware <p>
-
-    06 = Reset Configuration </td> </tr> <tr> <td>2 </td> <td>Port Id </td>
-    </tr> </table>
-
-
-
-    Table 76 Extended Update Status Response
+| Payload | Description                                                    |
+|---------|----------------------------------------------------------------|
+| 1:4     | Update Status.  See firmware update specification for details. |
+| 5:8     | Expected update bytes remaining.                               |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Update Status.  See firmware update
-specification for details.  </td> </tr> <tr> <td>5:8 </td> <td>Expected update
-bytes remaining.  </td> </tr> </table>
-
-## Activate Firmware Update
+### Activate Firmware Update
 
 Alerts Cerberus that sending of update bytes is complete, and that verification
 of update should start.  This command has no payload, the ERROR response zero is
 expected.
 
+#### Request
 
-    Table 77 Activate Firmware Update
+Empty body.
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
-
-## Reset Configuration
+### Reset Configuration
 
 Resets configuration parameters back to the default state.  Depending on the
 request parameters, different amounts of types of configuration can be erased,
@@ -2226,161 +2187,132 @@ contain a device-specific, one-time use, authorization token that must be signed
 with the PFM key to unlock the operation.  The authorization token has the
 following behavior:
 
+1.  A request for the same operation without providing the signed authorization
+    token will generate a new token that invalidates any old token.  This is
+    true even if the old token has not been used yet.
 
+2.  After an authorization token has been used to unlock an operation, it can
+    never be used again.  A new token must be requested.  This is true even if
+    the requested operation was not able to complete successfully.
 
-1. A request for the same operation without providing the signed authorization
-token will generate a new token that invalidates any old token.  This is true
-even if the old token has not been used yet.
-2. After an authorization token has been used to unlock an operation, it can
-never be used again.  A new token must be requested.  This is true even if the
-requested operation was not able to complete successfully.
-3. A failure to authorize the request when providing a signed token does not
-invalidate the current authorization token in the device.
+3.  A failure to authorize the request when providing a signed token does not
+    invalidate the current authorization token in the device.
 
 If authorization is not required, or the request is sent with a signed token, a
 standard error response will be returned indicating the status.
 
+#### Request
 
-    Table 78 Reset Configuration Request
+| Payload | Description                                                          |
+|---------|----------------------------------------------------------------------|
+| 1       | Type of reset operation to request.                                  |
+| 2:N     | (Optional) Device-specific authorization token, signed with PFM key. |
+
+Possible reset types:
+*   0x00: Revert the device into the unprotected (bypass) state by erasing all
+    PFMs and CFMs.
+*   0x01: Perform a factory reset by removing all configuration.  This does not
+    include signed device certificates.
+
+#### Response
+
+| Payload | Description                         |
+|---------|-------------------------------------|
+| 1:N     | Device-specific authorization token |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Type of reset operation to request: <p> 0:
-Revert the device into the unprotected (bypass) state by erasing all PFMs and
-CFMs.  <p> 1:  Perform a factory reset by removing all configuration.  This does
-not include signed device certificates.  </td> </tr> <tr> <td>2:N </td>
-<td>(Optional) Device-specific authorization token, signed with PFM key.  </td>
-</tr> </table>
-
-
-
-    Table 79 Reset Configuration Response with Authorization Token
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>Device-specific authorization token </td>
-</tr> </table>
-
-## Get Configuration Ids
+### Get Configuration Ids
 
 This command retrieves PFM Ids, CFM Ids, PCD Id, and signed digest of request
 nonce and response ids.
 
+#### Request
 
-    Table 80 Get Configuration Ids Request
+| Payload | Description  |
+|---------|--------------|
+| 1:32    | Random Nonce |
 
+#### Response
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:32 </td> <td>32 byte Nonce </td> </tr> </table>
-
-
-
-    Table 81  Get Configuration Ids Response 
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:32 </td> <td>32 byte Nonce </td> </tr> <tr> <td>33 </td>
-<td>Number of PFMs Ids (P) </td> </tr> <tr> <td>34 </td> <td>Number of CFM Ids
-(C) </td> </tr> <tr> <td>35:(P*4 + C*4 + 4) (V’) </td> <td>PFM Version Id[0] -
-PFM Version Id[N] <p> CFM Version Id[0] - CFM Version Id[N] <p> PCD Version Id
-</td> </tr> <tr> <td>V’+1:M </td> <td>PFM Platform Id[0] - PFM Platform Id[N],
-each null terminated <p> CFM Platform Id[0] - CFM Platform Id[N], each null
-terminated <p> PCD Platform Id, null terminated </td> </tr> <tr> <td>M+1:SGN
-</td> <td>SGN<sup>(pk)</sup>(request message nonce + response message payload)
-</td> </tr> </table>
+| Payload                 | Description                 |
+|-------------------------|-----------------------------|
+| 1:32                    | Random Nonce                |
+| 33                      | Number of PFM Ids (P)       |
+| 34                      | Number of CFM Ids (C)       |
+| 35:(P*4 + C*4 + 4) (V') | PFM, CFM, PCD Version IDs   |
+| V'+1:M                  | PFM, CFM, PCD Platfomrm IDs |
+| M+1:SIGN                | `SIGN(request || response)` |
 
 
-N is the number of measurements and L is the length of each measurement.  The
-Signature should be a SHA2 over the request and response message body (excluding
-the signature).  The signature algorithm is defined by the certificate
-exchanged in the DIGEST.
-
-## Recover Firmware
+### Recover Firmware
 
 Start the firmware recovery process for the device.  Not all devices will
 support all types of recovery.  The implementation is device specific.
 
+#### Request
 
-    Table 82 Recover Firmware Request
+| Payload | Description                                                        |
+|---------|--------------------------------------------------------------------|
+| 1       | Port Id                                                            |
+| 2       | Firmware image to use: 0x00 = Exit Recovery, 0x01 = Enter Recovery |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2 </td>
-<td>Firmware image to use for recovery: <p> 0: Exit Recovery <p> 1: Enter
-Recovery </td> </tr> </table>
-
-## Prepare Recovery Image
+### Prepare Recovery Image
 
 Provisions RoT for incoming Recovery Image for Port.
 
+#### Requests
 
-    Table 83 Prepare Recovery Image Request
+| Payload | Description |
+|---------|-------------|
+| 1       | Port Id     |
+| 2:5     | Total size  |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2:5 </td>
-<td>Total size </td> </tr> </table>
-
-
-The response back is the Error Code indicating Success or failure.
-
-## Update Recovery Image
+### Update Recovery Image
 
 The flash descriptor structure describes the regions of flash for the device.
 
+#### Request
 
-    Table 84 Update Component Firmware Manifest Request
+| Payload | Description            |
+|---------|------------------------|
+| 1       | Port Id                |
+| 2:N     | Recovery Image Payload |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2:N </td>
-<td>Recovery Image Payload </td> </tr> </table>
-
-## Activate Recovery Image
+### Activate Recovery Image
 
 Signals recovery image has been completely sent and verification of the image
 should start.  Once the image has been verified, it can be used for host
 firmware recovery.
 
+### Request
 
-    Table 85 Activate Recovery Image
+| Payload | Description |
+|---------|-------------|
+| 1       | Port Id     |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> </table>
-
-## Get Recovery Image Id
+### Get Recovery Image Id
 
 Retrieves the recovery image identifiers.
 
+#### Request
 
-    Table 86 Recovery Image Id Request
+| Payload      | Description                                                 |
+|--------------|-------------------------------------------------------------|
+| 1            | Port Id                                                     |
+| 2 (optional) | Identifier: 0x00 = Version Id (default), 0x01 = Platform Id |
 
+#### Response
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Port Id </td> </tr> <tr> <td>2 (optional) </td>
-<td>Identifier: <p> 0 = Version Id (default) <p> 1 = Platform Id </td> </tr>
-</table>
-
-
-
-    Table 87 Recovery Image Version Id Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:32 </td> <td>Recovery Image Version Id </td> </tr>
-</table>
+| Payload | Description                                         |
+|---------|-----------------------------------------------------|
+| 1:N     | Recovery Image Platform Id as null-terminated ASCII |
 
 
-
-    Table 88 Recovery Image Platform Id Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:N </td> <td>Recovery Image Platform Id as null-terminated
-ASCII </td> </tr> </table>
-
-## Platform Measurement Register
+### Get Platform Measurement Register
 
 Returns the Cerberus Platform Measurement Register (PMR), which is a digest of
 the Cerberus Firmware, PFM, CFM and PCD.  This information contained in PMR0 is
@@ -2395,127 +2327,169 @@ that was run to boot the device.  For ease of attestation, PMR0 is intended to
 only contain static information.  If variable data will also be measured, these
 measurements should be exposed through PMR1-2.
 
+#### Request
 
-    Table 89 Platform Measurement Request
+| Payload | Description                 |
+|---------|-----------------------------|
+| 1       | Platform Measurement Number |
+| 2:33    | Random Nonce                |
 
+#### Response
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Platform Measurement Number </td> </tr> <tr>
-<td>2:33 </td> <td>32 byte Nonce </td> </tr> </table>
-
-
-
-    Table 90 Platform Measurement Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:32 </td> <td>32 byte Nonce </td> </tr> <tr> <td>33 </td>
-<td>Measurement length (L) </td> </tr> <tr> <td>34:33+L </td> <td>Platform
-Measurement Value </td> </tr> <tr> <td>34+L:N </td> <td>SGN<sup>(pk)</sup>(
-request message payload + response message payload) </td> </tr> </table>
-
+| Payload | Description                 |
+|---------|-----------------------------|
+| 1:32    | Random Nonce                |
+| 33      | Measurement length (L)      |
+| 34:33+L | Platform Measurement Value  |
+| 34+L:N  | `SIGN(request ++ response)` |
 
 PMR1-4 are cleared on component reset.  PMR0 is cleared and re-built on Cerberus
 reset.
 
-## Update Platform Measurement Register
+
+### Update Platform Measurement Register
 
 External updates to PMR3-4 are permitted.  Attempts to update PMR0-2 will result
-error.  Only SHA 2 is supported for measurement extension.  SHA1 and SHA3 are
+error.  Only SHA2 is supported for measurement extension.  SHA1 and SHA3 are
 not applicable.  Note:  The measurement can only be updated over an
 authenticated and secured channel.
 
+#### Reqyest
 
-    Table 91 Update Platform Measurement Request
+| Payload | Description                 |
+|---------|-----------------------------|
+| 1       | Platform Measurement Number |
+| 2:N     | Measurement Extension       |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Platform Measurement Number </td> </tr> <tr>
-<td>2:N </td> <td>Measurement Extension </td> </tr> </table>
-
-## Reset Counter
+### Reset Counter
 
 Provides Cerberus and Component Reset Counter since power-on.
 
+#### Request
 
-    Table 92 Reset Counter Request
+| Payload | Description        |
+|---------|--------------------|
+| 1       | Reset Counter Type |
+| 2       | Port Id            |
+
+Possible reset counter types:
+*   0x00: Local Device
+*   0x01: Protected External Devices (if applicable).
+    These does not include external AC-RoTs that are challenged by the device.
+*   Other values are vendor-defined.
+
+#### Response
+
+| Payload | Description |
+|---------|-------------|
+| 1:2     | Reset Count |
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Reset Counter Type <p> 0 = Local Device <p> 1 =
-Protected External Devices (if applicable).  These does not include external
-AC-RoTs that are challenged by the device.  <p> Other values are implementation
-specific.  </td> </tr> <tr> <td>2 </td> <td>Port Id </td> </tr> </table>
-
-
-
-    Table 93 Reset Counter Response
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:2 </td> <td>Reset Count </td> </tr> </table>
-
-## Message Unseal 
+### Message Unseal 
 
 This command starts unsealing an attestation message.  The ciphertext is limited
 to what can fit in a single message along with the other pieces necessary for
 unsealing.
 
+#### Request
 
-    Table 94 Unseal Message Request
+<!-- TODO: make this a proper table. -->
+<table>
+    <tr>
+        <td><strong>Payload</strong> </td>
+        <td><strong>Description</strong> </td>
+    </tr>
+    <tr>
+        <td>1 </td>
+        <td>[7:5] Reserved
+            <br> [4:2] HMAC Type:
+            <br> 000 – SHA256
+            <br> [1:0] Seed Type:
+            <br> 00 – RSA: Seed is encrypted with an RSA public key
+            <br> 01 – ECDH: Seed is an ECC public key, ASN.1/DER encoded </td>
+    </tr>
+    <tr>
+        <td>2 </td>
+        <td>Additional Seed Parameters
+            <br> RSA:
+            <br> [7:3] Reserved
+            <br> [2:0] Padding Scheme:
+            <br> 000 – PKCS#1 v1.5
+            <br> 001 – OAEP using SHA1
+            <br> 010 – OAEP using SHA256
+            <br> ECDH:
+            <br> [7:1] Reserved
+            <br> [0]: Seed Processing:
+            <br> 0 – No additional processing. Raw ECDH output is the seed.
+            <br> 1 – Seed is a SHA256 hash of the ECDH output. </td>
+    </tr>
+    <tr>
+        <td>3:4 </td>
+        <td>Seed Length (S) </td>
+    </tr>
+    <tr>
+        <td>5:4+S (S') </td>
+        <td>Seed </td>
+    </tr>
+    <tr>
+        <td>S'+1:S'+2 </td>
+        <td>Cipher Text Length (C) </td>
+    </tr>
+    <tr>
+        <td>S'+3:S'+2+C (C') </td>
+        <td>Cipher Text </td>
+    </tr>
+    <tr>
+        <td>C'+1:C'+2 </td>
+        <td>HMAC Length (H) </td>
+    </tr>
+    <tr>
+        <td>C'+3:C'+2+H (H') </td>
+        <td>HMAC </td>
+    </tr>
+    <tr>
+        <td>H'+1:H'+64 (P0') </td>
+        <td>PMR0 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
+    </tr>
+    <tr>
+        <td>P0'+1:P0'+64 (P1') </td>
+        <td>PMR1 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
+    </tr>
+    <tr>
+        <td>P1'+1:P1'+64 (P2') </td>
+        <td>PMR2 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
+    </tr>
+    <tr>
+        <td>P2'+1:P2'+64 (P3') </td>
+        <td>PMR3 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
+    </tr>
+    <tr>
+        <td>P3'+1:P3'+64 </td>
+        <td>PMR4 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
+    </tr>
+</table>
 
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>[7:5] Reserved <p> [4:2] HMAC Type: <p> 000 –
-SHA256 <p> [1:0] Seed Type: <p> 00 – RSA:  Seed is encrypted with an RSA public
-key <p> 01 – ECDH:  Seed is an ECC public key, ASN.1/DER encoded </td> </tr>
-<tr> <td>2 </td> <td>Additional Seed Parameters <p> RSA: <p> [7:3] Reserved <p>
-[2:0] Padding Scheme: <p> 000 – PKCS#1 v1.5 <p> 001 – OAEP using SHA1 <p> 010 –
-OAEP using SHA256 <p> ECDH: <p> [7:1] Reserved <p> [0]: Seed Processing: <p> 0 –
-No additional processing.  Raw ECDH output is the seed.  <p> 1 – Seed is a
-SHA256 hash of the ECDH output.  </td> </tr> <tr> <td>3:4 </td> <td>Seed Length
-(S) </td> </tr> <tr> <td>5:4+S (S’) </td> <td>Seed </td> </tr> <tr>
-<td>S’+1:S’+2 </td> <td>Cipher Text Length (C) </td> </tr> <tr> <td>S’+3:S’+2+C
-(C’) </td> <td>Cipher Text </td> </tr> <tr> <td>C’+1:C’+2 </td> <td>HMAC Length
-(H) </td> </tr> <tr> <td>C’+3:C’+2+H (H’) </td> <td>HMAC </td> </tr> <tr>
-<td>H’+1:H’+64 (P0’) </td> <td>PMR0 Sealing, 0’s to ignore.  Unused bytes are
-first and must be set to 0.  </td> </tr> <tr> <td>P0’+1:P0’+64 (P1’) </td>
-<td>PMR1 Sealing, 0’s to ignore.  Unused bytes are first and must be set to 0.
-</td> </tr> <tr> <td>P1’+1:P1’+64 (P2’) </td> <td>PMR2 Sealing, 0’s to ignore.
-Unused bytes are first and must be set to 0.  </td> </tr> <tr> <td>P2’+1:P2’+64
-(P3’) </td> <td>PMR3 Sealing, 0’s to ignore.  Unused bytes are first and must be
-set to 0.  </td> </tr> <tr> <td>P3’+1:P3’+64 </td> <td>PMR4 Sealing, 0’s to
-ignore.  Unused bytes are first and must be set to 0.  </td> </tr> </table>
-
-## Message Unseal Result
+### Message Unseal Result
 
 This command retrieves the current status of an unsealing process.
 
+#### Request
 
-    Table 95 Unseal Message Request
+Empty body.
 
+#### Response
 
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td> </td> <td> </td> </tr> </table>
+| Payload | Description      |
+|---------|------------------|
+| 1:4     | Unsealing status |
 
-
-
-    Table 96  Unseal Message Pending Response 
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Unsealing status </td> </tr> </table>
-
-
-
-    Table 97  Unseal Message Completed Response 
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Unsealing status </td> </tr> <tr> <td>5:6
-</td> <td>Encryption Key Length </td> </tr> <tr> <td>7:N </td> <td>Encryption
-Key </td> </tr> </table>
-
+| Payload | Description           |
+|---------|-----------------------|
+| 1:4     | Unsealing status      |
+| 5:6     | Encryption Key Length |
+| 7:N     | Encryption Key        |
 
 The Seal/Unseal flow is described in the Cerberus Attestation Integration
 specification.
@@ -2773,17 +2747,17 @@ Table 99 Commands
 <table> <tr> <td><strong>Register Name</strong> </td>
 <td><strong>Command</strong> </td> <td><strong>Length</strong> </td>
 <td><strong>R/W</strong> </td> <td><strong>Description</strong> </td> </tr> <tr>
-<td>Status </td> <td>30h </td> <td>2 </td> <td>R </td> <td>Command Status </td>
-</tr> <tr> <td>Firmware Version </td> <td>32h </td> <td>16 </td> <td>R/W </td>
+<td>Status </td> <td>0x30 </td> <td>2 </td> <td>R </td> <td>Command Status </td>
+</tr> <tr> <td>Firmware Version </td> <td>0x32 </td> <td>16 </td> <td>R/W </td>
 <td>Retrieve firmware version information </td> </tr> <tr> <td>Device Id </td>
-<td>33h </td> <td>8 </td> <td>R </td> <td>Retrieves Device Id </td> </tr> <tr>
-<td>Capabilities </td> <td>34h </td> <td>9 </td> <td>R </td> <td>Retrieves
+<td>0x33 </td> <td>8 </td> <td>R </td> <td>Retrieves Device Id </td> </tr> <tr>
+<td>Capabilities </td> <td>0x34 </td> <td>9 </td> <td>R </td> <td>Retrieves
 Device Capabilities </td> </tr> <tr> <td>Certificate Digest </td> <td>3C </td>
 <td>32 </td> <td>R </td> <td>SHA256 of Device Id Certificate </td> </tr> <tr>
 <td>Certificate </td> <td>3D </td> <td>4096 </td> <td>R/W </td> <td>Certificate
 from the AC-Rot </td> </tr> <tr> <td>Challenge </td> <td>3E </td> <td>32 </td>
 <td>W </td> <td>Nonce written by RoT </td> </tr> <tr> <td>Platform Configuration
-Register </td> <td>03h </td> <td>5Eh </td> <td>R </td> <td>Reads firmware
+Register </td> <td>0x03 </td> <td>0x5e </td> <td>R </td> <td>Reads firmware
 measurement, calculated with S Nonce </td> </tr> </table>
 
 ### Legacy Command Format
