@@ -104,11 +104,12 @@ IS A TRADEMARK AND TECHNOLOGY OF TEXAS INSTRUMENTS; GUIDE PINS FROM PENCOM;
 BATTERIES FROM PANASONIC.  IMPLEMENTATION OF THESE TECHNOLOGIES MAY BE SUBJECT
 TO THEIR OWN LEGAL TERMS.
 
+
 # Summary
 
 Throughout this document, the term "Processor" refers to all Central Processing
 Unit (CPU), System On Chip (SOC), Micro Control Unit (MCU), and Microprocessor
-architectures.  The document details the required challenge protocol required
+architectures.  The document details the required Challenge Protocol required
 for Active Component and Platform RoTs.  The Processor must implement all
 required features to establish a hardware based Root of Trust.  Processors that
 intrinsically fail to meet these requirements must implement the flash
@@ -125,7 +126,6 @@ integrity.  The hierarchical architecture extends beyond the typically UEFI
 measurements, to include integrity measurements of all Active Component
 firmware.  The document describes the APIs needed to support the attestation
 challenge for Project Cerberus.
-
 
 
 # Physical Communication Channel
@@ -165,21 +165,7 @@ between their Processor and Flash to establish the needed Root-of-Trust.  Figure
 measurement challenge channels between the motherboard PA-RoT and Active
 Component RoTs (AC-RoT).
 
-
-    Figure 1 Motherboard I2C lane diagram
-
-
-    
-
-<p id="gdcalert2" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image2.png).  Store image on your image
-server and adjust path/filename/extension if necessary.  </span><br>(<a
-href="#">Back to top</a>)(<a href="#gdcalert3">Next alert</a>)<br><span
-style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image2.png "image_tooltip")
-
+> TODO: Figure 1
 
 The Project Cerberus firmware attestation is a hierarchical architecture.  Most
 Active Components in the modern server boot to an operational level before the
@@ -216,7 +202,10 @@ that carry higher bit counts.  RoT’s that cannot support certificate
 authentication are required to support hashing algorithms and either RSA or
 ECDSA signatures of firmware measurements.
 
-## Power Control In the Cerberus motherboard design, power and reset sequencing
+
+## Power Control
+
+In the Cerberus motherboard design, power and reset sequencing
 is orchestrated by the PA-RoT.  When voltage is applied to the motherboard, it
 passes through in-rush circuity to a CPLD that performs time sensitive
 sequencing of power rails to ensure stabilization.  Once a power good level is
@@ -237,6 +226,7 @@ Cerberus policies determine whether the system should boot with the Active
 Component powered off, or the platform should remain on standby power, while
 reporting the measurement failure to the Data Center Management Software through
 the OOB path.
+
 
 # Communication 
 
