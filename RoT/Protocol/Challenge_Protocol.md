@@ -59,17 +59,19 @@ Authors:
 
 (c) 2017 Microsoft Corporation.
 
+## Legal
+
 As of November 1, 2017, the following persons or entities have made this
 Specification available under the Open Web Foundation Final Specification
 Agreement (OWFa 1.0), which is available at
-[http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0](http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0)
+<http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0>.
 
-Microsoft Corporation.
+- Microsoft Corporation.
 
 You can review the signed copies of the Open Web Foundation Agreement Version
 1.0 for this Specification at
-[http://www.opencompute.org/participate/legal-documents/](http://www.opencompute.org/participate/legal-documents/),
-which may also include additional parties to those listed above.
+<http://www.opencompute.org/participate/legal-documents/> which may also include
+additional parties to those listed above.
 
 Your use of this Specification may be subject to other third party rights.  THIS
 SPECIFICATION IS PROVIDED "AS IS." The contributors expressly disclaim any
@@ -87,7 +89,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 CONTRIBUTORS AND LICENSORS OF THIS SPECIFICATION MAY HAVE MENTIONED CERTAIN
 TECHNOLOGIES THAT ARE MERELY REFERENCED WITHIN THIS SPECIFICATION AND NOT
 LICENSED UNDER THE OWF CLA OR OWFa.  THE FOLLOWING IS A LIST OF MERELY REFERENCED
-TECHNOLOGY: INTELLIGENT PLATFORM MANAGEMENT INTERFACE (IPMI); I<sup>2</sup>C IS
+TECHNOLOGY: INTELLIGENT PLATFORM MANAGEMENT INTERFACE (IPMI); I2C IS
 A TRADEMARK AND TECHNOLOGY OF NXP SEMICONDUCTORS ; EPYC IS A TRADEMARK AND
 TECHNOLOGY OF ADVANCED MICRO DEVICES INC.; ASPEED AST 2400/2500 FAMILY
 PROCESSORS IS A TECHNOLOGY OF  ASPEED TECHNOLOGY INC.; MOLEX NANOPITCH, NANO
