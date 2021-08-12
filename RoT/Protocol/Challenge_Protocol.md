@@ -103,7 +103,7 @@ TO THEIR OWN LEGAL TERMS.
 
 # Summary
 
-Throughout this document, the term “Processor” refers to all Central Processing
+Throughout this document, the term "Processor" refers to all Central Processing
 Unit (CPU), System On Chip (SOC), Micro Control Unit (MCU), and Microprocessor
 architectures.  The document details the required challenge protocol required
 for Active Component and Platform RoTs.  The Processor must implement all
@@ -153,10 +153,10 @@ attestation.   In either approach, physical connectors to Active Component
 interfaces do not need to change as they already have I2C.
 
 Active Components with the intrinsic security attributes described in the
-“Processor Secure Boot Requirements” document do not need to place the physical
+"Processor Secure Boot Requirements" document do not need to place the physical
 Cerberus microcontroller between their Processor and Flash.   Active Components
-that do not meet the requirements described in the “Processor Secure Boot
-Requirements” document are required to implement the Cerberus micro-controller
+that do not meet the requirements described in the "Processor Secure Boot
+Requirements" document are required to implement the Cerberus micro-controller
 between their Processor and Flash to establish the needed Root-of-Trust.  Figure
 1 Motherboard I2C lane diagram, represents the pre-boot and post-boot
 measurement challenge channels between the motherboard PA-RoT and Active
@@ -1214,7 +1214,7 @@ The following section describes the structures of the MCTP message body.
 
 The error command is returned for command responses when the command was not
 completed as proposed, it also acts as a generic status for commands without
-response whereby “No Error” code would indicate success.   The Msg Tag, Seq and
+response whereby "No Error" code would indicate success.   The Msg Tag, Seq and
 Command match the response to the corresponding request.   The Message Body is
 returned as follows:
 
@@ -1253,7 +1253,7 @@ unexpected size </td> <td>Packet Length </td> </tr> <tr> <td>Message Overflow
 
 
 If an explicit response is not defined for the command definitions in the
-following sections, the Error Message is the expected response with “No Error”.
+following sections, the Error Message is the expected response with "No Error".
 The Error Message can occur as the response for any command that fails
 processing.
 
@@ -2072,7 +2072,7 @@ PFM.  This command can only follow a valid PFM update.
 <td>Activation: <p> 0 = Reboot only <p> 1 = Immediately </td> </tr> </table>
 
 
-If reboot only has been issued, the option for “Immediately” committing the PFM
+If reboot only has been issued, the option for "Immediately" committing the PFM
 is not available until a new PFM is updated.
 
 ## Get Component Firmware Manifest Id
