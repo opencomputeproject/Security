@@ -2494,6 +2494,7 @@ Empty body.
 The Seal/Unseal flow is described in the Cerberus Attestation Integration
 specification.
 
+
 # Platform Active RoT (PA-RoT)
 
 The PA-RoT is responsible for challenging the AC-RoT’s and collecting their
@@ -2535,24 +2536,18 @@ level and persistent storage level.
 The following table lists the attributes stored in the PFM for each Active
 component:
 
-
-    Table 98 PFM Attributes
-
-
-<table> <tr> <td><strong>Attribute</strong> </td>
-<td><strong>Description</strong> </td> </tr> <tr> <td>Description </td>
-<td>Device Part or Description </td> </tr> <tr> <td>Device Type </td>
-<td>Underlying Device Type of AC-RoT </td> </tr> <tr> <td>Remediation Policy
-</td> <td>Policy(s) defining default remediation actions for integrity failure.
-</td> </tr> <tr> <td>Firmware Version </td> <td>List of firmware versions </td>
-</tr> <tr> <td>Flash Areas/Offsets </td> <td>List of offset and digests, used
-and unused </td> </tr> <tr> <td>Measurement </td> <td>Firmware Measurements
-</td> </tr> <tr> <td>Measurement Algorithm </td> <td>Algorithm used to calculate
-measurement.  </td> </tr> <tr> <td>Public Key </td> <td>Public keys in the key
-manifest </td> </tr> <tr> <td>Digest Algorithm </td> <td>Algorithm used to
-calculate </td> </tr> <tr> <td>Signature </td> <td>Firmware signature(s) </td>
-</tr> </table>
-
+| Attribute             | Description                                 |
+|-----------------------|---------------------------------------------|
+| Description           | Device Part or Description                  |
+| Device Type           | Underlying Device Type of AC-RoT            |
+| Remediation Policy    | Remediation actions for integrity failure.  |
+| Firmware Version      | List of firmware versions                   |
+| Flash Areas/Offsets   | List of offset and digests, used and unused |
+| Measurement           | Firmware Measurements                       |
+| Measurement Algorithm | Algorithm used to calculate measurement.    |
+| Public Key            | Public keys in the key manifest.            |
+| Digest Algorithm      | Algorithm used to calculate.                |
+| Signature             | Firmware signature(s)                       |
 
 The PA-RoT actively takes measurements of flash from platform firmware, the PFM
 provides metadata that instructs the RoT on measurement and signature
@@ -2571,6 +2566,7 @@ Note:  The PA-RoT and AC-RoT enforce secure boot and only permit the download of
 digitally signed and unrevoked firmware.  A PFM or CFM mismatch can only occur
 when firmware integrity is brought into question.
 
+
 ## RoT External Communication interface
 
 The PA-RoT connects to the platform through, either SPI, QSPI depending on the
@@ -2582,21 +2578,7 @@ all AC-RoTs in the platform.  The BMC bridges the PA-RoT to the Rack Manager,
 which in-turn bridges the rack to the Datacenter management network.  The
 interface into the PA-RoT is as follows:
 
-
-    Figure 12 External Communication Interface
-
-
-    
-
-<p id="gdcalert11" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image11.png).  Store image on
-your image server and adjust path/filename/extension if necessary.
-</span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert12">Next
-alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image11.png "image_tooltip")
-
+> TODO: figure 12
 
 The Datacenter Management (DCM) software can communicate with the PA-RoT
 Out-Of-Band (OOB) through the Rack Manager.  The Rack Manager allows tunneling
@@ -2605,6 +2587,7 @@ over I2C.  This channel is assumed insecure, which is why all communicates are
 authenticated and encrypted.  The Datacenter Management Software can collect
 the RFM measurements and other challenge data over this secure channel.  Secure
 updates are also possible over this channel.
+
 
 ## Host Interface
 
@@ -2624,6 +2607,7 @@ status and make a determination on the remediation.
 
 The OOB communication to Cerberus requires TLS and Certificate Authentication.
 
+
 # Legacy Interface
 
 The legacy interface is defined for backward combability with devices that do
@@ -2633,6 +2617,7 @@ and providing an offset for Signed Firmware Measurements.  The payload
 structures will closely match that of the MCTP protocol version.  Legacy
 interfaces to no support session based authentication but permit signed
 measurements.
+
 
 ## Protocol Format
 
@@ -2648,6 +2633,7 @@ repeated start and finally a slave address read.  The master keeps clocking as
 the slaves responds with the selected data.  The command code byte can be
 considered register space.
 
+
 ### PEC Handling
 
 An SMBus legacy protocol implementation may leverage the 8bit SMBus Packet Error
@@ -2660,6 +2646,7 @@ An Active RoT that receives an invalid PEC can optionally NACK the byte that
 carried the incorrect PEC value or drop the data for the transaction and any
 further transactions (read or write) until the next valid read or write Start
 transaction is received.
+
 
 ### Message Splitting
 
@@ -2676,6 +2663,7 @@ entire message.  Each segment includes decrementing packet number that
 sequentially identifies the part of the overall message.  To stay within the
 protocol length each message segment must be no longer than 255 bytes.
 
+
 ### Payload Format
 
 The payload portions of the SMBus Write and Read blocks will encapsulate the
@@ -2687,6 +2675,7 @@ ACK/NACK conditions refer to the SMBus specification.
 The data blocks of the Write and Read commands will encapsulate the message
 payload.  The encapsulated payload includes a uint16 register offset and data
 section.
+
 
 ### Register Format
 
@@ -2703,37 +2692,13 @@ writes can be performed by writing the seal register to the zero offset.
 The following diagram depicts register read access flow for a large register
 space:
 
-
-    Figure 14 Register Read Flow
-
-
-
-<p id="gdcalert12" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image12.png).  Store image on
-your image server and adjust path/filename/extension if necessary.
-</span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert13">Next
-alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image12.png "image_tooltip")
-
+> TODO: Figure 14
 
 The following diagram depicts register write access flow for a large register
 space, with required seal (update complete bit):
 
+> TODO: Figure 15
 
-    Figure 15 Register Write Flow
-
-
-
-<p id="gdcalert13" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image13.png).  Store image on
-your image server and adjust path/filename/extension if necessary.
-</span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert14">Next
-alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
-
-
-![alt_text](images/image13.png "image_tooltip")
 
 ### Legacy Active Component RoT Commands
 
@@ -2741,141 +2706,104 @@ The following table describes the commands accepted by the Active Component RoT.
 All commands are master initiated.  The command number is not representative of
 a contiguous memory space, but an index to the respective register
 
-Table 99 Commands
+| Register Name                   | Command | Length | R/W | Description                                         |
+|---------------------------------|---------|--------|-----|-----------------------------------------------------|
+| Status                          | 0x30    | 2      | R   | Command Status                                      |
+| Firmware Version                | 0x32    | 16     | R/W | Retrieve firmware version information               |
+| Device Id                       | 0x33    | 8      | R   | Retrieves Device Id                                 |
+| Capabilities                    | 0x34    | 9      | R   | Retrieves Device Capabilities                       |
+| Certificate Digest              | 0x3c    | 32     | R   | SHA256 of Device Id Certificate                     |
+| Certificate                     | 0x3d    | 4096   | R/W | Certificate from the AC-Rot                         |
+| Challenge                       | 0x3e    | 32     | W   | Nonce written by RoT                                |
+| Platform Configuration Register | 0x03    | 0x5e   | R   | Reads firmware measurement, calculated with S Nonce |
 
-
-<table> <tr> <td><strong>Register Name</strong> </td>
-<td><strong>Command</strong> </td> <td><strong>Length</strong> </td>
-<td><strong>R/W</strong> </td> <td><strong>Description</strong> </td> </tr> <tr>
-<td>Status </td> <td>0x30 </td> <td>2 </td> <td>R </td> <td>Command Status </td>
-</tr> <tr> <td>Firmware Version </td> <td>0x32 </td> <td>16 </td> <td>R/W </td>
-<td>Retrieve firmware version information </td> </tr> <tr> <td>Device Id </td>
-<td>0x33 </td> <td>8 </td> <td>R </td> <td>Retrieves Device Id </td> </tr> <tr>
-<td>Capabilities </td> <td>0x34 </td> <td>9 </td> <td>R </td> <td>Retrieves
-Device Capabilities </td> </tr> <tr> <td>Certificate Digest </td> <td>3C </td>
-<td>32 </td> <td>R </td> <td>SHA256 of Device Id Certificate </td> </tr> <tr>
-<td>Certificate </td> <td>3D </td> <td>4096 </td> <td>R/W </td> <td>Certificate
-from the AC-Rot </td> </tr> <tr> <td>Challenge </td> <td>3E </td> <td>32 </td>
-<td>W </td> <td>Nonce written by RoT </td> </tr> <tr> <td>Platform Configuration
-Register </td> <td>0x03 </td> <td>0x5e </td> <td>R </td> <td>Reads firmware
-measurement, calculated with S Nonce </td> </tr> </table>
 
 ### Legacy Command Format
 
 The following section describes the register format for AC-RoT that do not
 implement SMBUS and comply with the legacy measurement exchange protocol.
 
-
-
-        1. Status
+#### Status
 
 The SMBUS read command reads detailed information on error status.  The status
 register is issued between writing the challenge nonce and reading the
 Measurement.  The delay time for deriving the Measurement must comply with the
 Capabilities command.
 
+| Payload | Description                                               |
+|---------|-----------------------------------------------------------|
+| 1       | Status: 0x00 = Complete, 0x01 = In Progress, 0x02 = Error |
+| 2       | Error Data or Zero                                        |
 
-    Table 100 Status Register
+<!-- NOTE: all of the table references below are broken and ened to be replaced
+     with proper anchor links. -->
 
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Status: <p>
-
-    00 = Complete <p>
-
-    01 In Progress <p>
-
-    02 Error </td> </tr> <tr> <td>2 </td> <td>Error Data or Zero </td> </tr>
-    </table>
-
-
-
-
-        2. Firmware Version
+#### Firmware Version
 
 The SMBUS write command payload sets the index.  The subsequent SMBUS read
 command reads the response.  For register payload description see response:
 Table 11 Firmware Version Response
 
+#### Device Id
 
+The SMBUS read command reads the response.  For register payload
+description see response: Table 1 Field Definitions.
 
-        3. Device Id
+#### Device Capabilities
 
-    The SMBUS read command reads the response.  For register payload
-    description see response:  Table 1 Field Definitions 
+The SMBUS read command reads the response.  For register payload description see
+response: Table 13 Device Capabilities Response 
 
-        4. Device Capabilities
-
-    The SMBUS read command reads the response.  For register payload
-    description see response: 
-
-
-Table 13 Device Capabilities Response 
-
-        5. Certificate Digest
+#### Certificate Digest
 
 The SMBUS read command reads the response.  For register payload description
-see response: Table 24 GET DIGEST Response
+see response: Table 24 `GET DIGEST` Response
 
 The PA-Rot will use the digest to determine if it has the certificate already
 cached.  Unlike MCTP, only the Alias and Device Id cert is supported.
 Therefore, it must be CA signed by a mutually trusted CA, as the CA Public Cert
 is not present
 
-
-
-        6. Certificate
+#### Certificate
 
 The SMBUS write command writes the offset into the register space.  For register
-payload description see response:  Table 26 GET CERTIFICATE Response
+payload description see response:  Table 26 `GET CERTIFICATE` Response
 
-
-#### Unlike MCTP, only the Alias and Device Id cert is supported.  Therefore,
+Unlike MCTP, only the Alias and Device Id certificates are supported. Therefore,
 it must be CA signed by mutually trusted CA, as the CA Public Cert is not
 present in the reduced challenge
 
 The SMBUS write command writes a nonce for measurement freshness.
 
+| Payload | Description                           |
+|---------|---------------------------------------|
+| 1:32    | Random 32 byte nonce chosen by PA-RoT |
 
-    Table 101 Challenge Register
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:32 </td> <td>Random 32 byte nonce chosen by PA-RoT </td>
-</tr> </table>
-
-
-
-
-        7. Measurement
+#### Measurement
 
 The SMBUS read command that reads the signed measurement with the nonce from the
 hallenge above.  The PA-RoT must poll the Status register for completion after
 issuing the Challenge and before reading the Measurement.
 
+| Payload | Description                          |
+|---------|--------------------------------------|
+| 1       | Length (L) of following hash digest. |
+| 2:33    | `H(Challenge Nonce ** H(PMR0))`      |
+| 34:N    | Signature of HASH [2:33]             |
 
-    Table 102 Measurement Register
-
-
-<table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Length (L) of following hash digest.  </td>
-</tr> <tr> <td>2:33 </td> <td>H(Challenge Nonce || H(Firmware Measurement/PMR0))
-</td> </tr> <tr> <td>34:N </td> <td>Signature of HASH [2:33] </td> </tr>
-</table>
 
 # References
-    1. DICE Architecture
-    [https://trustedcomputinggroup.org/work-groups/dice-architectures](https://trustedcomputinggroup.org/work-groups/dice-architectures)
-    2. RIoT
-    [https://www.microsoft.com/en-us/research/publication/riot-a-foundation-for-trust-in-the-internet-of-things](https://www.microsoft.com/en-us/research/publication/riot-a-foundation-for-trust-in-the-internet-of-things)
-    3. DICE and RIoT Keys and Certificates
-    [https://www.microsoft.com/en-us/research/publication/device-identity-dice-riot-keys-certificates](https://www.microsoft.com/en-us/research/publication/device-identity-dice-riot-keys-certificates)
-    4. USB Type C Authentication Specification
-    [http://www.usb.org/developers/docs/](http://www.usb.org/developers/docs/)
-    5. PCIe Device Security Enhancements specification
-    [https://www.intel.com/content/www/us/en/io/pci-express/pcie-device-security-enhancements-spec.html](https://na01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.intel.com%2Fcontent%2Fwww%2Fus%2Fen%2Fio%2Fpci-express%2Fpcie-device-security-enhancements-spec.html&data=02%7C01%7Cbryankel%40microsoft.com%7C6b6c323d9f5a430b6e2308d5c00880fc%7C72f988bf86f141af91ab2d7cd011db47%7C1%7C0%7C636626065116355800&sdata=Kebb47PfKoWc8jO1KHCDCxMriLH5gHncp3lCqyT6WAo%3D&reserved=0)
-    6. **NIST Special Publication 800-108 ** Recommendation for Key Derivation
-    Using Pseudorandom Functions.
-    [http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-108.pdf](http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-108.pdf)
-    7. TCG PC Client Platform Firmware Profile Specification** **
-    [https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification](https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification)
+1.  DICE Architecture
+    <https://trustedcomputinggroup.org/work-groups/dice-architectures>
+2.  RIoT
+    <https://www.microsoft.com/en-us/research/publication/riot-a-foundation-for-trust-in-the-internet-of-things>
+3.  DICE and RIoT Keys and Certificates
+    <https://www.microsoft.com/en-us/research/publication/device-identity-dice-riot-keys-certificates>
+4.  USB Type C Authentication Specification
+    <http://www.usb.org/developers/docs>
+5.  PCIe Device Security Enhancements specification
+    <https://www.intel.com/content/www/us/en/io/pci-express/pcie-device-security-enhancements-spec.html>
+6.  NIST Special Publication 800-108 - Recommendation for Key Derivation Using Pseudorandom Functions.
+    <http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-108.pdf>
+7.  TCG PC Client Platform Firmware Profile Specification
+    <https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification>
