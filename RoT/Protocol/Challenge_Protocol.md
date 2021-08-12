@@ -1,6 +1,7 @@
 <!--
   Style Guide
   - Make sure to wrap everything to 80 columns when possible.
+  - Sentence-ending periods are followed by two spaces.
 -->
 Project Cerberus: Firmware Challenge Specification
 =====
@@ -31,7 +32,7 @@ Authors:
     - Add Firmware Recovery image update commands.
     - Clarify Error Response.
 - v0.09 (2019-26-06) 
-    - Add Reset Configuration command. 
+    - Add Reset Configuration command.
     - Identify commands subject to the cryptographic timeout.
 - v0.10 (2019-05-08)
     - Update Cerberus-defined MCTP message definition.
@@ -70,12 +71,12 @@ You can review the signed copies of the Open Web Foundation Agreement Version
 [http://www.opencompute.org/participate/legal-documents/](http://www.opencompute.org/participate/legal-documents/),
 which may also include additional parties to those listed above.
 
-Your use of this Specification may be subject to other third party rights. THIS
+Your use of this Specification may be subject to other third party rights.  THIS
 SPECIFICATION IS PROVIDED "AS IS." The contributors expressly disclaim any
 warranties (express, implied, or otherwise), including implied warranties of
 merchantability, non-infringement, fitness for a particular purpose, or title,
-related to the Specification. The entire risk as to implementing or otherwise
-using the Specification is assumed by the Specification implementer and user. IN
+related to the Specification.  The entire risk as to implementing or otherwise
+using the Specification is assumed by the Specification implementer and user.  IN
 NO EVENT WILL ANY PARTY BE LIABLE TO ANY OTHER PARTY FOR LOST PROFITS OR ANY
 FORM OF INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER
 FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS SPECIFICATION OR ITS
@@ -85,7 +86,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 CONTRIBUTORS AND LICENSORS OF THIS SPECIFICATION MAY HAVE MENTIONED CERTAIN
 TECHNOLOGIES THAT ARE MERELY REFERENCED WITHIN THIS SPECIFICATION AND NOT
-LICENSED UNDER THE OWF CLA OR OWFa. THE FOLLOWING IS A LIST OF MERELY REFERENCED
+LICENSED UNDER THE OWF CLA OR OWFa.  THE FOLLOWING IS A LIST OF MERELY REFERENCED
 TECHNOLOGY: INTELLIGENT PLATFORM MANAGEMENT INTERFACE (IPMI); I<sup>2</sup>C IS
 A TRADEMARK AND TECHNOLOGY OF NXP SEMICONDUCTORS ; EPYC IS A TRADEMARK AND
 TECHNOLOGY OF ADVANCED MICRO DEVICES INC.; ASPEED AST 2400/2500 FAMILY
@@ -113,14 +114,14 @@ protection Cerberus RoT described Physical Flash Protection Requirements
 document.
 
 Active Components are add-in cards and peripherals that contain Processors,
-Microcontrollers or devices that run soft-logic.  
+Microcontrollers or devices that run soft-logic.
 
 This document describes the protocol used for attestation measurements of
-firmware for the Platform’s Active RoT.   The specification encompasses the
+firmware for the Platform’s Active RoT.  The specification encompasses the
 pre-boot, boot and runtime challenge and verification of platform firmware
 integrity.  The hierarchical architecture extends beyond the typically UEFI
 measurements, to include integrity measurements of all Active Component
-firmware.    The document describes the APIs needed to support the attestation
+firmware.  The document describes the APIs needed to support the attestation
 challenge for Project Cerberus.
 
 
@@ -133,12 +134,12 @@ Controller (BMC) for the thermal monitoring of Active Components.  In the
 Cerberus board layout, the I2C lanes are first used by the platform Cerberus
 microcontroller during boot and pre-boot, then later mux switched back to the
 BMC for thermal management.  Cerberus can at any time request for the BMC to
-yield control for runtime challenge and attestation.   Cerberus controls the I2C
+yield control for runtime challenge and attestation.  Cerberus controls the I2C
 mux position, and coordinates access during runtime.  It is also possible for
 Cerberus to proxy commands through the BMC at runtime, with the option for link
 encryption and asymmetric key exchange, making the BMC blind to the
-communications.   The Cerberus microcontroller on the motherboard is referred to
-as the Platform Active Root-of-Trust (PA-RoT).   This microcontroller is head of
+communications.  The Cerberus microcontroller on the motherboard is referred to
+as the Platform Active Root-of-Trust (PA-RoT).  This microcontroller is head of
 the hierarchical root-of-trust platform design and contains an attestable hash
 of all platform firmware kept in the Platform Firmware Manifest (PFM) and
 Component Firmware Manifest (CFM).
@@ -146,15 +147,15 @@ Component Firmware Manifest (CFM).
 Most cloud server motherboards route I2C to Active Components for thermal
 monitoring, the addition of the mux logic is the only modification to the
 motherboard.  An alternative to adding the additional mux, is to tunnel a secure
-challenge channel through the BMC over I2C.   Once the BMC has been loaded and
+challenge channel through the BMC over I2C.  Once the BMC has been loaded and
 attested by Cerberus, it can act as an I2C proxy.  This approach is less
 desirable, as it limits platform attestation should the BMC ever fail
-attestation.   In either approach, physical connectors to Active Component
+attestation.  In either approach, physical connectors to Active Component
 interfaces do not need to change as they already have I2C.
 
 Active Components with the intrinsic security attributes described in the
 "Processor Secure Boot Requirements" document do not need to place the physical
-Cerberus microcontroller between their Processor and Flash.   Active Components
+Cerberus microcontroller between their Processor and Flash.  Active Components
 that do not meet the requirements described in the "Processor Secure Boot
 Requirements" document are required to implement the Cerberus micro-controller
 between their Processor and Flash to establish the needed Root-of-Trust.  Figure
@@ -169,8 +170,8 @@ Component RoTs (AC-RoT).
     
 
 <p id="gdcalert2" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image2.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image2.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert3">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -183,17 +184,17 @@ Active Components in the modern server boot to an operational level before the
 platform’s host processors complete their initialization and become capable of
 challenging the devices.  In the Cerberus design, the platform is held in
 pre-power-on or reset state, whereby Active Components are quarantined and
-challenged for their firmware measurements.   Active Components must respond to
+challenged for their firmware measurements.  Active Components must respond to
 challenges from the PA-RoT confirming the integrity of their firmware before
 they are taken out of quarantine.
 
 In this version of the Cerberus platform design, the PFM and CFMs are static.
 The manifest is programmable through the PA-RoT’s communication interface.
 Auto-detection of Active Components and computation of the PFM/CFM will be
-considered in future version of the specification.   The PFM and CFM are
+considered in future version of the specification.  The PFM and CFM are
 manifests of allowed firmware versions and their corresponding firmware
-measurements.   The manifests contain a monotonic identifier used to restrict
-rollbacks. 
+measurements.  The manifests contain a monotonic identifier used to restrict
+rollbacks.
 
 The PA-RoT uses the measurements in the CFM to challenge the Active Components
 and compare their measurements.  The PA-RoT then uses the digest of these
@@ -205,30 +206,30 @@ The PA-RoT will support Authentication, Integrity and Confidentiality of
 messages.  Active Components RoT’s (AC-RoT) will support Authentication and
 Integrity of messages and challenges.  To facilitate this, AC-RoT are required
 to support certificate authentication.  The Active Component will support a
-component unique CA signed challenge certificate for authentication. 
+component unique CA signed challenge certificate for authentication.
 
 Note:  I2C is a low speed link, there is a performance tradeoff between
 optimizing the protocol messages and strong cryptographic hashing algorithms
-that carry higher bit counts.   RoT’s that cannot support certificate
+that carry higher bit counts.  RoT’s that cannot support certificate
 authentication are required to support hashing algorithms and either RSA or
 ECDSA signatures of firmware measurements.
 
 ## Power Control In the Cerberus motherboard design, power and reset sequencing
-is orchestrated by the PA-RoT.   When voltage is applied to the motherboard, it
+is orchestrated by the PA-RoT.  When voltage is applied to the motherboard, it
 passes through in-rush circuity to a CPLD that performs time sensitive
 sequencing of power rails to ensure stabilization.  Once a power good level is
 established, the platform is considered powered on.  Upon initial powering of
 the platform in the Cerberus design, the only active component powered-on is the
-PA- RoT.   The RoT first securely loads and decompresses its internal firmware,
+PA- RoT.  The RoT first securely loads and decompresses its internal firmware,
 then verifies the integrity of Baseboard Management Controller (BMC) firmware by
 measuring the BMC flash.  When the BMC firmware has been authenticated, the
 Active RoT enables power to be applied to the BMC.  Once the BMC has been
 powered, the Active RoT authenticates the firmware for the platform UEFI, during
 which time the RoT sequences power to the PCIe slots and begins Active Component
-RoT challenge.   When the UEFI has been authenticated, the platform is held in
+RoT challenge.  When the UEFI has been authenticated, the platform is held in
 system reset and the Active RoT will keep the system in reset until AC-RoTs have
 responded to the measurement challenge.  Any PCIe ports that do not respond to
-their measurement challenge will be subsequently unpowered.   Should any of the
+their measurement challenge will be subsequently unpowered.  Should any of the
 expected Active Components fail to respond to the measurement challenge,
 Cerberus policies determine whether the system should boot with the Active
 Component powered off, or the platform should remain on standby power, while
@@ -241,11 +242,11 @@ The Cerberus PA-RoT communicates with the AC-RoT’s over I2C.  The protocol
 supports an authentication and measurement challenge.  The Cerberus PA-RoT
 generates a secure asymmetric key pair unique to the microcontroller closely
 following the DICE architecture.  Private keys are inaccessible outside of the
-secure region of the Cerberus RoT.   Key generation and chaining follows the
+secure region of the Cerberus RoT.  Key generation and chaining follows the
 RIoT specification, described in section: 9.3 DICE and RIoT Keys and
-Certificates. Derived platform alias public keys are available for use in
+Certificates.  Derived platform alias public keys are available for use in
 attestation and communication from the AC-RoT’s during the challenge handshake
-for establishing communication.   
+for establishing communication.
 
 ## RSA/ECDSA Key Generation
 
@@ -257,31 +258,31 @@ code are used for data protection within the microcontroller and attestation of
 upper firmware layers.  The Device Id asymmetric key pair is derived
 cryptographically from the CDI and associated with the Device Id Certificate.
 The CDI uses the UDS derived from PUF and other random entropy including the
-microcontroller unique id and Firmware Security Descriptors.  
+microcontroller unique id and Firmware Security Descriptors.
 
 Cerberus implements the RIoT Core architecture for certificate generation and
-attestation.   For details on key generation on DICE and RIoT, review section:
+attestation.  For details on key generation on DICE and RIoT, review section:
 9.3 DICE and RIoT Keys and Certificates.
 
 Note:  The CDI is a compound key based on the UDS, Microcontroller Security
-Descriptors and second stage bootloader (mutable) measurement.   The second
+Descriptors and second stage bootloader (mutable) measurement.  The second
 stage bootloader is mutable code, but not typically updated with firmware
-updates.   Changes to the second stage bootloader will result in a different
-CDI, resulting in different asymmetric Device Id key generation. Certificates
+updates.  Changes to the second stage bootloader will result in a different
+CDI, resulting in different asymmetric Device Id key generation.  Certificates
 associated with the previous Device key will be invalidated and a new
-Certificate would need to be signed.  
+Certificate would need to be signed.
 
 A second asymmetric key pair certificate is created in the RIoT Core layer of
-Cerberus and passed to the Cerberus Application firmware.    This key pair forms
+Cerberus and passed to the Cerberus Application firmware.  This key pair forms
 the Alias Certificate and is derived from the CDI, Cerberus Firmware Security
-Descriptor and measurement of the next stage Cerberus Firmware.  
+Descriptor and measurement of the next stage Cerberus Firmware.
 
 Proof-of-knowledge of the CDI derived private key known as the Device Id private
 key is used as a building-block in a cryptographic protocol to identify the
-device.    The Device Id private key is used to sign the Alias Certificate, thus
-verifying the integrity of the key.   During initial provisioning, the Device Id
+device.  The Device Id private key is used to sign the Alias Certificate, thus
+verifying the integrity of the key.  During initial provisioning, the Device Id
 Certificate is CA signed by the Microsoft Certificate Authority.  When
-provisioned, the Device Id keys must match the previously signed public key.  
+provisioned, the Device Id keys must match the previously signed public key.
 
 
     Figure 2 RioT Core Key Generation
@@ -289,8 +290,8 @@ provisioned, the Device Id keys must match the previously signed public key.
 
 
 <p id="gdcalert3" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image3.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image3.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert4">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -303,7 +304,7 @@ Core.
 
 Each layer of the software can use its private key certificate to sign and issue
 a new certificate for the next layer, each successive layer continues this
-chain.   The certificate in the application layer (Alias Certificate) can be
+chain.  The certificate in the application layer (Alias Certificate) can be
 used when authenticating with devices and establishing a secure channel.  The
 certificate can also establish authenticity.  Non-application layer private keys
 used to sign certificates must be accessible only to the layer they are
@@ -316,11 +317,11 @@ The Cerberus firmware measurements are based on the Device Identifier
 Composition Engine (DICE) architecture:
 [https://trustedcomputinggroup.org/work-groups/dice-architectures](https://trustedcomputinggroup.org/work-groups/dice-architectures) 
 
-The first mutable code on the RoT is the Second Bootloader (SBL).   The CDI is a
-measurement of the HMAC(Device Secret Key + Entropy, H(SBL)).   This measurement
+The first mutable code on the RoT is the Second Bootloader (SBL).  The CDI is a
+measurement of the HMAC(Device Secret Key + Entropy, H(SBL)).  This measurement
 then passes to the second stage boot loader, that calculates the digest of the
 Third Bootloader (TBL).  On the Cerberus RoT this is the Application Firmware:
-HMAC(CDI, H(TBL)).  
+HMAC(CDI, H(TBL)).
 
 
     Figure 4 Measurement Calculation
@@ -329,8 +330,8 @@ HMAC(CDI, H(TBL)).
     
 
 <p id="gdcalert4" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image4.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image4.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert5">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -340,8 +341,8 @@ style="color: red; font-weight: bold">>>>>> </span></p>
 
 The Third Stage Bootloader (TBL) which runs the Cerberus Application Firmware
 will take additional area measurements of the SPI/QSPI flash for the Processor
-it protects, measuring both active and inactive areas.   The TBL measurements
-are verified and extended with an attestation freshness seed. The final
+it protects, measuring both active and inactive areas.  The TBL measurements
+are verified and extended with an attestation freshness seed.  The final
 measurement is signed, sealed, and made available to the challenge software.
 
 Seeds for attesting firmware by the application firmware can be extended from
@@ -349,7 +350,7 @@ Cerberus Firmware measurements, or using the Alias Certificates a dedicated
 freshness seed can be provided for measuring the protected processor firmware.
 
 The measurements are stored in either firmware or hardware register values
-within the PA-RoT.   The seed is typically transferred to the device using the
+within the PA-RoT.  The seed is typically transferred to the device using the
 Device Cert, Alias Cert or Attestation Cert.
 
 # Protocol and Hierarchy
@@ -358,37 +359,37 @@ The following section describes the capabilities and required protocol and
 Application Programming Interface (API) of the motherboard’s Platform Active RoT
 (PA-RoT) and Active Component to establish a platform level RoT.  The Cerberus
 Active RoT and Active Component RoTs are required to support the following I2C
-protocol.   
+protocol.
 
 The protocol is derived from the MCTP SMBus/I2C Transport Binding Specification.
 A limited version of the protocol is defined for devices that do not support
-MCTP.   If an AC-RoT implements the Attestation Protocol over MCTP, it may also
+MCTP.  If an AC-RoT implements the Attestation Protocol over MCTP, it may also
 optionally implement the minimum attestation protocol over native SMBus/I2C.
 
 ## Attestation Message Interface
 
 The Attestation Message Interface uses the MCTP over I2C message protocol for
-transporting the Attestation payloads.   The AC-RoT MCTP Management Endpoint
+transporting the Attestation payloads.  The AC-RoT MCTP Management Endpoint
 should implement the required behaviors detailed in the Management Component
 Transport Protocol (MCTP) Base Specification, in relation to the MCTP SMBus/I2C
-Transport Binding Specification.   The following section outlines additional
+Transport Binding Specification.  The following section outlines additional
 requirements upon the expected behavior of the Management Endpoint:
 
 
 
 *   The Message Interface Request and Response Messages are transported with a
-    custom message type.  
+    custom message type.
 *   MCTP messages will be transmitted in a synchronous Request and Response
-    manner only.   An Endpoint (AC-RoT) should never initiate a Request Message
-    to the Controller (PA-RoT).  
+    manner only.  An Endpoint (AC-RoT) should never initiate a Request Message
+    to the Controller (PA-RoT).
 *   MCTP Endpoints must strictly adhere to the response timeout defined in this
-    specification.   When an Endpoint receives a standard message, it should be
+    specification.  When an Endpoint receives a standard message, it should be
     transmitting the response within 100ms.  If the Endpoint has not begun
     transmitting the Response Message within 100ms, it should drop the message
     and not respond.
 *   MCTP Endpoints must strictly adhere to the response timeout advertised for
     cryptographic commands.  Cryptographic commands include transmission of
-    messages signature generation and verification.   The cryptographic command
+    messages signature generation and verification.  The cryptographic command
     timeout multiplier is negotiated in the Device Capabilities command.
 *   MCTP leaves Authentication to the application implementation.  This
     specification partially follows the flow of USB Authentication Specification
@@ -398,21 +399,21 @@ requirements upon the expected behavior of the Management Endpoint:
     AC-RoT Endpoints should not generate any ARP messages to Notify Master.
     Devices should be aware they are normally behind I2C muxes and should not
     master the I2C bus outside of the allotted time they are provided to
-    response to an MCTP Request Message.   
+    response to an MCTP Request Message.
 *   MCTP Endpoint devices should be response only.
 *   Irrespective as to whether Endpoints are ARP capable, they should operate in
-    a Non-ARP-capable manner.  
+    a Non-ARP-capable manner.
 *   MCTP specifications use big endian byte ordering while this specification
     uses little endian byte ordering.  This ordering does not change the payload
     order in which bytes are sent out on the physical layer.
 *   Endpoints should support Fixed Addresses; Endpoint IDs are supported to
     permit multiple MCTP Endpoints behind a single physical address.
 *   As defined in the MCTP SMBus/I2C Transport Binding Specification Endpoints
-    should support fast-mode 400KHz.   
+    should support fast-mode 400KHz.
 *   Endpoint devices that do not support multi-master should operate in slave
-    mode.  The PA-RoT PCD will identify the mode of the device.   The Master
+    mode.  The PA-RoT PCD will identify the mode of the device.  The Master
     will issue SMBUS Write Block in MCTP payload format, the master will then
-    issue an I2C Read for the response.   The Master read the initial 12 bytes
+    issue an I2C Read for the response.  The Master read the initial 12 bytes
     and use byte 3 and the MCTP EOM header bits to determine if additional SMBUS
     read commands are required to collect the remainder of the response message.
 *   Endpoints should support EID assignment using the MCTP Set Endpoint ID
@@ -421,7 +422,7 @@ requirements upon the expected behavior of the Management Endpoint:
     message to indicate support level for the Cerberus protocol.
 
 The Platform Cerberus Active RoT is always the MCTP master.  Active Component
-RoT’s can be configured as Endpoint, or Endpoint and Master.   An Active
+RoT’s can be configured as Endpoint, or Endpoint and Master.  An Active
 Component RoT Endpoint and Master should interface to separate physical busses.
 There is no requirement for master arbitration as master and slave definitions
 are hierarchically established.  The only hierarchy whereby the Active Component
@@ -435,8 +436,8 @@ such as the Host Bus Adapter (HBA) depicted in the following block diagram:
     
 
 <p id="gdcalert5" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image5.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image5.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert6">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -446,12 +447,12 @@ style="color: red; font-weight: bold">>>>>> </span></p>
 
 In this diagram, the HBA RoT is an Endpoint to the Platform Active RoT and
 Master to the downstream HBA Expanders.  To the Platform’s Active RoT, the HBA
-is an Endpoint RoT.   To the HBA Expanders, the HBA Controller is a Master RoT.
+is an Endpoint RoT.  To the HBA Expanders, the HBA Controller is a Master RoT.
 
 The messaging protocol encompasses Management Component Transport Protocol
 (MCPT) Base Specification, in relation to the MCTP SMBus/I2C Transport Binding
 Specification, whereby the Active Component RoT is Endpoint and the Platform’s
-Active RoT as Master.   
+Active RoT as Master.
 
 ## Protocol Format
 
@@ -465,8 +466,8 @@ following diagram shows MCTP encapsulated message.
     
 
 <p id="gdcalert6" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image6.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image6.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert7">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -509,8 +510,8 @@ higher layer class of message being carried within the MCTP protocol.
 
 
 <p id="gdcalert7" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image7.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image7.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert8">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -519,7 +520,7 @@ style="color: red; font-weight: bold">>>>>> </span></p>
 
 
 The Management Component Transport Protocol (MCTP) Base Specification defines
-the MCTP packet header (refer to DSP0236 for field descriptions). The fields of
+the MCTP packet header (refer to DSP0236 for field descriptions).  The fields of
 an MCTP Packet are shown in Table 1 Field Definitions.
 
 Table 1 Field Definitions
@@ -546,7 +547,7 @@ is set to true (1b) for the last packet of a message.  </td> <td>1 bit </td>
 multiple packets.  Increments modulo 4 on each successive packet up through the
 packet contained the EOM flag set.  </td> <td>2 bits </td> </tr> <tr>
 <td>Message Tag </td> <td>Combined with Source Endpoint Id and TO field to
-identify unique message at MCTP transport layer.   <p> For messages that are
+identify unique message at MCTP transport layer.  <p> For messages that are
 split up into multiple packets, the TO and Message Tag bits remain the same for
 all packets from the SOM to the EOM.  </td> <td>3 bits </td> </tr> <tr> <td>TO
 </td> <td>Tag Owner bit identifies whether the message tag was originated by the
@@ -584,7 +585,7 @@ smaller based on device capabilities.
         1. Message Type
 
 The message type should be 0x7E as per the Management Component Transport
-Protocol (MCTP) Base Specification.   The message type is used to support Vendor
+Protocol (MCTP) Base Specification.  The message type is used to support Vendor
 Defined Messages where the Vendor is identified by the PCI based Vendor ID.  The
 initial message header is specified in the Management Component Transport
 Protocol (MCTP) Base Specification, and detailed below for completeness:
@@ -594,12 +595,12 @@ Protocol (MCTP) Base Specification, and detailed below for completeness:
 
 
 <table> <tr> <td>Message Header </td> <td>Byte </td> <td> </td> </tr> <tr>
-<td>Request Data </td> <td>1:2 </td> <td>PCI/PCIe Vendor ID. The MCTP Vendor Id
+<td>Request Data </td> <td>1:2 </td> <td>PCI/PCIe Vendor ID.  The MCTP Vendor Id
 formatted per 00h Vendor ID format offset.  </td> </tr> <tr> <td> </td> <td>3:N
-</td> <td>Vendor-Defined Message Body. 0 to N bytes.  </td> </tr> <tr>
+</td> <td>Vendor-Defined Message Body.  0 to N bytes.  </td> </tr> <tr>
 <td>Response Data </td> <td>1:2 </td> <td>PCI/PCIe Vendor ID, the value is
 formatted per 00h Vendor ID offset </td> </tr> <tr> <td> </td> <td>3:M </td>
-<td>Vendor-Defined Message Body. 0 to M bytes </td> </tr> </table>
+<td>Vendor-Defined Message Body.  0 to M bytes </td> </tr> </table>
 
 
 The Vendor ID is a 16-bit Unsigned Integer, described in the PCI 2.3
@@ -631,7 +632,7 @@ contents of the message
         4. Packet Assembly into Messages
 
 An MCTP message may be split into multiple MCTP Packet Payloads and sent as a
-series of packets. Refer to the MCTP Base Specification for packetization and
+series of packets.  Refer to the MCTP Base Specification for packetization and
 message assembly rules.
 
 
@@ -640,7 +641,7 @@ message assembly rules.
 
 Request Messages are messages that are generated by a Master MTCP Controller and
 sent to an MCTP Endpoint.  Request Messages specify an action to be performed by
-the Endpoint. Request Messages are either Control Messages or Cerberus Messages. 
+the Endpoint.  Request Messages are either Control Messages or Cerberus Messages.
 
 
 
@@ -653,16 +654,16 @@ Message must be completed within the allocated time or discarded.
 
 ## EID Assignment
 
-The BMC will assign EIDs to the different Active Component RoT devices. All
+The BMC will assign EIDs to the different Active Component RoT devices.  All
 Active Component RoT devices should support the MCTP Set Endpoint ID control
-request and response messages. The Platform Active RoT will have a static EID of
+request and response messages.  The Platform Active RoT will have a static EID of
 0x0B.
 
 # Certificates
 
 The PA-RoT and AC-Rot will have a minimum of two certificates: Device Id
 Certificate (typically CA signed by offline CA) and the Alias Certificate
-(signed by the Device Id Certificate).   The PA-RoT may also have an additional
+(signed by the Device Id Certificate).  The PA-RoT may also have an additional
 Attestation Certificate signed by the Device Id Certificate.
 
 Certificates follow the 9.3 DICE and RIoT Keys and Certificates.
@@ -682,7 +683,7 @@ appropriate standards.  Custom extensions must be marked non-critical.
         7. Textual Format
 
 All text ASN.1 objects contained within Certificates, shall be specified as
-either a UTF8String, PrintableString, or IA5String. The length of any textual
+either a UTF8String, PrintableString, or IA5String.  The length of any textual
 object shall not exceed 64 bytes excluding the DER type and DER length encoding.
 
 
@@ -704,17 +705,17 @@ Object Identifier should follow 9.3 DICE and RIoT Keys and Certificates
         10. Serial Number
 
 As per 9.3 DICE and RIoT Keys and Certificates, the Certificate _Serial Numbers_
-MUST be statistically unique per-Alias Certificate. 
+MUST be statistically unique per-Alias Certificate.
 
 If the security processor has an entropy source, an 8-octet random number MAY be
-used. 
+used.
 
 If the security processor has does not have an entropy source, then an 8-octet
 _Serial Number_ MAY be generated using a cryptographically secure key derivation
 function based on a secret key, such as those described in SP800-108 [9.6 NIST
 Special Publication 800-108].  The _Serial Number_ MUST be unique for each
 generated certificate.  For the Alias Certificate, this SHOULD be achieved by
-incorporating the FWID into the key derivation process (e.g. as the _Context_
+incorporating the FWID into the key derivation process (e.g.  as the _Context_
 value in SP-800-108)
 
 If the 8-octet serial number generated is not a positive number, it may be
@@ -746,7 +747,7 @@ prove integrity of the device firmware.  Once a device is authenticated, a
 secure session can optionally be established to provide confidentiality.  For
 some devices, a secure session can also be used to enable a cryptographic
 binding that can be used for additional security or to enable additional
-functionality.  
+functionality.
 
 A device only needs to support a single session from another endpoint.  In
 single session devices, the establishment of a new session will supersede and
@@ -754,13 +755,13 @@ terminate the existing session to permit the new session.  The previous session
 will be terminated upon receiving an out of session (unencrypted) Get Digests
 request specifying a requested key exchange.  Get Digests requests received in
 session (encrypted) or without requesting key exchange will not cause the active
-session to terminate.  
+session to terminate.
 
 ## PA-RoT and AC-RoT Authentication
 
 Devices are authenticated using the Alias certificate chain and signed firmware
-measurements.   The certificate chain is endorsed by the Certificate Authority
-signing the Device Id Certificate.   The certificate hierarchy is explained in
+measurements.  The certificate chain is endorsed by the Certificate Authority
+signing the Device Id Certificate.  The certificate hierarchy is explained in
 the TCG [Implicit Identity Based Device
 Attestation](https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Arch-Implicit-Identity-Based-Device-Attestation-v1-rev93.pdf)
 Reference.
@@ -776,8 +777,8 @@ Section 4 Authentication Protocol of USB Authentication Specification
 
 Section 5 Authentication Messages of USB Authentication Specification
 
-The authentication sequence starts with the master (e.g. PA-RoT) issuing a Get
-Digests command.  The slave (e.g. AC-RoT) responds with a list of SHA256 hashes
+The authentication sequence starts with the master (e.g.  PA-RoT) issuing a Get
+Digests command.  The slave (e.g.  AC-RoT) responds with a list of SHA256 hashes
 for each certificate in the device’s Alias certificate chain.  If the master has
 cached the certificate chain, it may optionally skip requesting these
 certificates.
@@ -822,8 +823,8 @@ cached
 
 
 <p id="gdcalert8" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image8.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image8.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert9">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -901,8 +902,8 @@ key.
 
 
 <p id="gdcalert9" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html
-alert: inline image link here (to images/image9.png). Store image on your image
-server and adjust path/filename/extension if necessary. </span><br>(<a
+alert: inline image link here (to images/image9.png).  Store image on your image
+server and adjust path/filename/extension if necessary.  </span><br>(<a
 href="#">Back to top</a>)(<a href="#gdcalert10">Next alert</a>)<br><span
 style="color: red; font-weight: bold">>>>>> </span></p>
 
@@ -972,7 +973,7 @@ K<sub>S</sub> will not be processed by either side.
 
 
 <p id="gdcalert10" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image10.png). Store image on
+gd2md-html alert: inline image link here (to images/image10.png).  Store image on
 your image server and adjust path/filename/extension if necessary.
 </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert11">Next
 alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
@@ -983,15 +984,15 @@ alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
 # Command Format
 
 The following section describes the MCTP message format to support the
-Authentication and Challenge and Attestation protocol.   The Request/Response
+Authentication and Challenge and Attestation protocol.  The Request/Response
 message body describes the Vendor Defined MCTP message encapsulated inside the
 MCTP transport.  This section does not describe the MCTP Transport Header, which
 includes the MCTP Header Version, Destination Endpoint ID and other fields as
-defined by MCTP protocol.   The MCTP message encapsulation is described in
+defined by MCTP protocol.  The MCTP message encapsulation is described in
 section 3.2
 
 The MCTP Get Vendor Defined Message Support command enables discovery of what
-Endpoint vendor defined messages are supported.   The discovery identifies the
+Endpoint vendor defined messages are supported.  The discovery identifies the
 vendor organization and defined messages types.  The format of this request is
 described in the MCTP base protocol specification.
 
@@ -1023,7 +1024,7 @@ error if this bit is 1.  </td> </tr> <tr> <td>Crypt </td> <td>Message Payload
 and Command are encrypted </td> </tr> <tr> <td>Command </td> <td>The command ID
 for command to execute </td> </tr> <tr> <td>Msg Integrity Check </td> <td>This
 field represents the optional presence of a message type-specific integrity
-check over the contents of the message body. If present (indicated by IC bit)
+check over the contents of the message body.  If present (indicated by IC bit)
 the Message integrity check field is carried in the last bytes of the message
 body </td> </tr> </table>
 
@@ -1050,7 +1051,7 @@ colspan="8" >Command </td> <td colspan="24" >Message Payload </td> </tr>
 
 
 The protocol header fields are to be included only in the first packet of a
-multiple packet MCTP message. After reconstruction of the message body, the
+multiple packet MCTP message.  After reconstruction of the message body, the
 protocol header will be used to interpret the message contents.  Reserved fields
 must be set to 0.
 
@@ -1065,7 +1066,7 @@ described in section 5 is used to generate the encryption keys.  An encrypted
 message will have a 16-byte GCM authentication tag and 12-byte initialization
 vector in plaintext at the end of the message body.  The following table shows
 the body of an encrypted Cerberus message, with the encryption trailer.
-Segments shaded in grey indicate ciphertext, and white indicate plaintext. 
+Segments shaded in grey indicate ciphertext, and white indicate plaintext.
 
 Table 5 Encrypted Cerberus message body
 
@@ -1099,8 +1100,8 @@ The following table describes the commands defined under this specification.
 There are three categories: (1) Required commands (R) that are mandatory for all
 implementations, (2) Optional commands (O) that may be utilized if the specific
 implementation requires it, (3) Master commands (M) that are required for all
-implementations that can act as an attestation master for slave devices.   All
-MCTP commands are master initiated.   The following section describes the
+implementations that can act as an attestation master for slave devices.  All
+MCTP commands are master initiated.  The following section describes the
 command codes.
 
 
@@ -1208,14 +1209,14 @@ Get Config IDs is Required.
 
 ## Message Body Structures
 
-The following section describes the structures of the MCTP message body. 
+The following section describes the structures of the MCTP message body.
 
 ## Error Message
 
 The error command is returned for command responses when the command was not
 completed as proposed, it also acts as a generic status for commands without
-response whereby "No Error" code would indicate success.   The Msg Tag, Seq and
-Command match the response to the corresponding request.   The Message Body is
+response whereby "No Error" code would indicate success.  The Msg Tag, Seq and
+Command match the response to the corresponding request.  The Message Body is
 returned as follows:
 
 
@@ -1614,7 +1615,7 @@ start of the Certificate chain where read request begins.  </td> </tr> <tr>
 </td> </tr> <tr> <td>1 </td> <td>Param1: Slot Number of the target Certificate
 Chain returned.  </td> </tr> <tr> <td>2 </td> <td>Certificate number of the
 returned certificate </td> </tr> <tr> <td>3:N </td> <td>Requested contents of
-target Certificate Chain.   See section 4 Certificates.  </td> </tr> </table>
+target Certificate Chain.  See section 4 Certificates.  </td> </tr> </table>
 
 ## CHALLENGE
 
@@ -1655,10 +1656,10 @@ firmware of the target components.  This firmware measurement data does not
 include Cerberus PCD, CFM or PFM.  These measurements are returned in PMR1.  The
 numbers are retrieved in the 6.44 Get Configuration Ids.  The USB-C Context Hash
 is not included in the CHALLENGE.  This is replaced with contextual measurements
-for the device.   Note: The attestation Certificate derivation will include the
-measurement of firmware and security descriptors.   PMR0 is anticipated to be
+for the device.  Note: The attestation Certificate derivation will include the
+measurement of firmware and security descriptors.  PMR0 is anticipated to be
 the least changing PMR as it contains the measurement of security descriptors
-and device initial boot loader. 
+and device initial boot loader.
 
 ## Key Exchange
 
@@ -1666,8 +1667,8 @@ Key Exchange is used to establish an encrypted channel with a device.  The
 session establishment flow is detailed in Section 5 Authentication.
 
 Upon receiving this message with Key Type 0, both sides can establish an
-encrypted session.   If Key Type 1, the paired key is also compared, and paired
-functionality is unlocked if verified to match the expected key.   The Key Type
+encrypted session.  If Key Type 1, the paired key is also compared, and paired
+functionality is unlocked if verified to match the expected key.  The Key Type
 1 can only be performed under an encrypted session, as the session key is
 required for the HMAC.  When initially calculating a pairing key (K<sub>P</sub>)
 for device binding, the HMAC specified in the Key Type 0 request for the session
@@ -1836,9 +1837,9 @@ Tamper log.  It is not possible to clear or reset the tamper counter.
 
 
 Length determined by end of log, or packet size based on device capabilities see
-section: 6.7 Device Capabilities. If response spans multiple MCTP messages, end
+section: 6.7 Device Capabilities.  If response spans multiple MCTP messages, end
 of response will be determined by an MCTP message which has a payload less than
-maximum payload supported by both devices. To guarantee a response will never
+maximum payload supported by both devices.  To guarantee a response will never
 fall exactly on the max payload boundary, the responder must send back an extra
 packet with zero payload.
 
@@ -2022,7 +2023,7 @@ versions </td> </tr> </table>
 
 If response spans multiple MCTP messages, end of response will be determined by
 an MCTP packet which has payload less than maximum payload supported by both
-devices. To guarantee a response will never fall exactly on the max payload
+devices.  To guarantee a response will never fall exactly on the max payload
 boundary, the responder should send back an extra packet with zero payload.
 
 ## Prepare Platform Firmware Manifest
@@ -2051,16 +2052,16 @@ Payload </td> </tr> </table>
 
 
 PFM payload includes PFM signature and monotonic forward only Id.  PFM signature
-is verified upon receipt of all PFM payloads.   PFMs are activated upon the
-activation command.   Note if a system is rebooted after receiving a PFM, the
-PFM is atomically activated.   To activate before reboot, issue the Activate PFM
+is verified upon receipt of all PFM payloads.  PFMs are activated upon the
+activation command.  Note if a system is rebooted after receiving a PFM, the
+PFM is atomically activated.  To activate before reboot, issue the Activate PFM
 command.
 
 ## Activate Platform Firmware Manifest
 
 Upon valid PFM update, the update command seals the PFM committal method.  If
 committing immediately, flash reads and writes should be suspended when this
-command is issued. The RoT will master the SPI bus and verify the newly updated
+command is issued.  The RoT will master the SPI bus and verify the newly updated
 PFM.  This command can only follow a valid PFM update.
 
 
@@ -2128,16 +2129,16 @@ The flash descriptor structure describes the regions of flash for the device.
 
 
 The CFM payload includes CFM signature and monotonic forward only Id.  CFM
-signature is verified upon receipt of all CFM payloads.   CFMs are activated
-upon the activation command.   Note if a system is rebooted after receiving a
-CFM, the pending CFM is verified and atomically activated.   To activate before
+signature is verified upon receipt of all CFM payloads.  CFMs are activated
+upon the activation command.  Note if a system is rebooted after receiving a
+CFM, the pending CFM is verified and atomically activated.  To activate before
 reboot, issue the Activate CFM command.
 
 ## Activate Component Firmware Manifest
 
-Upon valid CFM update, the update command seals the CFM committal method.   The
+Upon valid CFM update, the update command seals the CFM committal method.  The
 RoT will master I2C and attest Components in the Platform Configuration Data
-against the CFM.  
+against the CFM.
 
 
     Table 64 Active CFM Request
@@ -2170,7 +2171,7 @@ component IDs </td> </tr> </table>
 
 If response spans multiple MCTP messages, end of response will be determined by
 an MCTP packet which has payload less than maximum payload supported by both
-devices. To guarantee a response will never fall exactly on the max payload
+devices.  To guarantee a response will never fall exactly on the max payload
 boundary, the responder should send back an extra packet with zero payload.
 
 ## Get Platform Configuration Data Id
@@ -2224,12 +2225,12 @@ The flash descriptor structure describes the regions of flash for the device.
 
 
 The PCD payload includes PCD signature and monotonic forward only Id.  PCD
-signature is verified upon receipt of all PCD payloads.   PCD is activated upon
-the activation command.   Note if a system is rebooted after receiving a PCD.
+signature is verified upon receipt of all PCD payloads.  PCD is activated upon
+the activation command.  Note if a system is rebooted after receiving a PCD.
 
 ## Activate Platform Configuration Data
 
-Upon valid PCD update, the activate command seals the PCD committal.    
+Upon valid PCD update, the activate command seals the PCD committal.
 
 
     Table 69 Active PCD Request
@@ -2290,8 +2291,8 @@ Data determines the feature enablement and attestation <p>
 
 
 The Power Control Index informs the PA-RoT of the index assigned to power
-sequence the Component.    This informs the PA-RoT which control register needs
-to be asserted in the platform power sequencer.  
+sequence the Component.  This informs the PA-RoT which control register needs
+to be asserted in the platform power sequencer.
 
 The Failure Action: 0 = Platform Defined, 1 = Report Only, 2 = Auto Recover 3 =
 Power Control.
@@ -2398,7 +2399,7 @@ bytes remaining.  </td> </tr> </table>
 ## Activate Firmware Update
 
 Alerts Cerberus that sending of update bytes is complete, and that verification
-of update should start. This command has no payload, the ERROR response zero is
+of update should start.  This command has no payload, the ERROR response zero is
 expected.
 
 
@@ -2458,7 +2459,7 @@ not include signed device certificates.  </td> </tr> <tr> <td>2:N </td>
 ## Get Configuration Ids
 
 This command retrieves PFM Ids, CFM Ids, PCD Id, and signed digest of request
-nonce and response ids.  
+nonce and response ids.
 
 
     Table 80 Get Configuration Ids Request
@@ -2484,9 +2485,9 @@ terminated <p> PCD Platform Id, null terminated </td> </tr> <tr> <td>M+1:SGN
 </td> </tr> </table>
 
 
-N is the number of measurements and L is the length of each measurement.    The
+N is the number of measurements and L is the length of each measurement.  The
 Signature should be a SHA2 over the request and response message body (excluding
-the signature).   The signature algorithm is defined by the certificate
+the signature).  The signature algorithm is defined by the certificate
 exchanged in the DIGEST.
 
 ## Recover Firmware
@@ -2577,7 +2578,7 @@ ASCII </td> </tr> </table>
 ## Platform Measurement Register
 
 Returns the Cerberus Platform Measurement Register (PMR), which is a digest of
-the Cerberus Firmware, PFM, CFM and PCD.   This information contained in PMR0 is
+the Cerberus Firmware, PFM, CFM and PCD.  This information contained in PMR0 is
 Cerberus firmware.  PMR1-2 are reserved for PFM/CFM/PCD and other configuration.
 PMR3-4 are reserved for external usages.
 
@@ -2615,8 +2616,8 @@ reset.
 ## Update Platform Measurement Register
 
 External updates to PMR3-4 are permitted.  Attempts to update PMR0-2 will result
-error.   Only SHA 2 is supported for measurement extension.  SHA1 and SHA3 are
-not applicable.   Note:  The measurement can only be updated over an
+error.  Only SHA 2 is supported for measurement extension.  SHA1 and SHA3 are
+not applicable.  Note:  The measurement can only be updated over an
 authenticated and secured channel.
 
 
@@ -2683,7 +2684,7 @@ ignore.  Unused bytes are first and must be set to 0.  </td> </tr> </table>
 
 ## Message Unseal Result
 
-This command retrieves the current status of an unsealing process.  
+This command retrieves the current status of an unsealing process.
 
 
     Table 95 Unseal Message Request
@@ -2725,9 +2726,9 @@ The manifest informs the PA-RoT on all the Active Components in the system.  It
 provides their I2C addresses, and information on how to verify their
 measurements against a known or expected state.  Polices configured in the
 Platform RoT determine what action it should take should the measurements fail
-verification. 
+verification.
 
-In the Cerberus designed motherboard, the PA-RoT orchestrates power-on.   Only
+In the Cerberus designed motherboard, the PA-RoT orchestrates power-on.  Only
 Active Components listed in the challenge manifest, that pass verification will
 be released from power-on reset.
 
@@ -2735,9 +2736,9 @@ be released from power-on reset.
 
 The PA-RoT contains a Platform Firmware Manifest (PFM) that describes the
 firmware permitted on the Platform.  The Component Firmware Manifest (CFM)
-describes the firmware permitted for components in the Platform.   The Platform
+describes the firmware permitted for components in the Platform.  The Platform
 Configuration Data (PCD), specific to each SKU describes the number of Component
-types in the platform and their respective locations.  
+types in the platform and their respective locations.
 
 Note: The PFM and CFM are different from the boot key manifest described in the
 Processor Secure Boot Requirements specification.  The PFM and CFM describe
@@ -2776,20 +2777,20 @@ calculate </td> </tr> <tr> <td>Signature </td> <td>Firmware signature(s) </td>
 
 The PA-RoT actively takes measurements of flash from platform firmware, the PFM
 provides metadata that instructs the RoT on measurement and signature
-verification.  The PA-RoT stores the measurements in the RFM.   The PA-Rot then
+verification.  The PA-RoT stores the measurements in the RFM.  The PA-Rot then
 challenges the AC-RoTs for their measurements using the Platform Configuration
 Data.  it compares measurements from the AC-RoT’s to the CFM, while recording
-measurements in the RFM.  
+measurements in the RFM.
 
 The measurements of the Platform firmware and Component firmware are compared to
 the PFM and CFM.  Should a mismatch occur, the PA-RoT would raise an event log
-and invoke the policy action defined for the Platform and/or Component.   A
+and invoke the policy action defined for the Platform and/or Component.  A
 variety of actions can be automated for a PFM/CFM challenge failure.  Actions
-are defined in the CFM and PCD files.   
+are defined in the CFM and PCD files.
 
 Note:  The PA-RoT and AC-RoT enforce secure boot and only permit the download of
-digitally signed and unrevoked firmware.   A PFM or CFM mismatch can only occur
-when firmware integrity is brought into question.  
+digitally signed and unrevoked firmware.  A PFM or CFM mismatch can only occur
+when firmware integrity is brought into question.
 
 ## RoT External Communication interface
 
@@ -2799,7 +2800,7 @@ microprocessor appears transparent to the host as it presents only a flash
 interface.  The management interface into the PA-RoT and AC-RoTs is an  I2C bus
 channeled through the Baseboard Management Controller (BMC).  The BMC can reach
 all AC-RoTs in the platform.  The BMC bridges the PA-RoT to the Rack Manager,
-which in-turn bridges the rack to the Datacenter management network.   The
+which in-turn bridges the rack to the Datacenter management network.  The
 interface into the PA-RoT is as follows:
 
 
@@ -2809,7 +2810,7 @@ interface into the PA-RoT is as follows:
     
 
 <p id="gdcalert11" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image11.png). Store image on
+gd2md-html alert: inline image link here (to images/image11.png).  Store image on
 your image server and adjust path/filename/extension if necessary.
 </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert12">Next
 alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
@@ -2822,15 +2823,15 @@ The Datacenter Management (DCM) software can communicate with the PA-RoT
 Out-Of-Band (OOB) through the Rack Manager.  The Rack Manager allows tunneling
 through to the Baseboard Management Controller, which connects to the PA-RoT
 over I2C.  This channel is assumed insecure, which is why all communicates are
-authenticated and encrypted.   The Datacenter Management Software can collect
-the RFM measurements and other challenge data over this secure channel.   Secure
+authenticated and encrypted.  The Datacenter Management Software can collect
+the RFM measurements and other challenge data over this secure channel.  Secure
 updates are also possible over this channel.
 
 ## Host Interface
 
 The host can communicate with the PA-RoT and AC-RoTs through the BMC host
 interface.  Similar to the OOB path, the BMC bridges the host-side LPC/eSPI
-interface to the I2C interface on the RoT.   The host through BMC is an unsecure
+interface to the I2C interface on the RoT.  The host through BMC is an unsecure
 channel, and therefore requires authentication and confidentiality.
 
 ## Out Of Band (OOB) Interface
@@ -2840,14 +2841,14 @@ during power-on.  Should firmware corruption occur during power-on, the OOB
 channel can communicate with the DCM software while the CPU is held in reset.
 If the recovery policy determines the system should remain powered off, it’s
 still possible for the DCM software to interrogate the PA-RoT for detailed
-status and make a determination on the remediation. 
+status and make a determination on the remediation.
 
 The OOB communication to Cerberus requires TLS and Certificate Authentication.
 
 # Legacy Interface
 
 The legacy interface is defined for backward combability with devices that do
-not support MCTP.   These devices must provide a register set with specific
+not support MCTP.  These devices must provide a register set with specific
 offsets for Device Capabilities, Receiving Alias Certificate, accepting a Nonce,
 and providing an offset for Signed Firmware Measurements.  The payload
 structures will closely match that of the MCTP protocol version.  Legacy
@@ -2858,22 +2859,22 @@ measurements.
 
 The legacy protocol leverages the SMBus Write/Read Word and Block commands.
 The interface is register based using similar read and write subroutines of I2C
-devices.   The data transmit and receive requirements are 32 bytes or greater.
+devices.  The data transmit and receive requirements are 32 bytes or greater.
 Large payloads can be truncated and retrieved recursively spanning multiple
-block read or write commands.  
+block read or write commands.
 
-The block read SMBUS command is specified in the SMBUS specification.   Slave
+The block read SMBUS command is specified in the SMBUS specification.  Slave
 address write and command code bytes are transmitted by the master, then a
-repeated start and finally a slave address read.   The master keeps clocking as
-the slaves responds with the selected data.    The command code byte can be
-considered register space.  
+repeated start and finally a slave address read.  The master keeps clocking as
+the slaves responds with the selected data.  The command code byte can be
+considered register space.
 
 ### PEC Handling
 
 An SMBus legacy protocol implementation may leverage the 8bit SMBus Packet Error
 Check (PEC) for transactional data integrity.  The PEC is calculated by both the
 transmitter and receiver of each packet using the 8-bit cyclic redundancy check
-(CRC-8) of both read or write bus transaction.    The PEC accumulates all bytes
+(CRC-8) of both read or write bus transaction.  The PEC accumulates all bytes
 sent or received after the start condition.
 
 An Active RoT that receives an invalid PEC can optionally NACK the byte that
@@ -2886,14 +2887,14 @@ transaction is received.
 The protocol supports Write Block and Read Block commands.  Standard SMBus
 transactions are limited to 32 bytes of data.  It is expected that some Active
 Component RoTs with intrinsic Cerberus capabilities may have limited I2C message
-buffer designed around the SMBus protocol that limit them to 32 bytes.   To
+buffer designed around the SMBus protocol that limit them to 32 bytes.  To
 overcome hardware limitations in message lengths, the Capabilities register
 includes a buffer size for determining the maximum packet size for messages.
 This allows the Platform’s Active RoT to send messages larger than 32 bytes.
 If the Active Component RoT only permits 32 bytes of data, the Platform’s Active
 RoT can segment the Read or Write Blocks into multiple packets totaling the
 entire message.  Each segment includes decrementing packet number that
-sequentially identifies the part of the overall message.   To stay within the
+sequentially identifies the part of the overall message.  To stay within the
 protocol length each message segment must be no longer than 255 bytes.
 
 ### Payload Format
@@ -2902,22 +2903,22 @@ The payload portions of the SMBus Write and Read blocks will encapsulate the
 protocol defined in this specification.  The SMBus START and STOP framing and
 ACK/NACK bit conditions are omitted from this portion of the specification for
 simplification.  To review the specifics of START and STOP packet framing and
-ACK/NACK conditions refer to the SMBus specification.  
+ACK/NACK conditions refer to the SMBus specification.
 
 The data blocks of the Write and Read commands will encapsulate the message
-payload.   The encapsulated payload includes a uint16 register offset and data
+payload.  The encapsulated payload includes a uint16 register offset and data
 section.
 
 ### Register Format
 
 The SMBUS command byte indexes the register, while additional writes offsets
-index inside the register space.   The offset and respective response is
-encapsulated into the data portions of I2C Write and Read Block commands.   The
+index inside the register space.  The offset and respective response is
+encapsulated into the data portions of I2C Write and Read Block commands.  The
 PA-RoT is always the I2C master, therefore Write and Read commands are described
 from the perspective of the I2C master.
 
 Certain registers may contain partial or temporary data while the register is
-being written across multiple commands.    The completion or sealing of register
+being written across multiple commands.  The completion or sealing of register
 writes can be performed by writing the seal register to the zero offset.
 
 The following diagram depicts register read access flow for a large register
@@ -2929,7 +2930,7 @@ space:
 
 
 <p id="gdcalert12" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image12.png). Store image on
+gd2md-html alert: inline image link here (to images/image12.png).  Store image on
 your image server and adjust path/filename/extension if necessary.
 </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert13">Next
 alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
@@ -2947,7 +2948,7 @@ space, with required seal (update complete bit):
 
 
 <p id="gdcalert13" ><span style="color: red; font-weight: bold">>>>>>
-gd2md-html alert: inline image link here (to images/image13.png). Store image on
+gd2md-html alert: inline image link here (to images/image13.png).  Store image on
 your image server and adjust path/filename/extension if necessary.
 </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert14">Next
 alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
@@ -2958,7 +2959,7 @@ alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
 ### Legacy Active Component RoT Commands
 
 The following table describes the commands accepted by the Active Component RoT.
-All commands are master initiated.   The command number is not representative of
+All commands are master initiated.  The command number is not representative of
 a contiguous memory space, but an index to the respective register
 
 Table 99 Commands
@@ -2989,10 +2990,10 @@ implement SMBUS and comply with the legacy measurement exchange protocol.
 
         1. Status
 
-The SMBUS read command reads detailed information on error status.   The status
+The SMBUS read command reads detailed information on error status.  The status
 register is issued between writing the challenge nonce and reading the
 Measurement.  The delay time for deriving the Measurement must comply with the
-Capabilities command. 
+Capabilities command.
 
 
     Table 100 Status Register
@@ -3014,19 +3015,19 @@ Capabilities command.
         2. Firmware Version
 
 The SMBUS write command payload sets the index.  The subsequent SMBUS read
-command reads the response.   For register payload description see response:
+command reads the response.  For register payload description see response:
 Table 11 Firmware Version Response
 
 
 
         3. Device Id
 
-    The SMBUS read command reads the response.   For register payload
+    The SMBUS read command reads the response.  For register payload
     description see response:  Table 1 Field Definitions 
 
         4. Device Capabilities
 
-    The SMBUS read command reads the response.   For register payload
+    The SMBUS read command reads the response.  For register payload
     description see response: 
 
 
@@ -3034,11 +3035,11 @@ Table 13 Device Capabilities Response
 
         5. Certificate Digest
 
-The SMBUS read command reads the response.   For register payload description
+The SMBUS read command reads the response.  For register payload description
 see response: Table 24 GET DIGEST Response
 
 The PA-Rot will use the digest to determine if it has the certificate already
-cached.   Unlike MCTP, only the Alias and Device Id cert is supported.
+cached.  Unlike MCTP, only the Alias and Device Id cert is supported.
 Therefore, it must be CA signed by a mutually trusted CA, as the CA Public Cert
 is not present
 
@@ -3050,7 +3051,7 @@ The SMBUS write command writes the offset into the register space.  For register
 payload description see response:  Table 26 GET CERTIFICATE Response
 
 
-#### Unlike MCTP, only the Alias and Device Id cert is supported.   Therefore,
+#### Unlike MCTP, only the Alias and Device Id cert is supported.  Therefore,
 it must be CA signed by mutually trusted CA, as the CA Public Cert is not
 present in the reduced challenge
 
@@ -3070,7 +3071,7 @@ The SMBUS write command writes a nonce for measurement freshness.
         7. Measurement
 
 The SMBUS read command that reads the signed measurement with the nonce from the
-hallenge above.   The PA-RoT must poll the Status register for completion after
+hallenge above.  The PA-RoT must poll the Status register for completion after
 issuing the Challenge and before reading the Measurement.
 
 
