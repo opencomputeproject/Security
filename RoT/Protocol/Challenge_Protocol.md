@@ -4,6 +4,7 @@
   - Sentence-ending periods are followed by two spaces.
   - Hexadecimal integers should be formatted as `0xff`.
 -->
+
 Project Cerberus: Firmware Challenge Specification
 =====
 
@@ -196,7 +197,6 @@ messages.  Active Components RoT’s (AC-RoT) will support Authentication and
 Integrity of messages and challenges.  To facilitate this, AC-RoT are required
 to support certificate authentication.  The Active Component will support a
 component unique CA signed challenge certificate for authentication.
-
 
 > Note:  I2C is a low speed link, there is a performance tradeoff between
 > optimizing the protocol messages and strong cryptographic hashing algorithms
@@ -526,12 +526,16 @@ Defined Messages where the Vendor is identified by the PCI based Vendor ID.  The
 initial message header is specified in the Management Component Transport
 Protocol (MCTP) Base Specification, and detailed below for completeness:
 
-| Message Header | Byte |                                                                                     |
-|----------------|------|-------------------------------------------------------------------------------------|
+
+    Table 2 Vendor Defined Message
+
+
+| -------------- | ---- | --- |
+| Message Header | Byte |     |
 | Request Data   | 1:2  | PCI/PCIe Vendor ID.  The MCTP Vendor Id formatted per 0x00 Vendor ID format offset. |
-|                | 3:N  | Vendor-Defined Message Body.  0 to N bytes.                                         |
-| Response Data  | 1:2  | PCI/PCIe Vendor ID, the value is formatted per 0x00 Vendor ID offset.               |
-|                | 3:M  | Vendor-Defined Message Body.  0 to M bytes.                                         |
+|                | 3:N  | Vendor-Defined Message Body.  0 to N bytes. |
+| Response Data  | 1:2  | PCI/PCIe Vendor ID, the value is formatted per 00h Vendor ID offset. |
+|                | 3:M  | Vendor-Defined Message Body.  0 to M bytes. |
 
 
 The Vendor ID is a 16-bit unsigned integer, described in the PCI 2.3
@@ -873,67 +877,42 @@ vendor organization and defined messages types.  The format of this request is
 described in the MCTP base protocol specification.
 
 For the Cerberus protocol, the following information shall be returned in
-response to the MCTP Get Vendor Defined Message Support request:
+response to the MCTP "Get Vendor Defined Message Support" request:
 
+*   Vendor ID Format: `0x00`
+*   PCI Vendor ID: `0x1414`
+*   Command Set Version: `0x04`
 
-
-*   Vendor ID Format = 0
-*   PCI Vendor ID = 0x1414
-*   Command Set Version = 4
 
 ## Attestation Protocol Format
 
-The messages from PA-RoT to AC-RoT will have the following fields
-
-
-<table> <tr> <td>Field Name </td> <td>Description </td> </tr> <tr> <td>IC </td>
-<td>(MCTP integrity check bit) Indicates whether the MCTP message is covered <p>
-by an overall MCTP message payload integrity check </td> </tr> <tr> <td>Message
-Type </td> <td>Indicates MCTP Vendor defined message </td> </tr> <tr> <td>MCTP
-PCI Vendor </td> <td>Id for PCI Vendor.  Cerberus messages use the Microsoft PCI
-ID of 0x1414.  </td> </tr> <tr> <td>Request Type </td> <td>This field indicates
-what type of request is contained in the message.  Messages defined in this
-specification shall have this bit set to 0.  Setting this bit to 1 provides a
-mechanism, aside from different vendor IDs, to support a device-specific command
-set.  Devices that don’t have any additional command support will return an
-error if this bit is 1.  </td> </tr> <tr> <td>Crypt </td> <td>Message Payload
-and Command are encrypted </td> </tr> <tr> <td>Command </td> <td>The command ID
-for command to execute </td> </tr> <tr> <td>Msg Integrity Check </td> <td>This
-field represents the optional presence of a message type-specific integrity
-check over the contents of the message body.  If present (indicated by IC bit)
-the Message integrity check field is carried in the last bytes of the message
-body </td> </tr> </table>
-
-
-
-    Table 4 MCTP Message Format
-
-
-<table> <tr> <td colspan="8" >+0 </td> <td colspan="8" >+1 </td> <td colspan="8"
->+2 </td> <td colspan="8" >+3 </td> </tr> <tr> <td>7 </td> <td>6 </td> <td>5
-</td> <td>4 </td> <td>3 </td> <td>2 </td> <td>1 </td> <td>0 </td> <td>7 </td>
-<td>6 </td> <td>5 </td> <td>4 </td> <td>3 </td> <td>2 </td> <td>1 </td> <td>0
-</td> <td>7 </td> <td>6 </td> <td>5 </td> <td>4 </td> <td>3 </td> <td>2 </td>
-<td>1 </td> <td>0 </td> <td>7 </td> <td>6 </td> <td>5 </td> <td>4 </td> <td>3
-</td> <td>2 </td> <td>1 </td> <td>0 </td> </tr> <tr> <td colspan="4" >MCTP Rsvd
-</td> <td colspan="4" >Header Version </td> <td colspan="8" >Destination
-Endpoint ID </td> <td colspan="8" >Source Endpoint ID </td> <td>S \ O \ M </td>
-<td>E \ O \ M </td> <td colspan="2" >Pkt Seq # </td> <td>TO </td> <td
-colspan="3" >Msg \ Tag </td> </tr> <tr> <td>I \ C </td> <td colspan="7" >Msg
-Type = 7E </td> <td colspan="16" >MCTP PCI Vendor ID = 0x1414 </td> <td>Rq </td>
-<td>Rsvd </td> <td>Crypt </td> <td colspan="5" >Reserved </td> </tr> <tr> <td
-colspan="8" >Command </td> <td colspan="24" >Message Payload </td> </tr>
-</table>
-
+Messages from a PA-RoT to an AC-RoT will have the following format.
+This is embedded in the structure defined in Section 3.4.
+| Payload  | Description                              |
+|----------|------------------------------------------|
+| 0:0      | Integrity check flag.                    |
+| 7:1      | MCTP message type (always `0x7e`).       |
+| 23:8     | MCTP PCI Vendor ID (always `0x1414`).    |
+| 24:24    | Request type.                            |
+| 25:25    | Reserved (should be zero).               |
+| 26:26    | Set if encrypted (see below).            |
+| 31:27    | Reserved.                                |
+| 39:32    | Cerberus command byte.                   |
+| Variable | The command payload.                     |
 
 The protocol header fields are to be included only in the first packet of a
 multiple packet MCTP message.  After reconstruction of the message body, the
 protocol header will be used to interpret the message contents.  Reserved fields
 must be set to 0.
 
+The "request type" field indicates what type of request is contained in the
+message.  Messages defined in this specification shall have this field set to 0.
+Setting this bit to 1 provides a mechanism, besides different vendor IDs, to
+support a device-specific command set.  Devices that don't have any additional
+command support will return an error if this bit is 1.
 
 
-        14. Encrypted Messages
+## Encrypted Messages
 
 If the crypt field is set in the protocol header, the message body contains
 encrypted data.  The command code byte and full message payload, reconstructed
@@ -941,153 +920,103 @@ from individual MCTP packets, is encrypted.  The session establishment flow
 described in section 5 is used to generate the encryption keys.  An encrypted
 message will have a 16-byte GCM authentication tag and 12-byte initialization
 vector in plaintext at the end of the message body.  The following table shows
-the body of an encrypted Cerberus message, with the encryption trailer.
-Segments shaded in grey indicate ciphertext, and white indicate plaintext.
+the body of an encrypted Cerberus message, with the encryption trailer. Note
+that offsets are given in bits, not bytes.
 
-Table 5 Encrypted Cerberus message body
-
-
-<table> <tr> <td>I \ C </td> <td>Msg Type = 7E </td> <td colspan="2" >MCTP PCI
-Vendor ID = 0x1414 </td> <td>Rq </td> <td>Rsvd </td> <td>Crypt </td>
-<td>Reserved </td> </tr> <tr> <td colspan="2" >Command </td> <td colspan="6"
->Message Payload </td> </tr> <tr> <td colspan="3" >GCM Tag </td> <td colspan="5"
->>Initialization Vector </td> </tr> </table>
-
-## Command Set Type Code
-
-The type codes associated with the commands determine whether the command can be
-executed outside of an obfuscated session:
-
-
-            Table 6 Command Types
-
-
-<table> <tr> <td><strong>Type</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Accepted inside or outside session.  </td>
-</tr> <tr> <td>2 </td> <td>Authentication and session setup commands.  </td>
-</tr> <tr> <td>3 </td> <td>Session required commands, obfuscated by session
-encryption or KDF, message body content is normally scrambled.  </td> </tr> <tr>
-<td>8xh </td> <td>Any of the other command types, but the command uses the
-timeout allowed for Cryptographic commands.  </td> </tr> </table>
+| Payload   | Description                                                        |
+|-----------|--------------------------------------------------------------------|
+| 0:0       | Integrity check flag.                                              |
+| 7:1       | MCTP message type (always `0x7e`).                                 |
+| 23:8      | MCTP PCI Vendor ID (always `0x1414`).                              |
+| 24:24     | Request type.                                                      |
+| 25:25     | Reserved (should be zero).                                         |
+| 26:26     | Set if encrypted (always, in this case).                           |
+| 31:27     | Reserved.                                                          |
+| Variable  | Ciphertext; corresponds to the command byte and its payload above. |
+| N+15:N    | AES-GCM tag.                                                       |
+| N+31:N+15 | AES-GCM initialization vector.                                     |
 
 ## RoT Commands
 
-The following table describes the commands defined under this specification.
-There are three categories: (1) Required commands (R) that are mandatory for all
-implementations, (2) Optional commands (O) that may be utilized if the specific
-implementation requires it, (3) Master commands (M) that are required for all
-implementations that can act as an attestation master for slave devices.  All
-MCTP commands are master initiated.  The following section describes the
-command codes.
+The following table summarizes messages defined under this specification, with
+the folloiwing legend:
+*   "Enc" means the command must be encrypted within a session.
+*   "Slow" means the command performs cryptographic operations, and should use
+    the longer message timeout.
+*   "Byte" is the command byte that identifies this message.
+*   "Required" is whether the message *must* be implemented: `R` means
+    "required in all cases"; `O` means "implement if necessary"; `M` means
+    "required for an attestation master".
 
+| Message Name               | Enc | Slow | Byte | Required | Description                                         |
+|----------------------------|-----|------|------|----------|-----------------------------------------------------|
+| `ERROR`                    |     |      | 0x7f | R        | Default response message.                           |
+| `Firmware Version`         |     |      | 0x01 | R        | Retrieves firmware version information.             |
+| `Device Capabilities`      |     |      | 0x02 | R        | Retrieves device capabilities.                      |
+| `Device Id`                |     |      | 0x03 | R        | Retrieves device id.                                |
+| `Device Information`       |     |      | 0x04 | R        | Retrieves device information.                       |
+| `Export CSR`               |     |      | 0x20 | R        | Exports CSR for device keys.                        |
+| `Import Certificate`       |     | X    | 0x21 | R        | Imports CA signed Certificate.                      |
+| `Get Certificate State`    |     |      | 0x22 | R        | Checks the state of the signed Certificate chain.   |
+| `GET DIGESTS`              |     | X    | 0x81 | R        | Retrieves certificate chain digests.                |
+| `GET CERTIFICATE`          |     |      | 0x82 | R        | Retrieves certificate chain.                        |
+| `CHALLENGE`                |     | X    | 0x83 | R        | Authenticates the collective measurement.           |
+| `Key Exchange`             |     | X    | 0x84 | O        | Exchanges session keys and mfg device pairing keys. |
+| `Session Sync`             | X   | X    | 0x85 | O        | Checks status of a secure session.                  |
+| `Get Log Info`             |     |      | 0x4f | O        | Retrieves logging information.                      |
+| `Get Log`                  |     |      | 0x50 | O        | Retrieves debug, attestation, and tamper logs.      |
+| `Clear Log`                |     |      | 0x51 | O        | Clears device logs.                                 |
+| `Get Attestation Data`     |     |      | 0x52 | O        | Retrieves raw data from the attestation log.        |
+| `Get Host State`           |     |      | 0x40 | O        | Gets reset state of the host processor.             |
+| `Get PFM Id`               |     |      | 0x59 | O        | Gets PFM information.                               |
+| `Get PFM Supported`        |     |      | 0x5a | O        | Retrieves the PFM.                                  |
+| `Prepare PFM`              |     |      | 0x5b | O        | Prepares an incoming PFM update.                    |
+| `Update PFM`               |     |      | 0x5c | O        | Uploads part of a new PFM.                          |
+| `Activate PFM`             |     |      | 0x5d | O        | Activates a newly-staged PFM.                       |
+| `Get CFM Id`               |     |      | 0x5e | M        | Gets CFM information.                               |
+| `Prepare CFM`              |     |      | 0x5f | M        | Prepares an incoming CFM update.                    |
+| `Update CFM`               |     |      | 0x60 | M        | Uploads part of a new CFM.                          |
+| `Activate CFM`             |     |      | 0x61 | M        | Activates a newly-staged CFM.                       |
+| `Get CFM Supported`        |     |      | 0x8d | M        | Retrieve supported CFM IDs.                         |
+| `Get PCD Id`               |     |      | 0x62 | M        | Gets PCD information.                               |
+| `Prepare PCD`              |     |      | 0x63 | M        | Prepares an incoming PCD update.                    |
+| `Update PCD`               |     |      | 0x64 | M        | Uploads part of a new PCD.                          |
+| `Activate PCD`             |     |      | 0x65 | M        | Activates a newly-staged PCD.                       |
+| `Prepare Firmware Update`  |     |      | 0x66 | O        | Prepares an incoming firmware update.               |
+| `Update Firmware`          |     |      | 0x67 | O        | Uploads part of a new firmare image.                |
+| `Update Status`            |     |      | 0x68 | M        | Firmware or manifest update status                  |
+| `Extended Update Status`   |     |      | 0x8e | M        | Firmware or manifest extended status                |
+| `Activate Firmware Update` |     |      | 0x69 | O        | Activates a newly-staged firmware update.           |
+| `Reset Configuration`      |     | X    | 0x6a | O        | Resets configuration to default state.              |
+| `Get Config IDs`           |     | X    | 0x70 | M        | Gets authenticated manifest IDs.                    |
+| `Recovery Firmware`        |     |      | 0x71 | O        | Restores firmware index using backup.               |
+| `Prepare Recovery Image`   |     |      | 0x72 | O        | Prepares an incoming recovery image update.         |
+| `Update Recovery Image`    |     |      | 0x73 | O        | Uploads part of a new recovery image.               |
+| `Activate Recovery Image`  |     |      | 0x74 | O        | Activate newly-staged recovery image.               |
+| `Get Recovery Image Id`    |     |      | 0x75 | O        | Get recovery image information.                     |
+| `Get PMR`                  |     | X    | 0x80 | O        | Gets a Platform Measurement Register.               |
+| `Update PMR`               | X   | X    | 0x86 | O        | Extends a Platform Measurements Register.           |
+| `Reset Counter`            |     |      | 0x87 | R        | Reset Counter.                                      |
+| `Unseal Message`           |     | X    | 0x89 | O        | Begin an unsealing challenge.                       |
+| `Unseal Message Result`    |     |      | 0x8a | O        | Get unsealing status and result.                    |
 
-    Table 7 Command List
+Command bytes `0xf0` through `0xff` will never be allocated by Cerberus, and may
+be treated as a "private use" area.
 
-
-<table> <tr> <td><strong>Message Name</strong> </td> <td><strong>Type</strong>
-</td> <td><strong>Command</strong> </td> <td><strong>R/O/M</strong> </td>
-<td><strong>Description</strong> </td> </tr> <tr> <td>ERROR </td> <td>0x01 </td>
-<td>0x7f </td> <td>R </td> <td>Status Response message.  </td> </tr> <tr>
-<td>Firmware Version </td> <td>0x01 </td> <td>0x01 </td> <td>R </td> <td>Retrieve
-firmware version information </td> </tr> <tr> <td>Device Capabilities </td>
-<td>0x01 </td> <td>0x02 </td> <td>R </td> <td>Retrieves Device Capabilities </td>
-</tr> <tr> <td>Device Id </td> <td>0x01 </td> <td>0x03 </td> <td>R </td>
-<td>Retrieves Device Id </td> </tr> <tr> <td>Device Information </td> <td>0x01
-</td> <td>0x04 </td> <td>R </td> <td>Retrieves device information </td> </tr>
-<tr> <td>Export CSR </td> <td>0x01 </td> <td>0x20 </td> <td>R </td> <td>Exports
-CSR for device keys </td> </tr> <tr> <td>Import Certificate </td> <td>0x81 </td>
-<td>0x21 </td> <td>R </td> <td>Imports CA signed Certificate </td> </tr> <tr>
-<td>Get Certificate State </td> <td>0x01 </td> <td>0x22 </td> <td>R </td>
-<td>Checks the state of the signed Certificate chain </td> </tr> <tr> <td>GET
-DIGESTS </td> <td>0x82 </td> <td>0x81 </td> <td>R </td> <td>PA-RoT retrieves
-session information </td> </tr> <tr> <td>GET CERTIFICATE </td> <td>0x02 </td>
-<td>0x82 </td> <td>R </td> <td>PA-RoT sets session variables based on Session
-Query </td> </tr> <tr> <td>CHALLENGE </td> <td>0x82 </td> <td>0x83 </td> <td>R
-</td> <td>PA-RoT retrieves and verifies AC-RoT certificate </td> </tr> <tr>
-<td>Key Exchange </td> <td>0x82 </td> <td>0x84 </td> <td>O<sup>1</sup> </td>
-<td>Exchange pre-master session keys and mfg device pairing key </td> </tr> <tr>
-<td>Session Sync </td> <td>0x83 </td> <td>0x85 </td> <td>O<sup>1</sup> </td>
-<td>Check status of a secure session </td> </tr> <tr> <td>Get Log Info </td>
-<td>0x01 </td> <td>0x4f </td> <td>O </td> <td>Get Log Information </td> </tr> <tr>
-<td>Get Log </td> <td>0x01 </td> <td>0x50 </td> <td>O </td> <td>Retrieve debug,
-attestation and tamper log </td> </tr> <tr> <td>Clear Log </td> <td>0x01 </td>
-<td>0x51 </td> <td>O </td> <td>Clear log information </td> </tr> <tr> <td>Get
-Attestation Data </td> <td>0x01 </td> <td>0x52 </td> <td>O<sup>2</sup> </td>
-<td>Retrieve raw data for an entry in the attestation log </td> </tr> <tr>
-<td>Get Host State </td> <td>0x01 </td> <td>0x40 </td> <td>O </td> <td>Get reset
-state of the host processor </td> </tr> <tr> <td>Get PFM Id </td> <td>0x01 </td>
-<td>0x59 </td> <td>O </td> <td>Get PFM Information </td> </tr> <tr> <td>Get PFM
-Supported </td> <td>0x01 </td> <td>0x5a </td> <td>O </td> <td>Retrieve the PFM
-</td> </tr> <tr> <td>Prepare PFM </td> <td>0x01 </td> <td>0x5b </td> <td>O </td>
-<td>Prepare PFM payload on PA-RoT </td> </tr> <tr> <td>Update PFM </td> <td>0x01
-</td> <td>0x5c </td> <td>O </td> <td>Set the PFM </td> </tr> <tr> <td>Activate
-PFM </td> <td>0x01 </td> <td>0x5d </td> <td>O </td> <td>Force Activation of
-supplied PFM </td> </tr> <tr> <td>Get CFM Id </td> <td>0x01 </td> <td>0x5e </td>
-<td>M </td> <td>Get Component Manifest Information </td> </tr> <tr> <td>Prepare
-CFM </td> <td>0x01 </td> <td>0x5f </td> <td>M </td> <td>Prepare Component Manifest
-Update </td> </tr> <tr> <td>Update CFM </td> <td>0x01 </td> <td>0x60 </td> <td>M
-</td> <td>Update Component Manifest </td> </tr> <tr> <td>Activate CFM </td>
-<td>0x01 </td> <td>0x61 </td> <td>M </td> <td>Activate Component Firmware Manifest
-Update </td> </tr> <tr> <td>Get CFM Supported </td> <td>0x01 </td> <td>0x8d </td>
-<td>M </td> <td>Retrieve supported CFM IDs </td> </tr> <tr> <td>Get PCD Id </td>
-<td>0x01 </td> <td>0x62 </td> <td>M </td> <td>Get Platform Configuration Data
-Information </td> </tr> <tr> <td>Prepare PCD </td> <td>0x01 </td> <td>0x63 </td>
-<td>M </td> <td>Prepare Platform Configuration Data Update </td> </tr> <tr>
-<td>Update PCD </td> <td>0x01 </td> <td>0x64 </td> <td>M </td> <td>Update Platform
-Configuration Data </td> </tr> <tr> <td>Activate PCD </td> <td>0x01 </td> <td>0x65
-</td> <td>M </td> <td>Activate Platform Configuration Data Update </td> </tr>
-<tr> <td>Prepare Firmware Update </td> <td>0x01 </td> <td>0x66 </td> <td>O </td>
-<td>Prepare for receiving firmware image </td> </tr> <tr> <td>Update Firmware
-</td> <td>0x01 </td> <td>0x67 </td> <td>O </td> <td>Firmware update payload </td>
-</tr> <tr> <td>Update Status </td> <td>0x01 </td> <td>0x68 </td> <td>M<sup>3</sup>
-</td> <td>Firmware, PFM/CFM/PCD update status </td> </tr> <tr> <td>Extended
-Update Status </td> <td>0x01 </td> <td>0x8e </td> <td>M<sup>3</sup> </td>
-<td>Firmware, PFM/CFM/PCD extended status </td> </tr> <tr> <td>Activate Firmware
-Update </td> <td>0x01 </td> <td>0x69 </td> <td>O </td> <td>Activate received FW
-update </td> </tr> <tr> <td>Reset Configuration </td> <td>0x81 </td> <td>0x6a
-</td> <td>O </td> <td>Reset configuration to default state </td> </tr> <tr>
-<td>Get Config IDs </td> <td>0x81 </td> <td>0x70 </td> <td>M<sup>4</sup> </td>
-<td>Get manifest IDs and signed digest of request nonce and response ids.  </td>
-</tr> <tr> <td>Recovery Firmware </td> <td>0x01 </td> <td>0x71 </td> <td>O </td>
-<td>Restore Firmware Index using backup.  </td> </tr> <tr> <td>Prepare Recovery
-Image </td> <td>0x01 </td> <td>0x72 </td> <td>O </td> <td>Prepare storage for
-Recovery Image </td> </tr> <tr> <td>Update Recovery Image </td> <td>0x01 </td>
-<td>0x73 </td> <td>O </td> <td>Updates the Recover image </td> </tr> <tr>
-<td>Activate Recovery Image </td> <td>0x01 </td> <td>0x74 </td> <td>O </td>
-<td>Activate the received Recovery image </td> </tr> <tr> <td>Get Recovery Image
-Id </td> <td>0x01 </td> <td>0x75 </td> <td>O </td> <td>Get Recovery firmware
-information </td> </tr> <tr> <td>Platform Measurement Register </td> <td>0x81
-</td> <td>0x80 </td> <td>O </td> <td>Returns the Platform Measurement </td> </tr>
-<tr> <td>Update Platform Measurement Register </td> <td>0x83 </td> <td>0x86 </td>
-<td>O </td> <td>Extends Platform Measurements </td> </tr> <tr> <td>Reset Counter
-</td> <td>0x01 </td> <td>0x87 </td> <td>R </td> <td>Reset Counter </td> </tr> <tr>
-<td>Unseal Message </td> <td>0x81 </td> <td>0x89 </td> <td>O </td> <td>Unseal
-attestation challenges.  </td> </tr> <tr> <td>Unseal Message Result </td>
-<td>0x01 </td> <td>0x8a </td> <td>O </td> <td>Get unsealing status and result
-</td> </tr> <tr> <td>Unsupported Commands </td> <td> </td> <td>0xf0 – 0xff </td>
-<td> </td> <td>Reserved commands that must be rejected by the device </td> </tr>
-</table>
-
-
-<sup>1</sup> Key Exchange and Session Sync are Required if encrypted sessions
-are supported.
-
-<sup>2</sup> Get Attestation Data is Required if an Attestation Log is
-supported.
-
-<sup>3</sup> For implementations that support any update command, Update Status
-and Extended Update Status are Required
-
-<sup>4</sup> For implementations that use PFM, CFM, or PCD configuration files,
-Get Config IDs is Required.
-
+A note on required messages:
+1. `Key Exchange` and `Session Sync` are required if any "Enc" messages are supported.
+2. `Get Attestation Data` is required if an Attestation Log is supported.
+3. If any update command (e.g., `Prepare`/`Update/`Activate` commands) are
+   supported, `Update Status` and `Extended Update Status` are required.
+4. If any manifest types are supported, `Get Config IDs` is required.
 
 
 ## Message Body Structures
 
 The following section describes the structures of the MCTP message body.
 
-## Error Message
+
+### Error Message
 
 The error command is returned for command responses when the command was not
 completed as proposed, it also acts as a generic status for commands without
@@ -1111,21 +1040,21 @@ returned as follows:
 <table> <tr> <td><strong>Error Code</strong> </td> <td><strong>Value</strong>
 </td> <td><strong>Description</strong> </td> <td><strong>Data</strong> </td>
 </tr> <tr> <td>No Error </td> <td>0h </td> <td>Success [Reserved in USB Type C
-<p> Authentication Specification] </td> <td>0x00 </td> </tr> <tr> <td>Invalid
-Request </td> <td>0x01 </td> <td>Invalidated data in the request </td> <td>0x00
-</td> </tr> <tr> <td>Busy </td> <td>0x03 </td> <td>Device cannot response as it
-is busy processing other commands </td> <td>0x00 </td> </tr> <tr> <td>Unspecified
-</td> <td>0x04 </td> <td>Unspecified error occurred </td> <td>Vendor defined
-</td> </tr> <tr> <td>Reserved </td> <td>0x05-0xef </td> <td>Reserved </td>
-<td>Reserved </td> </tr> <tr> <td>Invalid Checksum </td> <td>0xf0 </td>
+<p> Authentication Specification] </td> <td>00h </td> </tr> <tr> <td>Invalid
+Request </td> <td>01h </td> <td>Invalidated data in the request </td> <td>00h
+</td> </tr> <tr> <td>Busy </td> <td>03h </td> <td>Device cannot response as it
+is busy processing other commands </td> <td>00h </td> </tr> <tr> <td>Unspecified
+</td> <td>04h </td> <td>Unspecified error occurred </td> <td>Vendor defined
+</td> </tr> <tr> <td>Reserved </td> <td>05h-EFh </td> <td>Reserved </td>
+<td>Reserved </td> </tr> <tr> <td>Invalid Checksum </td> <td>F0h </td>
 <td>Invalid checksum </td> <td>Checksum </td> </tr> <tr> <td>Out of Order
-Message </td> <td>0xf1 </td> <td>EOM before SOM </td> <td>0x00 </td> </tr> <tr>
-<td>Authentication </td> <td>0xf2 </td> <td>Authentication not established </td>
-<td>0x00 </td> </tr> <tr> <td>Out of Sequence Window </td> <td>0xf3 </td>
-<td>Message received out of Sequence Window </td> <td>0x00 </td> </tr> <tr>
-<td>Invalid Packet Length </td> <td>0xf4 </td> <td>Packet received with
+Message </td> <td>F1h </td> <td>EOM before SOM </td> <td>00h </td> </tr> <tr>
+<td>Authentication </td> <td>F2h </td> <td>Authentication not established </td>
+<td>00h </td> </tr> <tr> <td>Out of Sequence Window </td> <td>F3h </td>
+<td>Message received out of Sequence Window </td> <td>00h </td> </tr> <tr>
+<td>Invalid Packet Length </td> <td>F4h </td> <td>Packet received with
 unexpected size </td> <td>Packet Length </td> </tr> <tr> <td>Message Overflow
-</td> <td>0xf5 </td> <td>Message exceeded maximum length </td> <td>Message Length
+</td> <td>F5h </td> <td>Message exceeded maximum length </td> <td>Message Length
 </td> </tr> </table>
 
 
@@ -1143,7 +1072,7 @@ This command gets the target firmware the version.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Area Index: <p> 0x00 = Entire Firmware <p> 0x01 =
+</td> </tr> <tr> <td>1 </td> <td>Area Index: <p> 00h = Entire Firmware <p> 01h =
 RIoT Core <p> Additional indexes are firmware specific </td> </tr> </table>
 
 
@@ -1331,7 +1260,7 @@ This command gets information about the target device.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Information Index: <p> 0x00 = Unique Chip
+</td> </tr> <tr> <td>1 </td> <td>Information Index: <p> 00h = Unique Chip
 Identifier <p> Additional indexes are firmware specific </td> </tr> </table>
 
 
@@ -1674,9 +1603,9 @@ Get the internal log information for the RoT.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Debug Log (0x01) Length in bytes </td> </tr>
-<tr> <td>5:8 </td> <td>Attestation Log (0x02) Length in bytes </td> </tr> <tr>
-<td>9:12 </td> <td>Tamper Log (0x03) Length in bytes </td> </tr> </table>
+</td> </tr> <tr> <td>1:4 </td> <td>Debug Log (01h) Length in bytes </td> </tr>
+<tr> <td>5:8 </td> <td>Attestation Log (02h) Length in bytes </td> </tr> <tr>
+<td>9:12 </td> <td>Tamper Log (03h) Length in bytes </td> </tr> </table>
 
 ## Get Log
 
@@ -1734,8 +1663,8 @@ Specification.
 
 
 <table> <tr> <td><strong>Offset</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Log entry start marker: <p> [7:4]: 0x0c <p>
-[3:0]: Header format, 0x0b per this specification.  </td> </tr> <tr> <td>2:3
+</td> </tr> <tr> <td>1 </td> <td>Log entry start marker: <p> [7:4]: 0xC <p>
+[3:0]: Header format, 0xB per this specification.  </td> </tr> <tr> <td>2:3
 </td> <td>Total length of the entry, including the header </td> </tr> <tr>
 <td>4:7 </td> <td>Unique entry identifier </td> </tr> </table>
 
@@ -1751,7 +1680,7 @@ within a single PMR </td> </tr> <tr> <td>13 </td> <td>Index of the PMR for the
 measurement </td> </tr> <tr> <td>14:15 </td> <td>Reserved, set to 0 </td> </tr>
 <tr> <td>16 </td> <td>Number of digests (1) </td> </tr> <tr> <td>17:19 </td>
 <td>Reserved, set to 0 </td> </tr> <tr> <td>20:21 </td> <td>Digest algorithm Id
-(0x0b, SHA256) </td> </tr> <tr> <td>22:53 </td> <td>SHA256 digest used to extend
+(0x0B, SHA256) </td> </tr> <tr> <td>22:53 </td> <td>SHA256 digest used to extend
 the measurement </td> </tr> <tr> <td>54:57 </td> <td>Measurement size (32) </td>
 </tr> <tr> <td>58:89 </td> <td>Measurement </td> </tr> </table>
 
@@ -1840,8 +1769,8 @@ Retrieve the reset state of the host processor being protected by Cerberus.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Host Reset State: <p> 0x00 – Host is running
-(out of reset) <p> 0x01 – Host is being held in reset <p> 0x02 – Host is not being
+</td> </tr> <tr> <td>1 </td> <td>Host Reset State: <p> 00h – Host is running
+(out of reset) <p> 01h – Host is being held in reset <p> 02h – Host is not being
 held in reset, but is not running </td> </tr> </table>
 
 ## Get Platform Firmware Manifest Id
@@ -2844,17 +2773,17 @@ Table 99 Commands
 <table> <tr> <td><strong>Register Name</strong> </td>
 <td><strong>Command</strong> </td> <td><strong>Length</strong> </td>
 <td><strong>R/W</strong> </td> <td><strong>Description</strong> </td> </tr> <tr>
-<td>Status </td> <td>0x30 </td> <td>2 </td> <td>R </td> <td>Command Status </td>
-</tr> <tr> <td>Firmware Version </td> <td>0x32 </td> <td>16 </td> <td>R/W </td>
+<td>Status </td> <td>30h </td> <td>2 </td> <td>R </td> <td>Command Status </td>
+</tr> <tr> <td>Firmware Version </td> <td>32h </td> <td>16 </td> <td>R/W </td>
 <td>Retrieve firmware version information </td> </tr> <tr> <td>Device Id </td>
-<td>0x33 </td> <td>8 </td> <td>R </td> <td>Retrieves Device Id </td> </tr> <tr>
-<td>Capabilities </td> <td>0x34 </td> <td>9 </td> <td>R </td> <td>Retrieves
+<td>33h </td> <td>8 </td> <td>R </td> <td>Retrieves Device Id </td> </tr> <tr>
+<td>Capabilities </td> <td>34h </td> <td>9 </td> <td>R </td> <td>Retrieves
 Device Capabilities </td> </tr> <tr> <td>Certificate Digest </td> <td>3C </td>
 <td>32 </td> <td>R </td> <td>SHA256 of Device Id Certificate </td> </tr> <tr>
 <td>Certificate </td> <td>3D </td> <td>4096 </td> <td>R/W </td> <td>Certificate
 from the AC-Rot </td> </tr> <tr> <td>Challenge </td> <td>3E </td> <td>32 </td>
 <td>W </td> <td>Nonce written by RoT </td> </tr> <tr> <td>Platform Configuration
-Register </td> <td>0x03 </td> <td>0x5e </td> <td>R </td> <td>Reads firmware
+Register </td> <td>03h </td> <td>5Eh </td> <td>R </td> <td>Reads firmware
 measurement, calculated with S Nonce </td> </tr> </table>
 
 ### Legacy Command Format
