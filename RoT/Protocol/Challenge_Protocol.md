@@ -2,6 +2,7 @@
   Style Guide
   - Make sure to wrap everything to 80 columns when possible.
   - Sentence-ending periods are followed by two spaces.
+  - Hexadecimal integers should be formatted as `0xff`.
 -->
 Project Cerberus: Firmware Challenge Specification
 =====
@@ -576,7 +577,7 @@ smaller based on device capabilities.
 
         1. Message Type
 
-The message type should be 0x7E as per the Management Component Transport
+The message type should be 0x7e as per the Management Component Transport
 Protocol (MCTP) Base Specification.  The message type is used to support Vendor
 Defined Messages where the Vendor is identified by the PCI based Vendor ID.  The
 initial message header is specified in the Management Component Transport
@@ -588,10 +589,10 @@ Protocol (MCTP) Base Specification, and detailed below for completeness:
 
 <table> <tr> <td>Message Header </td> <td>Byte </td> <td> </td> </tr> <tr>
 <td>Request Data </td> <td>1:2 </td> <td>PCI/PCIe Vendor ID.  The MCTP Vendor Id
-formatted per 00h Vendor ID format offset.  </td> </tr> <tr> <td> </td> <td>3:N
+formatted per 0x00 Vendor ID format offset.  </td> </tr> <tr> <td> </td> <td>3:N
 </td> <td>Vendor-Defined Message Body.  0 to N bytes.  </td> </tr> <tr>
 <td>Response Data </td> <td>1:2 </td> <td>PCI/PCIe Vendor ID, the value is
-formatted per 00h Vendor ID offset </td> </tr> <tr> <td> </td> <td>3:M </td>
+formatted per 0x00 Vendor ID offset </td> </tr> <tr> <td> </td> <td>3:M </td>
 <td>Vendor-Defined Message Body.  0 to M bytes </td> </tr> </table>
 
 
@@ -649,7 +650,7 @@ Message must be completed within the allocated time or discarded.
 The BMC will assign EIDs to the different Active Component RoT devices.  All
 Active Component RoT devices should support the MCTP Set Endpoint ID control
 request and response messages.  The Platform Active RoT will have a static EID of
-0x0B.
+0x0b.
 
 # Certificates
 
@@ -1102,85 +1103,85 @@ command codes.
 
 <table> <tr> <td><strong>Message Name</strong> </td> <td><strong>Type</strong>
 </td> <td><strong>Command</strong> </td> <td><strong>R/O/M</strong> </td>
-<td><strong>Description</strong> </td> </tr> <tr> <td>ERROR </td> <td>01h </td>
-<td>7Fh </td> <td>R </td> <td>Status Response message.  </td> </tr> <tr>
-<td>Firmware Version </td> <td>01h </td> <td>01h </td> <td>R </td> <td>Retrieve
+<td><strong>Description</strong> </td> </tr> <tr> <td>ERROR </td> <td>0x01 </td>
+<td>0x7f </td> <td>R </td> <td>Status Response message.  </td> </tr> <tr>
+<td>Firmware Version </td> <td>0x01 </td> <td>0x01 </td> <td>R </td> <td>Retrieve
 firmware version information </td> </tr> <tr> <td>Device Capabilities </td>
-<td>01h </td> <td>02h </td> <td>R </td> <td>Retrieves Device Capabilities </td>
-</tr> <tr> <td>Device Id </td> <td>01h </td> <td>03h </td> <td>R </td>
-<td>Retrieves Device Id </td> </tr> <tr> <td>Device Information </td> <td>01h
-</td> <td>04h </td> <td>R </td> <td>Retrieves device information </td> </tr>
-<tr> <td>Export CSR </td> <td>01h </td> <td>20h </td> <td>R </td> <td>Exports
-CSR for device keys </td> </tr> <tr> <td>Import Certificate </td> <td>81h </td>
-<td>21h </td> <td>R </td> <td>Imports CA signed Certificate </td> </tr> <tr>
-<td>Get Certificate State </td> <td>01h </td> <td>22h </td> <td>R </td>
+<td>0x01 </td> <td>0x02 </td> <td>R </td> <td>Retrieves Device Capabilities </td>
+</tr> <tr> <td>Device Id </td> <td>0x01 </td> <td>0x03 </td> <td>R </td>
+<td>Retrieves Device Id </td> </tr> <tr> <td>Device Information </td> <td>0x01
+</td> <td>0x04 </td> <td>R </td> <td>Retrieves device information </td> </tr>
+<tr> <td>Export CSR </td> <td>0x01 </td> <td>0x20 </td> <td>R </td> <td>Exports
+CSR for device keys </td> </tr> <tr> <td>Import Certificate </td> <td>0x81 </td>
+<td>0x21 </td> <td>R </td> <td>Imports CA signed Certificate </td> </tr> <tr>
+<td>Get Certificate State </td> <td>0x01 </td> <td>0x22 </td> <td>R </td>
 <td>Checks the state of the signed Certificate chain </td> </tr> <tr> <td>GET
-DIGESTS </td> <td>82h </td> <td>81h </td> <td>R </td> <td>PA-RoT retrieves
-session information </td> </tr> <tr> <td>GET CERTIFICATE </td> <td>02h </td>
-<td>82h </td> <td>R </td> <td>PA-RoT sets session variables based on Session
-Query </td> </tr> <tr> <td>CHALLENGE </td> <td>82h </td> <td>83h </td> <td>R
+DIGESTS </td> <td>0x82 </td> <td>0x81 </td> <td>R </td> <td>PA-RoT retrieves
+session information </td> </tr> <tr> <td>GET CERTIFICATE </td> <td>0x02 </td>
+<td>0x82 </td> <td>R </td> <td>PA-RoT sets session variables based on Session
+Query </td> </tr> <tr> <td>CHALLENGE </td> <td>0x82 </td> <td>0x83 </td> <td>R
 </td> <td>PA-RoT retrieves and verifies AC-RoT certificate </td> </tr> <tr>
-<td>Key Exchange </td> <td>82h </td> <td>84h </td> <td>O<sup>1</sup> </td>
+<td>Key Exchange </td> <td>0x82 </td> <td>0x84 </td> <td>O<sup>1</sup> </td>
 <td>Exchange pre-master session keys and mfg device pairing key </td> </tr> <tr>
-<td>Session Sync </td> <td>83h </td> <td>85h </td> <td>O<sup>1</sup> </td>
+<td>Session Sync </td> <td>0x83 </td> <td>0x85 </td> <td>O<sup>1</sup> </td>
 <td>Check status of a secure session </td> </tr> <tr> <td>Get Log Info </td>
-<td>01h </td> <td>4Fh </td> <td>O </td> <td>Get Log Information </td> </tr> <tr>
-<td>Get Log </td> <td>01h </td> <td>50h </td> <td>O </td> <td>Retrieve debug,
-attestation and tamper log </td> </tr> <tr> <td>Clear Log </td> <td>01h </td>
-<td>51h </td> <td>O </td> <td>Clear log information </td> </tr> <tr> <td>Get
-Attestation Data </td> <td>01h </td> <td>52h </td> <td>O<sup>2</sup> </td>
+<td>0x01 </td> <td>0x4f </td> <td>O </td> <td>Get Log Information </td> </tr> <tr>
+<td>Get Log </td> <td>0x01 </td> <td>0x50 </td> <td>O </td> <td>Retrieve debug,
+attestation and tamper log </td> </tr> <tr> <td>Clear Log </td> <td>0x01 </td>
+<td>0x51 </td> <td>O </td> <td>Clear log information </td> </tr> <tr> <td>Get
+Attestation Data </td> <td>0x01 </td> <td>0x52 </td> <td>O<sup>2</sup> </td>
 <td>Retrieve raw data for an entry in the attestation log </td> </tr> <tr>
-<td>Get Host State </td> <td>01h </td> <td>40h </td> <td>O </td> <td>Get reset
-state of the host processor </td> </tr> <tr> <td>Get PFM Id </td> <td>01h </td>
-<td>59h </td> <td>O </td> <td>Get PFM Information </td> </tr> <tr> <td>Get PFM
-Supported </td> <td>01h </td> <td>5Ah </td> <td>O </td> <td>Retrieve the PFM
-</td> </tr> <tr> <td>Prepare PFM </td> <td>01h </td> <td>5Bh </td> <td>O </td>
-<td>Prepare PFM payload on PA-RoT </td> </tr> <tr> <td>Update PFM </td> <td>01h
-</td> <td>5Ch </td> <td>O </td> <td>Set the PFM </td> </tr> <tr> <td>Activate
-PFM </td> <td>01h </td> <td>5Dh </td> <td>O </td> <td>Force Activation of
-supplied PFM </td> </tr> <tr> <td>Get CFM Id </td> <td>01h </td> <td>5Eh </td>
+<td>Get Host State </td> <td>0x01 </td> <td>0x40 </td> <td>O </td> <td>Get reset
+state of the host processor </td> </tr> <tr> <td>Get PFM Id </td> <td>0x01 </td>
+<td>0x59 </td> <td>O </td> <td>Get PFM Information </td> </tr> <tr> <td>Get PFM
+Supported </td> <td>0x01 </td> <td>0x5a </td> <td>O </td> <td>Retrieve the PFM
+</td> </tr> <tr> <td>Prepare PFM </td> <td>0x01 </td> <td>0x5b </td> <td>O </td>
+<td>Prepare PFM payload on PA-RoT </td> </tr> <tr> <td>Update PFM </td> <td>0x01
+</td> <td>0x5c </td> <td>O </td> <td>Set the PFM </td> </tr> <tr> <td>Activate
+PFM </td> <td>0x01 </td> <td>0x5d </td> <td>O </td> <td>Force Activation of
+supplied PFM </td> </tr> <tr> <td>Get CFM Id </td> <td>0x01 </td> <td>0x5e </td>
 <td>M </td> <td>Get Component Manifest Information </td> </tr> <tr> <td>Prepare
-CFM </td> <td>01h </td> <td>5Fh </td> <td>M </td> <td>Prepare Component Manifest
-Update </td> </tr> <tr> <td>Update CFM </td> <td>01h </td> <td>60h </td> <td>M
+CFM </td> <td>0x01 </td> <td>0x5f </td> <td>M </td> <td>Prepare Component Manifest
+Update </td> </tr> <tr> <td>Update CFM </td> <td>0x01 </td> <td>0x60 </td> <td>M
 </td> <td>Update Component Manifest </td> </tr> <tr> <td>Activate CFM </td>
-<td>01h </td> <td>61h </td> <td>M </td> <td>Activate Component Firmware Manifest
-Update </td> </tr> <tr> <td>Get CFM Supported </td> <td>01h </td> <td>8Dh </td>
+<td>0x01 </td> <td>0x61 </td> <td>M </td> <td>Activate Component Firmware Manifest
+Update </td> </tr> <tr> <td>Get CFM Supported </td> <td>0x01 </td> <td>0x8d </td>
 <td>M </td> <td>Retrieve supported CFM IDs </td> </tr> <tr> <td>Get PCD Id </td>
-<td>01h </td> <td>62h </td> <td>M </td> <td>Get Platform Configuration Data
-Information </td> </tr> <tr> <td>Prepare PCD </td> <td>01h </td> <td>63h </td>
+<td>0x01 </td> <td>0x62 </td> <td>M </td> <td>Get Platform Configuration Data
+Information </td> </tr> <tr> <td>Prepare PCD </td> <td>0x01 </td> <td>0x63 </td>
 <td>M </td> <td>Prepare Platform Configuration Data Update </td> </tr> <tr>
-<td>Update PCD </td> <td>01h </td> <td>64h </td> <td>M </td> <td>Update Platform
-Configuration Data </td> </tr> <tr> <td>Activate PCD </td> <td>01h </td> <td>65h
+<td>Update PCD </td> <td>0x01 </td> <td>0x64 </td> <td>M </td> <td>Update Platform
+Configuration Data </td> </tr> <tr> <td>Activate PCD </td> <td>0x01 </td> <td>0x65
 </td> <td>M </td> <td>Activate Platform Configuration Data Update </td> </tr>
-<tr> <td>Prepare Firmware Update </td> <td>01h </td> <td>66h </td> <td>O </td>
+<tr> <td>Prepare Firmware Update </td> <td>0x01 </td> <td>0x66 </td> <td>O </td>
 <td>Prepare for receiving firmware image </td> </tr> <tr> <td>Update Firmware
-</td> <td>01h </td> <td>67h </td> <td>O </td> <td>Firmware update payload </td>
-</tr> <tr> <td>Update Status </td> <td>01h </td> <td>68h </td> <td>M<sup>3</sup>
+</td> <td>0x01 </td> <td>0x67 </td> <td>O </td> <td>Firmware update payload </td>
+</tr> <tr> <td>Update Status </td> <td>0x01 </td> <td>0x68 </td> <td>M<sup>3</sup>
 </td> <td>Firmware, PFM/CFM/PCD update status </td> </tr> <tr> <td>Extended
-Update Status </td> <td>01h </td> <td>8Eh </td> <td>M<sup>3</sup> </td>
+Update Status </td> <td>0x01 </td> <td>0x8e </td> <td>M<sup>3</sup> </td>
 <td>Firmware, PFM/CFM/PCD extended status </td> </tr> <tr> <td>Activate Firmware
-Update </td> <td>01h </td> <td>69h </td> <td>O </td> <td>Activate received FW
-update </td> </tr> <tr> <td>Reset Configuration </td> <td>81h </td> <td>6Ah
+Update </td> <td>0x01 </td> <td>0x69 </td> <td>O </td> <td>Activate received FW
+update </td> </tr> <tr> <td>Reset Configuration </td> <td>0x81 </td> <td>0x6a
 </td> <td>O </td> <td>Reset configuration to default state </td> </tr> <tr>
-<td>Get Config IDs </td> <td>81h </td> <td>70h </td> <td>M<sup>4</sup> </td>
+<td>Get Config IDs </td> <td>0x81 </td> <td>0x70 </td> <td>M<sup>4</sup> </td>
 <td>Get manifest IDs and signed digest of request nonce and response ids.  </td>
-</tr> <tr> <td>Recovery Firmware </td> <td>01h </td> <td>71h </td> <td>O </td>
+</tr> <tr> <td>Recovery Firmware </td> <td>0x01 </td> <td>0x71 </td> <td>O </td>
 <td>Restore Firmware Index using backup.  </td> </tr> <tr> <td>Prepare Recovery
-Image </td> <td>01h </td> <td>72h </td> <td>O </td> <td>Prepare storage for
-Recovery Image </td> </tr> <tr> <td>Update Recovery Image </td> <td>01h </td>
-<td>73h </td> <td>O </td> <td>Updates the Recover image </td> </tr> <tr>
-<td>Activate Recovery Image </td> <td>01h </td> <td>74h </td> <td>O </td>
+Image </td> <td>0x01 </td> <td>0x72 </td> <td>O </td> <td>Prepare storage for
+Recovery Image </td> </tr> <tr> <td>Update Recovery Image </td> <td>0x01 </td>
+<td>0x73 </td> <td>O </td> <td>Updates the Recover image </td> </tr> <tr>
+<td>Activate Recovery Image </td> <td>0x01 </td> <td>0x74 </td> <td>O </td>
 <td>Activate the received Recovery image </td> </tr> <tr> <td>Get Recovery Image
-Id </td> <td>01h </td> <td>75h </td> <td>O </td> <td>Get Recovery firmware
-information </td> </tr> <tr> <td>Platform Measurement Register </td> <td>81h
-</td> <td>80h </td> <td>O </td> <td>Returns the Platform Measurement </td> </tr>
-<tr> <td>Update Platform Measurement Register </td> <td>83h </td> <td>86h </td>
+Id </td> <td>0x01 </td> <td>0x75 </td> <td>O </td> <td>Get Recovery firmware
+information </td> </tr> <tr> <td>Platform Measurement Register </td> <td>0x81
+</td> <td>0x80 </td> <td>O </td> <td>Returns the Platform Measurement </td> </tr>
+<tr> <td>Update Platform Measurement Register </td> <td>0x83 </td> <td>0x86 </td>
 <td>O </td> <td>Extends Platform Measurements </td> </tr> <tr> <td>Reset Counter
-</td> <td>01h </td> <td>87h </td> <td>R </td> <td>Reset Counter </td> </tr> <tr>
-<td>Unseal Message </td> <td>81h </td> <td>89h </td> <td>O </td> <td>Unseal
+</td> <td>0x01 </td> <td>0x87 </td> <td>R </td> <td>Reset Counter </td> </tr> <tr>
+<td>Unseal Message </td> <td>0x81 </td> <td>0x89 </td> <td>O </td> <td>Unseal
 attestation challenges.  </td> </tr> <tr> <td>Unseal Message Result </td>
-<td>01h </td> <td>8Ah </td> <td>O </td> <td>Get unsealing status and result
-</td> </tr> <tr> <td>Unsupported Commands </td> <td> </td> <td>F0h – FFh </td>
+<td>0x01 </td> <td>0x8a </td> <td>O </td> <td>Get unsealing status and result
+</td> </tr> <tr> <td>Unsupported Commands </td> <td> </td> <td>0xf0 – 0xff </td>
 <td> </td> <td>Reserved commands that must be rejected by the device </td> </tr>
 </table>
 
@@ -1227,21 +1228,21 @@ returned as follows:
 <table> <tr> <td><strong>Error Code</strong> </td> <td><strong>Value</strong>
 </td> <td><strong>Description</strong> </td> <td><strong>Data</strong> </td>
 </tr> <tr> <td>No Error </td> <td>0h </td> <td>Success [Reserved in USB Type C
-<p> Authentication Specification] </td> <td>00h </td> </tr> <tr> <td>Invalid
-Request </td> <td>01h </td> <td>Invalidated data in the request </td> <td>00h
-</td> </tr> <tr> <td>Busy </td> <td>03h </td> <td>Device cannot response as it
-is busy processing other commands </td> <td>00h </td> </tr> <tr> <td>Unspecified
-</td> <td>04h </td> <td>Unspecified error occurred </td> <td>Vendor defined
-</td> </tr> <tr> <td>Reserved </td> <td>05h-EFh </td> <td>Reserved </td>
-<td>Reserved </td> </tr> <tr> <td>Invalid Checksum </td> <td>F0h </td>
+<p> Authentication Specification] </td> <td>0x00 </td> </tr> <tr> <td>Invalid
+Request </td> <td>0x01 </td> <td>Invalidated data in the request </td> <td>0x00
+</td> </tr> <tr> <td>Busy </td> <td>0x03 </td> <td>Device cannot response as it
+is busy processing other commands </td> <td>0x00 </td> </tr> <tr> <td>Unspecified
+</td> <td>0x04 </td> <td>Unspecified error occurred </td> <td>Vendor defined
+</td> </tr> <tr> <td>Reserved </td> <td>0x05-0xef </td> <td>Reserved </td>
+<td>Reserved </td> </tr> <tr> <td>Invalid Checksum </td> <td>0xf0 </td>
 <td>Invalid checksum </td> <td>Checksum </td> </tr> <tr> <td>Out of Order
-Message </td> <td>F1h </td> <td>EOM before SOM </td> <td>00h </td> </tr> <tr>
-<td>Authentication </td> <td>F2h </td> <td>Authentication not established </td>
-<td>00h </td> </tr> <tr> <td>Out of Sequence Window </td> <td>F3h </td>
-<td>Message received out of Sequence Window </td> <td>00h </td> </tr> <tr>
-<td>Invalid Packet Length </td> <td>F4h </td> <td>Packet received with
+Message </td> <td>0xf1 </td> <td>EOM before SOM </td> <td>0x00 </td> </tr> <tr>
+<td>Authentication </td> <td>0xf2 </td> <td>Authentication not established </td>
+<td>0x00 </td> </tr> <tr> <td>Out of Sequence Window </td> <td>0xf3 </td>
+<td>Message received out of Sequence Window </td> <td>0x00 </td> </tr> <tr>
+<td>Invalid Packet Length </td> <td>0xf4 </td> <td>Packet received with
 unexpected size </td> <td>Packet Length </td> </tr> <tr> <td>Message Overflow
-</td> <td>F5h </td> <td>Message exceeded maximum length </td> <td>Message Length
+</td> <td>0xf5 </td> <td>Message exceeded maximum length </td> <td>Message Length
 </td> </tr> </table>
 
 
@@ -1259,7 +1260,7 @@ This command gets the target firmware the version.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Area Index: <p> 00h = Entire Firmware <p> 01h =
+</td> </tr> <tr> <td>1 </td> <td>Area Index: <p> 0x00 = Entire Firmware <p> 0x01 =
 RIoT Core <p> Additional indexes are firmware specific </td> </tr> </table>
 
 
@@ -1447,7 +1448,7 @@ This command gets information about the target device.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Information Index: <p> 00h = Unique Chip
+</td> </tr> <tr> <td>1 </td> <td>Information Index: <p> 0x00 = Unique Chip
 Identifier <p> Additional indexes are firmware specific </td> </tr> </table>
 
 
@@ -1790,9 +1791,9 @@ Get the internal log information for the RoT.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1:4 </td> <td>Debug Log (01h) Length in bytes </td> </tr>
-<tr> <td>5:8 </td> <td>Attestation Log (02h) Length in bytes </td> </tr> <tr>
-<td>9:12 </td> <td>Tamper Log (03h) Length in bytes </td> </tr> </table>
+</td> </tr> <tr> <td>1:4 </td> <td>Debug Log (0x01) Length in bytes </td> </tr>
+<tr> <td>5:8 </td> <td>Attestation Log (0x02) Length in bytes </td> </tr> <tr>
+<td>9:12 </td> <td>Tamper Log (0x03) Length in bytes </td> </tr> </table>
 
 ## Get Log
 
@@ -1850,8 +1851,8 @@ Specification.
 
 
 <table> <tr> <td><strong>Offset</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Log entry start marker: <p> [7:4]: 0xC <p>
-[3:0]: Header format, 0xB per this specification.  </td> </tr> <tr> <td>2:3
+</td> </tr> <tr> <td>1 </td> <td>Log entry start marker: <p> [7:4]: 0x0c <p>
+[3:0]: Header format, 0x0b per this specification.  </td> </tr> <tr> <td>2:3
 </td> <td>Total length of the entry, including the header </td> </tr> <tr>
 <td>4:7 </td> <td>Unique entry identifier </td> </tr> </table>
 
@@ -1867,7 +1868,7 @@ within a single PMR </td> </tr> <tr> <td>13 </td> <td>Index of the PMR for the
 measurement </td> </tr> <tr> <td>14:15 </td> <td>Reserved, set to 0 </td> </tr>
 <tr> <td>16 </td> <td>Number of digests (1) </td> </tr> <tr> <td>17:19 </td>
 <td>Reserved, set to 0 </td> </tr> <tr> <td>20:21 </td> <td>Digest algorithm Id
-(0x0B, SHA256) </td> </tr> <tr> <td>22:53 </td> <td>SHA256 digest used to extend
+(0x0b, SHA256) </td> </tr> <tr> <td>22:53 </td> <td>SHA256 digest used to extend
 the measurement </td> </tr> <tr> <td>54:57 </td> <td>Measurement size (32) </td>
 </tr> <tr> <td>58:89 </td> <td>Measurement </td> </tr> </table>
 
@@ -1956,8 +1957,8 @@ Retrieve the reset state of the host processor being protected by Cerberus.
 
 
 <table> <tr> <td><strong>Payload</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>1 </td> <td>Host Reset State: <p> 00h – Host is running
-(out of reset) <p> 01h – Host is being held in reset <p> 02h – Host is not being
+</td> </tr> <tr> <td>1 </td> <td>Host Reset State: <p> 0x00 – Host is running
+(out of reset) <p> 0x01 – Host is being held in reset <p> 0x02 – Host is not being
 held in reset, but is not running </td> </tr> </table>
 
 ## Get Platform Firmware Manifest Id
@@ -2960,17 +2961,17 @@ Table 99 Commands
 <table> <tr> <td><strong>Register Name</strong> </td>
 <td><strong>Command</strong> </td> <td><strong>Length</strong> </td>
 <td><strong>R/W</strong> </td> <td><strong>Description</strong> </td> </tr> <tr>
-<td>Status </td> <td>30h </td> <td>2 </td> <td>R </td> <td>Command Status </td>
-</tr> <tr> <td>Firmware Version </td> <td>32h </td> <td>16 </td> <td>R/W </td>
+<td>Status </td> <td>0x30 </td> <td>2 </td> <td>R </td> <td>Command Status </td>
+</tr> <tr> <td>Firmware Version </td> <td>0x32 </td> <td>16 </td> <td>R/W </td>
 <td>Retrieve firmware version information </td> </tr> <tr> <td>Device Id </td>
-<td>33h </td> <td>8 </td> <td>R </td> <td>Retrieves Device Id </td> </tr> <tr>
-<td>Capabilities </td> <td>34h </td> <td>9 </td> <td>R </td> <td>Retrieves
+<td>0x33 </td> <td>8 </td> <td>R </td> <td>Retrieves Device Id </td> </tr> <tr>
+<td>Capabilities </td> <td>0x34 </td> <td>9 </td> <td>R </td> <td>Retrieves
 Device Capabilities </td> </tr> <tr> <td>Certificate Digest </td> <td>3C </td>
 <td>32 </td> <td>R </td> <td>SHA256 of Device Id Certificate </td> </tr> <tr>
 <td>Certificate </td> <td>3D </td> <td>4096 </td> <td>R/W </td> <td>Certificate
 from the AC-Rot </td> </tr> <tr> <td>Challenge </td> <td>3E </td> <td>32 </td>
 <td>W </td> <td>Nonce written by RoT </td> </tr> <tr> <td>Platform Configuration
-Register </td> <td>03h </td> <td>5Eh </td> <td>R </td> <td>Reads firmware
+Register </td> <td>0x03 </td> <td>0x5e </td> <td>R </td> <td>Reads firmware
 measurement, calculated with S Nonce </td> </tr> </table>
 
 ### Legacy Command Format
