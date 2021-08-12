@@ -2,47 +2,61 @@
   Style Guide
   - Make sure to wrap everything to 80 columns when possible.
 -->
+Project Cerberus: Firmware Challenge Specification
+=====
 
-# Project Cerberus: Firmware Challenge Specification
+Authors:
+- Bryan Kelly, Principal Firmware Engineering Manager, Microsoft
+- Christopher Weimer, Senior Firmware Engineer, Microsoft
+- Akram Hamdy, FirmwareEngineer, Microsoft
 
-**Author:** **Bryan Kelly**, Principal Firmware Engineering Manager, Microsoft
-**Christopher Weimer** Senior Firmware Engineer, Microsoft **Akram Hamdy**
-Firmware Engineer, Microsoft
+## Revision History
 
-# Revision History
+- v0.01 (2017-08-28)
+    - Initial draft.
+- v0.02 (2017-09-28)
+    - Add References section.
+- v0.03 (2017-10-28)
+    - Move message exchange from protocol to register based.
+- v0.04 (2018-12-02)
+    - Add MCTP Support and update session
+- v0.05 (2018-30-04)
+    - Incorporate Supplier feedback.
+- v0.06 (2018-15-10)
+    - Update Authentication flow.
+    - Change measurement to PMR and attestation integration.
+- v0.07 (2019-10-01)
+    - Change PMR naming to PM due to static requirements on extension.
+- v0.08 (2019-15-02)
+    - Add Firmware Recovery image update commands.
+    - Clarify Error Response.
+- v0.09 (2019-26-06) 
+    - Add Reset Configuration command. 
+    - Identify commands subject to the cryptographic timeout.
+- v0.10 (2019-05-08)
+    - Update Cerberus-defined MCTP message definition.
+- v0.11 (2019-21-10)
+    - Add detail on Mfg pairing for devices.
+    - Add commands to get RIoT, chip, and host reset information.
+- v0.12 (2019-27-12)
+    - Clarification regarding required and optional commands.
+- v0.13 (2020-17-03)
+    - Add commands to get manifest platform IDs and PMR measured data.
+    - Update unseal and device capabilities commands.
+    - Clarifications around command packet format.
+    - Add log formats.
+- v0.14 (2020-30-04)
+    - Update format of several commands, add extended update status.
+    - Clarifications around certificates.
+    - Add details about encrypted messages.
+- v0.15 (2020-22-05)
+    - Add unseal ECDH seed parameters.
+    - Define a range of reserved commands.
+- v1.00 (2020-19-08)
+    - Update session establishment and secure device binding.
+    - Add back Rq bit.
 
-<table> <tr> <td><strong>Date</strong> </td> <td><strong>Description</strong>
-</td> </tr> <tr> <td>28-08-2017 </td> <td>V0.01 - Initial Draft </td> </tr> <tr>
-<td>28-09-2017 </td> <td>V0.02 - Add References section </td> </tr> <tr>
-<td>28-10-2017 </td> <td>V0.03 - Move message exchange from protocol to register
-based </td> </tr> <tr> <td>02-12-2018 </td> <td>V0.04 – Add MCTP Support and
-update session </td> </tr> <tr> <td>04-30-2018 </td> <td>V0.05 – Incorporate
-Supplier feedback </td> </tr> <tr> <td>10-15-2018 </td> <td>V0.06 – Update
-Authentication flow.  Change measurement to PMR and attestation integration.
-</td> </tr> <tr> <td>01-10-2019 </td> <td>V0.07 – Change PMR naming to PM due to
-static requirements on extension.  </td> </tr> <tr> <td>02-15-2019 </td>
-<td>V0.08 – Add Firmware Recovery image update commands.  Clarify Error Response
-</td> </tr> <tr> <td>06-26-2019 </td> <td>V0.09 – Add Reset Configuration
-command.  Identify commands subject to the cryptographic timeout.  </td> </tr>
-<tr> <td>08-05-2019 </td> <td>V0.10 – Update Cerberus-defined MCTP message
-definition.  </td> </tr> <tr> <td>10-21-2019 </td> <td>V0.11 – Add detail on Mfg
-pairing for devices.  Add commands to get RIoT, chip, and host reset
-information.  </td> </tr> <tr> <td>12-27-2019 </td> <td>V0.12 – Clarification
-regarding required and optional commands.  </td> </tr> <tr> <td>03-17-2020 </td>
-<td>V0.13 – Add commands to get manifest platform IDs and PMR measured data.
-Update unseal and device capabilities commands.  Clarifications around command
-packet format.  Add log formats.  </td> </tr> <tr> <td>04-30-2020 </td>
-<td>V0.14 – Update format of several commands, add extended update status.
-Clarifications around certificates.  Add details about encrypted messages.
-</td> </tr> <tr> <td>05-22-2020 </td> <td>V0.15 – Add unseal ECDH seed
-parameters.  Define a range of reserved commands.  </td> </tr> <tr>
-<td>08-19-2020 </td> <td>V1.00 – Update session establishment and secure device
-binding.  Add back Rq bit.  </td> </tr> </table>
-
-
-
-
-© 2017 Microsoft Corporation.
+(c) 2017 Microsoft Corporation.
 
 As of November 1, 2017, the following persons or entities have made this
 Specification available under the Open Web Foundation Final Specification
