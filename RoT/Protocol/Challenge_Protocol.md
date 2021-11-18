@@ -425,26 +425,26 @@ Active RoT as Master.
 ## Protocol Format
 
 All MCTP transactions are based on the SMBus Block Write bus protocol.  The
-following table shows an MCTP encapsulated message; note that offsets are given
-in bits, rather than bytes.
+following table shows an MCTP encapsulated message.
 
-| Payload     | Description                            |
-|-------------|----------------------------------------|
-| 7:0         | I2C destination address.               |
-| 15:8        | Command code; must be `0x0f`.          |
-| 23:16       | Number of bytes in the packet payload. |
-| 31:24       | I2C source address.                    |
-| 35:32       | Reserved (should be zero).             |
-| 39:36       | MCTP Header version.                   |
-| 47:40       | Destination EID.                       |
-| 55:48       | Source EID.                            |
-| 56:56       | Start of message (SOM) flag.           |
-| 57:57       | End of message (EOM) flag.             |
-| 59:58       | Sequence number.                       |
-| 60:60       | Tag owner.                             |
-| 63:61       | Message tag.                           |
-| 64+N:64     | Packet payload.                        |
-| 64+N+8:64+N | PEC                                    |
+`message MCTP.Message`
+| Type           | Name             | Description                            |
+|----------------|------------------|----------------------------------------|
+| `b8`           | `i2c_dest`       | I2C destination address.               |
+| `0x0f`         | `command_code`   | Command code.                          |
+| `b8`           | `packet_len`     | Number of bytes in the packet payload. |
+| `b8`           | `i2c_src`        | I2C source address.                    |
+| `0b0000`       | `_`              | Reserved.                              |
+| `b4`           | `header_verison` | MCTP Header version.                   |
+| `b8`           | `dest_eid`       | Destination EID.                       |
+| `b8`           | `src_eid`        | Source EID.                            |
+| `b1`           | `som`            | Start of message (SOM) flag.           |
+| `b1`           | `eom`            | End of message (EOM) flag.             |
+| `b2`           | `seq_num`        | Sequence number.                       |
+| `b1`           | `tag_owner`      | Tag owner.                             |
+| `b3`           | `tag`            | Message tag.                           |
+| `[packet_len]` | `payload`        | Packet payload.                        |
+| `[8]`          | `pec`            | PEC                                    |
 
 A package should contain a minimum of 1 byte of payload, with the maximum not to
 exceed the negotiated MCTP Transmission Unit Size.  The byte count indicates the
@@ -481,6 +481,9 @@ The Management Component Transport Protocol (MCTP) Base Specification defines
 the MCTP packet header (refer to DSP0236 for field descriptions) as follows.
 Note that offsets are in bits, rather than bytes. This table corresponds to the
 data after bit `31` in the table above.
+
+<!-- NOTE: the `Variable` fields currently cannot be expressed in the table
+format. -->
 
 | Payload  | Description                  |
 |----------|------------------------------|
@@ -888,17 +891,19 @@ response to the MCTP "Get Vendor Defined Message Support" request:
 
 Messages from a PA-RoT to an AC-RoT will have the following format.
 This is embedded in the structure defined in Section 3.4.
-| Payload  | Description                              |
-|----------|------------------------------------------|
-| 0:0      | Integrity check flag.                    |
-| 7:1      | MCTP message type (always `0x7e`).       |
-| 23:8     | MCTP PCI Vendor ID (always `0x1414`).    |
-| 24:24    | Request type.                            |
-| 25:25    | Reserved (should be zero).               |
-| 26:26    | Set if encrypted (see below).            |
-| 31:27    | Reserved.                                |
-| 39:32    | Cerberus command byte.                   |
-| Variable | The command payload.                     |
+
+`message CerberusHeader`
+| Type      | Name                | Description                   |
+|-----------|---------------------|-------------------------------|
+| `b1`      | `integrity_check`   | Integrity check flag.         |
+| `0x7e`    | `mctp_message_type` | MCTP message type.            |
+| `0x1414`  | `mctp_pci_vendor`   | MCTP PCI Vendor ID.           |
+| `b1`      | `request_type`      | Request type.                 |
+| `0b0`     | `_`                 | Reserved.                     |
+| `b1`      | `is_encrypted`      | Set if encrypted (see below). |
+| `0b00000` | `_`                 | Reserved.                     |
+| `b8`      | `command_byte`      | Cerberus command byte.        |
+| `...`     | `payload`           | The command payload.          |
 
 The protocol header fields are to be included only in the first packet of a
 multiple packet MCTP message.  After reconstruction of the message body, the
@@ -923,18 +928,19 @@ vector in plaintext at the end of the message body.  The following table shows
 the body of an encrypted Cerberus message, with the encryption trailer. Note
 that offsets are given in bits, not bytes.
 
-| Payload   | Description                                                        |
-|-----------|--------------------------------------------------------------------|
-| 0:0       | Integrity check flag.                                              |
-| 7:1       | MCTP message type (always `0x7e`).                                 |
-| 23:8      | MCTP PCI Vendor ID (always `0x1414`).                              |
-| 24:24     | Request type.                                                      |
-| 25:25     | Reserved (should be zero).                                         |
-| 26:26     | Set if encrypted (always, in this case).                           |
-| 31:27     | Reserved.                                                          |
-| Variable  | Ciphertext; corresponds to the command byte and its payload above. |
-| N+15:N    | AES-GCM tag.                                                       |
-| N+31:N+15 | AES-GCM initialization vector.                                     |
+`message CerberusHeader`
+| Type      | Name                | Description                                |
+|-----------|---------------------|--------------------------------------------|
+| `b1`      | `integrity_check`   | Integrity check flag.                      |
+| `0x7e`    | `mctp_message_type` | MCTP message type.                         |
+| `0x1414`  | `mctp_pci_vendor`   | MCTP PCI Vendor ID.                        |
+| `b1`      | `request_type`      | Request type.                              |
+| `0b0`     | `_`                 | Reserved.                                  |
+| `0b1`     | `is_encrypted`      | Set if encrypted (always, in this case).   |
+| `0b00000` | `_`                 | Reserved.                                  |
+| `...`     | `ciphertext`        | Ciphertext; corresponds to the command byte and its payload above. |
+| `b16`     | `aead_tag`          | AES-GCM tag.                               |
+| `b16`     | `aead_iv`           | AES-GCM initialization vector.             |
 
 ## RoT Commands
 
@@ -1015,6 +1021,8 @@ A note on required messages:
 
 The following section describes the structures of the MCTP message body.
 
+<!-- Style note: structures pertinent to one message should have that message's
+  name as a namespace prefix; .Request and .Response should come first. -->
 
 ### Error Message
 
@@ -1024,55 +1032,60 @@ response whereby "No Error" code would indicate success.  The Message Tag,
 Sequence Number and Command match the response to the corresponding request.
 The Message Body is returned as follows:
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Error code  |
-| 2:5     | Error data  |
+`message Error.Response`
+| Type   | Name   | Description |
+|--------|--------|-------------|
+| `Code` | `code` | Error code  |
+| `[4]`  | `data` | Error data  |
 
-"Error code" is one of the following:
+`enum Error.Code`
+| Value  | Name               | Description                              |
+|--------|--------------------|------------------------------------------|
+| `0x00` | `success`          | Success.                                 |
+| `0x01` | `invalid_data`     | Invalidated data in the request          |
+| `0x03` | `busy`             | Device is busy processing other commands |
+| `0x04` | `unspecified`      | Vendor-defined error occurred            |
+| `0xf0` | `bad_checksum`     | Invalid checksum                         |
+| `0xf1` | `eom_before_som`   | EOM before SOM                           |
+| `0xf2` | `no_auth`          | Authentication not established           |
+| `0xf3` | `out_of_order`     | Message received out of Sequence Window  |
+| `0xf4` | `bad_packet_size`  | Packet received with unexpected size     |
+| `0xf5` | `bad_message_size` | Message exceeded maximum length          |
 
-
-    Table 9 Error Codes
-
-
-| Error Code             | Value | Description                              | Data           |
-|------------------------|-------|------------------------------------------|----------------|
-| No Error               | 0x00  | Success                                  | 0x00           |
-| Invalid Request        | 0x01  | Invalidated data in the request          | 0x00           |
-| Busy                   | 0x03  | Device is busy processing other commands | 0x00           |
-| Unspecified            | 0x04  | Unspecified error occurred               | Vendor defined |
-| Invalid Checksum       | 0xf0  | Invalid checksum                         | Checksum       |
-| Out of Order Message   | 0xf1  | EOM before SOM                           | 0x00           |
-| Authentication         | 0xf2  | Authentication not established           | 0x00           |
-| Out of Sequence Window | 0xf3  | Message received out of Sequence Window  | 0x00           |
-| Invalid Packet Length  | 0xf4  | Packet received with unexpected size     | Packet Length  |
-| Message Overflow       | 0xf5  | Message exceeded maximum length          | Message Length |
+<!-- Note: we do not use an enum type mapping because `data`'s size is not
+  dependent on the code. -->
+Unless otherwise specified, the `data` field should be interpreted as zero:
+- `unspecified`: `data` is vendor-defined.
+- `bad_checksum`: `data` should hold the expected checksum.
+- `bad_packet_size`: `data` is the offending packet length.
+- `bad_message_size`: `data` is the offending message length.
 
 If an explicit response is not defined for the command definitions in the
 following sections, the Error Message is the expected response with "No Error".
 The Error Message can occur as the response for any command that fails
 processing.
 
+
 ### Firmware Version
 
 This command gets the target firmware the version.
 
-#### Request
+`message FirmwareVersion.Request`
+| Type        | Name         | Description |
+|-------------|--------------|-------------|
+| `AreaIndex` | `area_index` | Area index. |
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Area Index  |
+`message FirmwareVersion.Response`
+| Type   | Name               | Description                                    |
+|--------|--------------------|------------------------------------------------|
+| `[32]` | `firmware_version` | Firmware Version Number; usually encoded as ASCII. |
 
-Area indexes are as follows:
-*   0x00: Entire Firmware
-*   0x01: RIoT Core
-*   Additional indexes are vendor-defined.
-
-#### Resposne
-
-| Payload | Description                     |
-|---------|---------------------------------|
-| 1:32    | Firmware Version Number (ASCII) |
+<!-- TODO: We cannot express this is an open enum. -->
+`enum FirmwareVersion.AreaIndex`
+| Value  | Name        | Description          |
+|--------|-------------|----------------------|
+| `0x00` | `all`       | The entire firmware. |
+| `0x01` | `riot_core` | The RIoT Core.       |
 
 
 ### Device Capabilities
@@ -1108,196 +1121,84 @@ additional considerations apply when determining appropriate maximum sizes:
     complex to do mechnaically. -->
 
 
-#### Request
+`message DeviceCapabilities.Request`
+| Type       | Name              | Description                   |
+|------------|-------------------|-------------------------------|
+| `b16`      | `max_message_len` | Maximum message payload size. |
+| `b16`      | `max_packet_len`  | Maximum packet payload size.  |
+| `Features` | `features`        | RoT features.                 |
 
-<table>
-    <tr>
-        <td> <strong>Payload</strong> </td>
-        <td><strong>Description</strong> </td>
-    </tr>
-    <tr>
-        <td>1:2 </td>
-        <td>Maximum Message Payload Size </td>
-    </tr>
-    <tr>
-        <td>3:4 </td>
-        <td>Maximum Packet Payload Size </td>
-    </tr>
-    <tr>
-        <td>5 </td>
-        <td>Mode:
-            <br> [7:6]
-            <br> 00 = AC-RoT
-            <br> 01 = PA-RoT
-            <br> 10 = External
-            <br> 11 = Reserved
-            <br> [5:4] Master/Slave
-            <br> 00 = Unknown
-            <br> 01 = Master
-            <br> 10 = Slave
-            <br> 11 = both master and slave
-            <br> [3] Reserved
-            <br> [2:0] Security
-            <br> 000 = None
-            <br> 001 = Hash/KDF
-            <br> 010 = Authentication [Certificate Auth]
-            <br> 100 = Confidentiality [AES] </td>
-    </tr>
-    <tr>
-        <td>6 </td>
-        <td>[7] PFM support
-            <br> [6] Policy Support
-            <br> [5] Firmware Protection
-            <br> [4-0] Reserved </td>
-    </tr>
-    <tr>
-        <td>7 </td>
-        <td>PK Key Strength:
-            <br> [7] RSA
-            <br> [6] ECDSA
-            <br> [5:3] ECC
-            <br> 000: None
-            <br> 001: 160bit
-            <br> 010: 256bit
-            <br> 100: Reserved
-            <br> [2:0] RSA:
-            <br> 000: None
-            <br> 001: RSA 2048
-            <br> 010: RSA 3072
-            <br> 100: RSA 4096 </td>
-    </tr>
-    <tr>
-        <td>8 </td>
-        <td>Encryption Key Strength:
-            <br> [7] ECC
-            <br> [6:3] Reserved
-            <br> [2:0] AES:
-            <br> 000: None
-            <br> 001: 128 bit
-            <br> 010: 256 bit
-            <br> 100: 384 bit </td>
-    </tr>
-</table>
+`message DeviceCapabilities.Response`
+| Type       | Name              | Description                                 |
+|------------|-------------------|---------------------------------------------|
+| `b16`      | `max_message_len` | Maximum message payload size.               |
+| `b16`      | `max_packet_len`  | Maximum packet payload size.                |
+| `Features` | `features`        | RoT features.                               |
+| `b8`       | `message_timeout` | Maximum message timeout in units of 10ms.   |
+| `b8`       | `crypto_timeout`  | Maximum cryptographic operation timeout in units of 100ms. |
 
-
-#### Response
-
-<table>
-    <tr>
-        <td><strong>Payload</strong> </td>
-        <td><strong>Description</strong> </td>
-    </tr>
-    <tr>
-        <td>1:2 </td>
-        <td>Maximum Message Payload Size </td>
-    </tr>
-    <tr>
-        <td>3:4 </td>
-        <td>Maximum Packet Payload Size </td>
-    </tr>
-    <tr>
-        <td>5 </td>
-        <td>Mode:
-            <br> [7:6]
-            <br> 00 = AC-RoT
-            <br> 01 = PA-RoT
-            <br> 10 = External
-            <br> 11 = Reserved
-            <br> [5:4] Master/Slave
-            <br> 00 = Unknown
-            <br> 01 = Master
-            <br> 10 = Slave
-            <br> 11 = both master and slave
-            <br> [3] Reserved
-            <br> [2:0] Security
-            <br> 000 = None
-            <br> 001 = Hash/KDF
-            <br> 010 = Authentication [Certificate Auth]
-            <br> 100 = Confidentiality [AES] </td>
-    </tr>
-    <tr>
-        <td>6 </td>
-        <td>[7] PFM support
-            <br> [6] Policy Support
-            <br> [5] Firmware Protection
-            <br> [4-0] Reserved </td>
-    </tr>
-    <tr>
-        <td>7 </td>
-        <td>PK Key Strength:
-            <br> [7] RSA
-            <br> [6] ECDSA
-            <br> [5:3] ECC
-            <br> 000: None
-            <br> 001: 160bit
-            <br> 010: 256bit
-            <br> 100: Reserved
-            <br> [2:0] RSA:
-            <br> 000: None
-            <br> 001: RSA 2048
-            <br> 010: RSA 3072
-            <br> 100: RSA 4096 </td>
-    </tr>
-    <tr>
-        <td>8 </td>
-        <td>Encryption Key Strength:
-            <br> [7] ECC
-            <br> [6:3] Reserved
-            <br> [2:0] AES:
-            <br> 000: None
-            <br> 001: 128 bit
-            <br> 010: 256 bit
-            <br> 100: 384 bit </td>
-    </tr>
-    <tr>
-        <td>9 </td>
-        <td>Maximum Message timeout: multiple of 10ms </td>
-    </tr>
-    <tr>
-        <td>10 </td>
-        <td>Maximum Cryptographic Message timeout: multiple of 100ms </td>
-    </tr>
-</table>
+`message DeviceCapabilities.Features`
+| Type      | Name                 | Description                               |
+|-----------|----------------------|-------------------------------------------|
+| `b1`      | `has_hashing`        | Whether hashing and KDF is available.     |
+| `b1`      | `has_auth`           | Whether authentication is available.      |
+| `b1`      | `has_aead`           | Whether AEAD-based confidentiality is available. |
+| `0b0`     | `_`                  | Reserved.                                 |
+| `BusRole` | `bus_role`           | The RoT's bus roles.                      |
+| `RotType` | `rot_type`           | Cerberus RoT types the device implements. |
+| `b5`      | `_`                  | Reserved.                                 |
+| `b1`      | `has_fw_protection`  | Whether this RoT supports firmware protection. |
+| `b1`      | `has_policy_support` | Whether this RoT supports policies.       |
+| `b1`      | `has_pfms`           | Whether this RoT supports PFMs.           |
+| `b1`      | `rsa2048`            | Whether 2048-bit RSA is supported.        |
+| `b1`      | `rsa3072`            | Whether 3072-bit RSA is supported.        |
+| `b1`      | `rsa4096`            | Whether 4096-bit RSA is supported.        |
+| `b1`      | `ecc160`             | Whether 160-bit ECC is supported.         |
+| `b1`      | `ecc256`             | Whether 256-bit ECC is supported.         |
+| `0b0`     | `_`                  | Reserved.                                 |
+| `b1`      | `has_ecdsa`          | Whether this RoT supports ECDSA keys.     |
+| `b1`      | `has_rsa`            | Whether this RoT supports RSA keys.       |
+| `b1`      | `aes128`             | Whether 128-bit AES is supported.         |
+| `b1`      | `aes256`             | Whether 256-bit AES is supported.         |
+| `b1`      | `aes384`             | Whether 384-bit AES is supported.         |
+| `b4`      | `_`                  | Reserved.                                 |
+| `b1`      | `has_ecc`            | Whether ECC is supported.                 |
 
 
 ### Device Id
 
-Eight bytes response.
+`message DeviceId.Request`
+| Type | Name | Description |
+|------|------|-------------|
 
-#### Request
-
-Empty body.
-
-### Response
-
-| Payload | Description              |
-|---------|--------------------------|
-| 1:2     | Vendor ID; LSB           |
-| 3:4     | Device ID; LSB           |
-| 5:6     | Subsystem Vendor ID; LSB |
-| 7:8     | Subsystem ID; LSB        |
+`message DeviceId.Response`
+| Type  | Name                  | Description               |
+|-------|-----------------------|---------------------------|
+| `b16` | `vendor_id`           | PCIe Vendor ID.           |
+| `b16` | `device_id`           | PCIe Device ID.           |
+| `b16` | `subsystem_vendor_id` | PCIe Subsystem Vendor ID. |
+| `b16` | `subsystem_id`        | PCIe Subsystem ID.        |
 
 
 ### Device Information
 
 This command gets information about the target device.
 
-#### Request
+`message DeviceInfo.Request`
+| Type    | Name    | Description        |
+|---------|---------|--------------------|
+| `Index` | `index` | Information index. |
 
-| Payload | Description       |
-|---------|-------------------|
-| 1       | Information Index |
+`message DeviceInfo.Response`
+| Type  | Name   | Description               |
+|-------|--------|---------------------------|
+| `...` | `data` | Requested identifier blob |
 
-
-Information indexes are as follows:
-*   0x00: Unique Chip Identifier.
-*   Additional indexes are vendor-defined.
-
-#### Response
-
-| Payload | Description               |
-|---------|---------------------------|
-| 1:N     | Requested identifier blob |
+<!-- TODO: We cannot express this is an open enum. -->
+`enum DeviceInfo.Index`
+| Value  | Name  | Description             |
+|--------|-------|-------------------------|
+| `0x00` | `uci` | Unique Chip Identigier. |
 
 
 ### Export CSR
@@ -1307,17 +1208,15 @@ Request.  The initial Certificate is self-signed, until CA signed and imported.
 Once the CA signed version of the certificate has been imported to the device,
 the self-signed certificate is replaced.
 
-#### Request
+`message ExportCSR.Request`
+| Type | Name   | Description             |
+|------|--------|-------------------------|
+| `b8` | `slot` | Certificate chain slot. |
 
-| Payload | Description        |
-|---------|--------------------|
-| 1       | Index: Default = 0 |
-
-#### Response
-
-| Payload | Description                 |
-|---------|-----------------------------|
-| 1:N     | Certificate Signing Request |
+`message ExportCSR.Response`
+| Type  | Name  | Description                 |
+|-------|-------|-----------------------------|
+| `...` | `csr` | Certificate Signing Request |
 
 
 ### Import Certificate
@@ -1338,19 +1237,18 @@ ensure the previous authentication step has completed before sending a new
 certificate.  The authentication status can be checked with the Get Certificate
 State command.
 
-#### Request
+`message ImportCert.Request`
+| Type    | Name   | Description                       |
+|---------|--------|-----------------------------------|
+| `Type`  | `type` | Certificate type.                 |
+| `[b16]` | `cert` | DER-encoded certificate contents. |
 
-| Payload | Description        |
-|---------|--------------------|
-| 1       | Type               |
-| 2:3     | Certificate Length |
-| 4:N     | Certificate        |
-
-
-Certificate types are as follows:
-*   0x00: Device Id Certificate
-*   0x01: Root CA Certificate
-*   0x02: Intermediate CA Certificate
+`enum ImportCert.Type`
+| Value  | Name           | Description                  |
+|--------|----------------|------------------------------|
+| `0x00` | `device_id`    | Owner-signed device ID cert. |
+| `0x01` | `root`         | Owner root CA cert.          |
+| `0x02` | `intermediate` | Owner intermediate CA cert.  |
 
 
 ### Get Certificate State
@@ -1359,21 +1257,23 @@ Determine the state of the certificate chain for signed certificates that have
 been sent to the device.  The request for this command contains no additional
 payload.
 
-#### Request
+`message GetCertState.Request`
+| Type | Name | Description |
+|------|------|-------------|
 
-Empty body.
+`message GetCertState.Response`
+| Type    | Name    | Description                                    |
+|---------|---------|------------------------------------------------|
+| `State` | `state` | The state of the chain.                        |
+| `[3]`   | `error` | Error details, if chain validation has failed. |
 
-#### Response
+`enum GetCertState.State`
+| Value  | Name                 | Description                                 |
+|--------|----------------------|---------------------------------------------|
+| `0x00` | `provisioned`        | A valid chain has been provisioned.         |
+| `0x01` | `not_provisioned`    | A valid chain has not yet been provisioned. |
+| `0x02` | `validation_pending` | The stored chain is being validated.        |
 
-| Payload | Description                                    |
-|---------|------------------------------------------------|
-| 1       | State                                          |
-| 2:4     | Error details, if chain validation has failed. |
-
-Possible states:
-*   0x00: A valid chain has been provisioned.
-*   0x01: A valid chain has not yet been provisioned.
-*   0x02: The stored chain is being validated.
 
 ### GET DIGESTS
 
@@ -1392,24 +1292,25 @@ when the requester and responder support multiple key exchange algorithms.
 Slots that do not contain a valid certificate chain will generate a response
 with 0 digests.  Payload byte 2 will indicate that no digests are returned.
 
-#### Request
 
-| Payload | Description                                                   |
-|---------|---------------------------------------------------------------|
-| 1       | Slot Number (0 to 7) of the target Certificate Chain to read. |
-| 2       | Key Exchange Algorithm                                        |
+`message GetDigests.Requests`
+| Type              | Name                | Description                        |
+|-------------------|---------------------|------------------------------------|
+| `b8`              | `slot`              | Slot Number (0 to 7) of the target Certificate Chain to read. |
+| `KeyExchangeAlgo` | `key_exchange_algo` | Key Exchange Algorithm.            |
 
-Potential key exchange algorithms are:
-*   0x00: None
-*   0x01: ECDH
 
-#### Response
+`message GetDigests.Response`
+| Type       | Name           | Description                                    |
+|------------|----------------|------------------------------------------------|
+| `0x01`     | `capabilities` | Capabilities field.                            |
+| `[32][b8]` | `digests`      | SHA256 digests of the certificates in the chain, starting from the root. |
 
-| Payload | Description                                                              |
-|---------|--------------------------------------------------------------------------|
-| 1       | Capabilities Field (always 0x01).                                        |
-| 2       | Number of digests returned.                                              |
-| 3:N     | SHA256 digests of the certificates in the chain, starting from the root. |
+`enum GetDigests.KeyExchangeAlgo`
+| Value  | Name   | Description                                         |
+|--------|--------|-----------------------------------------------------|
+| `0x00` | `none` | No key exchange is desired.                         |
+| `0x01` | `ecdh` | Elliptic-curve Diffe-Hellman exchange is requested. |
 
 
 ### GET CERTIFICATE
@@ -1420,50 +1321,45 @@ It follows closely the USB Type C Authentication Specification.
 If the device does not have a certificate for the requested slot or index, the
 certificate contents in the response will be empty.
 
-#### Request
+`message GetCert.Request`
+| Type  | Name         | Description                                           |
+|-------|--------------|-------------------------------------------------------|
+| `b8`  | `slot`       | Slot Number (0 to 7) of the target Certificate Chain to read. |
+| `b8`  | `cert_index` | Certificate to read, zero-indexed from the root Certificate. |
+| `b16` | `offset`     | Offset: offset in bytes from start of the Certificate to read. |
+| `b16` | `len`        | Length: number of bytes to read.                      |
 
-| Payload | Description                                                    |
-|---------|----------------------------------------------------------------|
-| 1       | Slot Number (0 to 7) of the target Certificate Chain to read.  |
-| 2       | Certificate to read, zero-indexed from the root Certificate.   |
-| 3:4     | Offset: offset in bytes from start of the Certificate to read. |
-| 5:6     | Length: number of bytes to read.                               |
-
-#### Resposne
-
-| Payload | Description                                           |
-|---------|-------------------------------------------------------|
-| 1       | Slot Number of the target Certificate Chain returned. |
-| 2       | Certificate index of the returned certificate         |
-| 3:N     | Requested contents of target Certificate Chain.       |
+`message GetCert.Response`
+| Type  | Name         | Description                                           |
+|-------|--------------|-------------------------------------------------------|
+| `b8`  | `slot`       | Slot Number of the target Certificate Chain returned. |
+| `b8`  | `cert_index` | Certificate index of the returned certificate         |
+| `...` | `cert_data`  | Requested contents of target Certificate Chain.       |
 
 
 ### CHALLENGE
 
 The PA-RoT will send this command providing the first nonce in the key exchange.
 
-#### Request
+`message Challenge.Request`
+| Type   | Name    | Description                                               |
+|--------|---------|-----------------------------------------------------------|
+| `b8`   | `slot`  | Slot Number (0 to 7) of the target Certificate Chain to read. |
+| `0x00` | `_`     | Reserved.                                                 |
+| `[32]` | `nonce` | Random nonce.                                             |
 
-| Payload | Description                                                   |
-|---------|---------------------------------------------------------------|
-| 1       | Slot Number (0 to 7) of the target Certificate Chain to read. |
-| 2       | Reserved                                                      |
-| 3:35    | Random nonce                                                  |
-
-#### Resposne
-
-| Payload | Description                                                        |
-|---------|--------------------------------------------------------------------|
-| 1       | Slot Number of the Certificate Chain used.                         |
-| 2       | Certificate slot mask                                              |
-| 3       | MinProtocolVersion supported by device                             |
-| 4       | MaxProtocolVersion supported by device                             |
-| 5:6     | Reserved                                                           |
-| 7:38    | Random nonce                                                       |
-| 39      | Number of components used to generate the PMR0 measurement         |
-| 40      | Length of PMR0 (L)                                                 |
-| 41:40+L | Value of PMR0 (Aggregated Firmware Digest)                         |
-| 41+L:N  | Signature over concatenated request and response message payloads. |
+`message Challenge.Response`
+| Type     | Name              | Description                                   |
+|----------|-------------------|-----------------------------------------------|
+| `b8`     | `slot`            | Slot Number of the Certificate Chain used.    |
+| `b8`     | `mask`            | Certificate slot mask.                        |
+| `b8`     | `min_version`     | MinProtocolVersion supported by device.       |
+| `b8`     | `max_version`     | MaxProtocolVersion supported by device.       |
+| `0x0000` | `_`               | Reserved.                                     |
+| `[32]`   | `nonce`           | Random nonce.                                 |
+| `b8`     | `pmr0_components` | Number of components used to generate the PMR0 measurement. |
+| `[b8]`   | `pmr0`            | Value of PMR0 (Aggregated Firmware Digest).   |
+| `...`    | `signature`       | Signature over concatenated request and response message payloads. |
 
 The firmware digests are measurements of the security descriptors and the
 firmware of the target components.  This firmware measurement data does not
@@ -1492,109 +1388,106 @@ will be used with the KDF.
 When closing an established session (Key Type 2), the response will be
 transmitted in plain text if the session was successfully terminated.
 
-#### Request
-
-| Payload | Description                                          |
-|---------|------------------------------------------------------|
-| 1       | Key Type                                             |
-| 2:N     | Key data.  Format is defined by the type of request. |
-
-Possible key types:
-*   0x00: Session key.
-*   0x01: Paired-Key HMAC.
-*   0x02: Destroy Session.
-
-##### Session Key Data
-
-| Payload | Description                                |
-|---------|--------------------------------------------|
-| 1       | HMAC Algorithm                             |
-| 2:N     | ASN.1 DER encoded ECC public key (`PKreq`) |
-
-Possible HMAC Hash Algorithms:
-*   0x00: SHA-256
-*   0x01: SHA-384
-*   0x02: SHA-512
-
 The HMAC type specified in this message applies to all HMAC operations for the
 established session, including any subsequent pairing messages.  Since session
 keys (`K_S` and `K_M`) are 256-bit keys, they will always be generated using
 SHA-256 regardless of the type of HMAC used for key exchange messages.
 
-##### Paired-Key HMAC Data
+`message KeyExchange.Request`
+| Type             | Name       | Description |
+|------------------|------------|-------------|
+| `KeyType`        | `key_type` | Key type.   |
+| `Data(key_type)` | `key_data` | Key data.   |
 
-| Payload | Description                               |
-|---------|-------------------------------------------|
-| 1:2     | Length in bytes of the pairing key        |
-| 3:N     | HMAC of the pairing key: `HMAC(K_M, K_P)` |
+`enum KeyExchange.Request.Data(KeyExchange.KeyType)`
+| Type                             | Name          |
+|----------------------------------|---------------|
+| `KeyExchange.SessionKey.Request` | `session_key` |
+| `KeyExchange.PairingKey.Request` | `pairing_key` |
+| `KeyExchange.Destroy.Request`    | `destroy`     |
 
-##### Destroy Session Data
+`message KeyExchange.SessionKey.Request`
+| Type       | Name          | Description                        |
+|------------|---------------|------------------------------------|
+| `HashType` | `hmac_digest` | HMAC hash algorithm.               |
+| `...`      | `pk_req`      | ASN.1 DER-encoded ECDH public key. |
 
-| Payload | Description                           |
-|---------|---------------------------------------|
-| 1:N     | HMAC of session key: `HMAC(K_M, K_S)` |
+`message KeyExchange.PairingKey.Request`
+| Type  | Name               | Description                                |
+|-------|--------------------|--------------------------------------------|
+| `b16` | `key_len`          | Length in bytes of the pairing key.        |
+| `...` | `pairing_key_hmac` | HMAC of the pairing key: `HMAC(K_M, K_P)`. |
 
-#### Response
+`message KeyExchange.Destroy.Request`
+| Type  | Name           | Description                                |
+|-------|----------------|--------------------------------------------|
+| `...` | `session_hmac` | HMAC of the session key: `HMAC(K_M, K_S)`. |
 
-| Payload | Description                                               |
-|---------|-----------------------------------------------------------|
-| 1       | Key Type from request                                     |
-| 2:N     | Response data.  Format is defined by the type of request. |
+`message KeyExchange.Response`
+| Type             | Name       | Description |
+|------------------|------------|-------------|
+| `KeyType`        | `key_type` | Key type.   |
+| `Data(key_type)` | `key_data` | Key data.   |
 
-##### Session Key Data 
+`enum KeyExchange.Response.Data(KeyExchange.KeyType)`
+| Type                              | Name          |
+|-----------------------------------|---------------|
+| `KeyExchange.SessionKey.Response` | `session_key` |
+| `b0`                              | `pairing_key` |
+| `b0`                              | `destroy`     |
 
-| Payload | Description                                           |
-|---------|-------------------------------------------------------|
-| 1       | Reserved.  Set to 0.                                  |
-| 2:3     | Key Length                                            |
-| 4:N     | DER-encoded ECC public key (`PKresp`)                 |
-| N+1:N+2 | Signature Length                                      |
-| N+3:M   | Signature over session keys: `SIGN(PKreq || PKresp)`  |
-| M+1:M+2 | HMAC Length                                           |
-| M+3:H   | HMAC of the Alias certificate: `HMAC(KM, alias_cert)` |
+`message KeyExchange.SessionKey.Response`
+| Type    | Name         | Description                                         |
+|---------|--------------|-----------------------------------------------------|
+| `0x00`  | `_`          | Reserved.                                           |
+| `[b16]` | `pk_resp`    | ASN.1 DER-encoded ECDH public key.                  |
+| `[b16]` | `signature`  | Signature over the session keys: `SIGN(pk_req || pk_resp)`. |
+| `[b16]` | `alias_hmac` | HMAC of the Alias certificate: `HMAC(K_M, alias_cert)`. |
 
-##### Paired-Key HMAC Data
+`enum KeyExchange.KeyType`
+| Value  | Name          | Description                                  |
+|--------|---------------|----------------------------------------------|
+| `0x00` | `session_key` | Establishing an initial session key.         |
+| `0x01` | `pairing_key` | Requesting a switch to a paired-key session. |
+| `0x02` | `destroy`     | Ends a session.                              |
 
-Empty body.
-
-##### Destory Session Data
-
-Empty body.
+`enum KeyExcahange.HashType`
+| Value  | Name     | Description |
+|--------|----------|-------------|
+| `0x00` | `sha256` | SHA-256.    |
+| `0x01` | `sha384` | SHA-384.    |
+| `0x02` | `sha512` | SHA-512.    |
 
 
 ### Session Sync
 
-Check the state of an encrypted session.
-The message must always be encrypted.
+Check the state of an encrypted session. The message must always be encrypted.
 
-#### Request.
+`message SessionSync.Request`
+| Type  | Name    | Description    |
+|-------|---------|----------------|
+| `[4]` | `nonce` | Random number. |
 
-| Payload | Description             |
-|---------|-------------------------|
-| 1:4     | Random number (`RNreq`) |
-
-#### Response.
-
-| Payload | Description                           |
-|---------|---------------------------------------|
-| 1:N     | HMAC of the nonce:  `HMAC(KM, RNreq)` |
+`message SessionSync.Response`
+| Type  | Name   | Description                           |
+|-------|--------|---------------------------------------|
+| `...` | `hmac` | HMAC of the nonce: `HMAC(K_M, nonce)` |
 
 
 ### Get Log Info
 
 Get the internal log information for the RoT.
 
-#### Request
+`message GetLogInfo.Request`
+| Type | Name | Description |
+|------|------|-------------|
 
-Empty body.
-
-#### Response
-
-| Payload | Description                            |
-|---------|----------------------------------------|
-| 1:4     | Debug Log (0x01) Length in bytes       |
-| 5:8     | Attestation Log (0x02) Length in bytes |
-| 9:12    | Tamper Log (0x03) Length in bytes      |
+`message GetLogInfo.Response`
+| Type  | Name                | Description                             |
+|-------|---------------------|-----------------------------------------|
+| `b32` | `debug_bytes`       | Debug Log (0x01) length in bytes.       |
+| `b32` | `attestation_bytes` | Attestation Log (0x02) length in bytes. |
+| `b32` | `tamper_bytes`      | Tamper Log (0x03) length in bytes.      |
 
 
 ### Get Log
@@ -1604,24 +1497,23 @@ Debug Log, which contains Cerberus application information and machine state.
 The Attestation measurement log, this log format is like the TCG log, and the
 Tamper log.  It is not possible to clear or reset the tamper counter.
 
-#### Request
+`message GetLog.Request`
+| Type      | Name       | Description                        |
+|-----------|------------|------------------------------------|
+| `LogType` | `log_type` | Log type.                          |
+| `b32`     | `offset`   | Offset in bytes from start of log. |
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Log Type    |
-| 2:5     | Offset      |
+`message GetLog.Response`
+| Type  | Name       | Description          |
+|-------|------------|----------------------|
+| `...` | `contents` | Contents of the log. |
 
-Possible log types:
-*   0x01: Debug Log.
-*   0x02: Attestation Log.
-*   0x03: Tamper Log.
-
-#### Response 
-
-| Payload | Description          |
-|---------|----------------------|
-| 1:N     | Contents of the log. |
-
+`enum GetLog.LogType`
+| Value  | Name              | Description      |
+|--------|-------------------|------------------|
+| `0x01` | `debug_log`       | Debug Log.       |
+| `0x02` | `attestation_log` | Attestation Log. |
+| `0x03` | `tamper_log`      | Tamper Log.      |
 
 Length determined by end of log, or packet size based on device capabilities see
 section: 6.7 Device Capabilities.  If response spans multiple MCTP messages, end
@@ -1640,27 +1532,28 @@ Specification.
 
 Log Entry Header:
 
-| Offset | Description                                                                             |
-|--------|-----------------------------------------------------------------------------------------|
-| 1      | Log entry start marker:  [7:4]: 0x0c [3:0]: Header format, 0x0b per this specification. |
-| 2:3    | Total length of the entry, including the header                                         |
-| 4:7    | Unique entry identifier                                                                 |
+`message GetLog.Header`
+| Type  | Name            | Description                                       |
+|-------|-----------------|---------------------------------------------------|
+| `0xc` | `start_marker`  | Log entry start marker.                           |
+| `0xb` | `header_format` | Header format for this specification.             |
+| `b16` | `len`           | Total length of the entry, including this header. |
+| `b32` | `id`            | Unique entry identifier.                          |
 
-Attestation Entry format:
-
-| Offset | Description                                    |
-|--------|------------------------------------------------|
-| 1:7    | Log Entry Header                               |
-| 8:11   | TCG Event Type                                 |
-| 12     | Measurement index within a single PMR.         |
-| 13     | Index of the PMR for the measurement.          |
-| 14:15  | Reserved, set to 0.                            |
-| 16     | Number of digests                              |
-| 17:19  | Reserved, set to 0.                            |
-| 20:21  | Digest algorithm Id (`0x0b`, SHA-256)          |
-| 22:53  | SHA-256 digest used to extend the measurement. |
-| 54:57  | Measurement length                             |
-| 58:89  | Measurement                                    |
+`message GetLog.AttestationEntry`
+| Type     | Name               | Description                                  |
+|----------|--------------------|----------------------------------------------|
+| `Header` | `log_entry_header` | Log entry header.                            |
+| `b32`    | `tcg_event`        | TCG event type.                              |
+| `b8`     | `measurement_idx`  | Measurement index within a single PMR.       |
+| `b8`     | `pmr_index`        | Index of the PMR for the measurement.        |
+| `0x0000` | `_`                | Reserved.                                    |
+| `b8`     | `digest_num`       | Number of digests.                           |
+| `0x0000` | `_`                | Reserved.                                    |
+| `0x000b` | `digest_type`      | Digest algorithm ID. (Fixed to SHA-256).     |
+| `[32]`   | `digest`           | SHA-256 digest used to extend the measurement. |
+| `b32`    | `measurement_len`  | Measurement length.                          |
+| `[32]`   | `measurement`      | Measurement.                                 |
 
 #### Debug Log Format
 
@@ -1671,26 +1564,26 @@ exposed log information.  A recommended entry format is provided here.
 
 Suggested Debug Entry format:
 
-| Offset | Description                      |
-|--------|----------------------------------|
-| 1:7    | Log Entry Header                 |
-| 8:9    | Format version of the entry.     |
-| 10     | Severity of the entry.           |
-| 11     | ID of the source of the message. |
-| 12     | ID for the entry message type.   |
-| 13:16  | Message specific argument.       |
-| 17:20  | Message specific argument.       |
+`message GetLog.DebugEntry`
+| Type     | Name               | Description                         |
+|----------|--------------------|-------------------------------------|
+| `Header` | `log_entry_header` | Log entry header.                   |
+| `b16`    | `format_version`   | Format version for the debug entry. |
+| `b8`     | `severity`         | Severity of the entry.              |
+| `b8`     | `source`           | ID of the source of the message.    |
+| `b8`     | `entry_type`       | ID of the entry type.               |
+| `[4]`    | `param1`           | Message-specific argument.          |
+| `[4]`    | `param2`           | Message-specific argument.          |
+
 
 ### Clear Debug/Attestation Log
 
-Clear the log in the RoT. Note that the tamper log cannot be cleared.
+Clears the log in the RoT. Note that the tamper log cannot be cleared.
 
-#### Request
-
-| Payload | Description |
-|---------|-------------|
-| 1       | Log Type    |
-
+`message ClearLog.Request`
+| Type             | Name       | Description                                  |
+|------------------|------------|----------------------------------------------|
+| `GetLog.LogType` | `log_type` | Log type to clear; cannot be the tamper log. |
 
 Note: in clearing the attestation log, it is automatically recreated using
 current measurements.
@@ -1709,84 +1602,88 @@ While this command is intended to support small pieces of that data that should
 fit into a single MCTP message, an offset parameter is included in the request
 to support scenarios where the required data is too large.
 
-#### Request
 
-| Payload | Description                   |
-|---------|-------------------------------|
-| 1       | Platform Measurement Register |
-| 2       | Entry Index                   |
-| 3:6     | Offset                        |
+`message GetAttestationData.Request`
+| Type  | Name          | Description                          |
+|-------|---------------|--------------------------------------|
+| `b8`  | `pmr_index`   | Platform Measurement Register index. |
+| `b8`  | `entry_index` | Entry index within the PMR.          |
+| `b32` | `offset`      | Byte offset within the entry.        |
 
-#### Response
-
-| Payload | Description        |
-|---------|--------------------|
-| 1:N     | The measured data. |
+`message GetAttestationData.Response`
+| Type  | Name          | Description        |
+|-------|---------------|--------------------|
+| `...` | `measurement` | The measured data. |
 
 
 ### Get Host State
 
 Retrieve the reset state of the host processor being protected by Cerberus.
 
+`message GetHostState.Request`
+| Type | Name      | Description       |
+|------|-----------|-------------------|
+| `b8` | `port_id` | Port ID to query. |
 
-#### Request
+`message GetHostState.Response`
+| Type         | Name          | Description       |
+|--------------|---------------|-------------------|
+| `ResetState` | `reset_state` | Host reset state. |
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Port Id     |
+`enum GetHostState.ResetState`
+| Value  | Name      | Description                                |
+|--------|-----------|--------------------------------------------|
+| `0x00` | `running` | Host is running.                           |
+| `0x01` | `reset`   | Host is in reset.                          |
+| `0x02` | `unknown` | Host is neither running nor held in reset. |
 
-#### Response
-| Payload | Description      |
-|---------|------------------|
-| 1       | Host Reset State |
-
-Possible states:
-*   0x00 - Host is running.
-*   0x01 - Host is held in reset.
-*   0x02 - Host is not running, nor held in reset.
 
 ### Get PFM Id
 
 Retrieves PFM identifiers.
 
-#### Request
+`message PFM.GetId.Request`
+| Type                  | Name         | Description             |
+|-----------------------|--------------|-------------------------|
+| `b8`                  | `port_id`    | Port the PFM describes. |
+| `Manifest.Region`     | `pfm_region` | PFM region to query.    |
+| `Manifest.Identifier` | `id`         | Identifier returned.    |
+<!-- There isn't a way to specify a default value for `id`. -->
 
-| Payload      | Description                                                  |
-|--------------|--------------------------------------------------------------|
-| 1            | Port Id                                                      |
-| 2            | PFM Region:  0x00 = Active, 0x01 = Pending                   |
-| 3 (optional) | Identifier:  0x00 = Version Id (default), 0x01 = Platform Id |
+`message PFM.GetId.Response`
+| Type  | Name    | Description                        |
+|-------|---------|------------------------------------|
+| `b8`  | `valid` | Whether the PFM is valid (0 or 1). |
+| `...` | `id`    | The requested ID value.            |
 
-#### Response
+`enum Manifest.Region`
+| Value  | Name      | Description                      |
+|--------|-----------|----------------------------------|
+| `0x00` | `active`  | The active PFM.                  |
+| `0x01` | `pending` | The pending PFM if there is one. |
 
-| Payload | Description              |
-|---------|--------------------------|
-| 1       | PFM Valid (0x00 or 0x01) |
-| 2:5     | PFM Version Id           |
-
-| Payload | Description                              |
-|---------|------------------------------------------|
-| 1       | PFM Valid (0 or 1)                       |
-| 2:N     | PFM Platform Id as null-terminated ASCII |
+`enum Manifest.Identifier`
+| Value  | Name          | Description                        |
+|--------|---------------|------------------------------------|
+| `0x00` | `version_id`  | The version in the PFM.            |
+| `0x01` | `platform_id` | The Platform ID string in the PFM. |
 
 
-### Get PFM Supported Firmware 
+### Get PFM Supported Firmware
 
-#### Request
+`message PFM.GetSupportedFW.Request`
+| Type              | Name         | Description                |
+|-------------------|--------------|----------------------------|
+| `b8`              | `port_id`    | Port ID the PFM describes. |
+| `Manifest.Region` | `pfm_region` | PFM region to query.       |
+| `u32`             | `offset`     | Offset in bytes.           |
 
-| Payload | Description                               |
-|---------|-------------------------------------------|
-| 1       | Port Id                                   |
-| 2       | PFM Region: 0x00 = Active, 0x01 = Pending |
-| 3:6     | Offset                                    |
-
-#### Response
-
-| Payload | Description               |
-|---------|---------------------------|
-| 1       | PFM Valid (0x00 or 0x01)  |
-| 2:5     | PFM Version Id            |
-| 6:N     | PFM supported FW versions |
+`message PFM.GetSupportedFW.Response`
+| Type  | Name       | Description                        |
+|-------|------------|------------------------------------|
+| `b8`  | `valid`    | Whether the PFM is valid (0 or 1). |
+| `[4]` | `id`       | The PFM's version.                 |
+| `...` | `versions` | The supported FW versions.         |
 
 If response spans multiple MCTP messages, end of response will be determined by
 an MCTP packet which has payload less than maximum payload supported by both
@@ -1798,30 +1695,28 @@ boundary, the responder should send back an extra packet with zero payload.
 
 Provisions RoT for incoming PFM.
 
-#### Request
+`message PFM.Prepare.Request`
+| Type  | Name         | Description                        |
+|-------|--------------|------------------------------------|
+| `b8`  | `port_id`    | Port ID the PFM describes.         |
+| `u32` | `total_size` | Total size of the update in bytes. |
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Port Id     |
-| 2:5     | Total size  |
 
 #### Update PFM
 
 The flash descriptor structure describes the regions of flash for the device.
 
-#### Request
+`message PFM.Update.Request`
+| Type  | Name      | Description                |
+|-------|-----------|----------------------------|
+| `b8`  | `port_id` | Port ID the PFM describes. |
+| `...` | `payload` | The next chunk of data.    |
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Port Id     |
-| 2:N     | PFM Payload |
-
-PFM payload includes PFM signature and monotonic forward only Id.  PFM signature
-is verified upon receipt of all PFM payloads.  PFMs are activated upon the
-activation command.  Note if a system is rebooted after receiving a PFM, the
+The PFM payload includes a signature and monotonic forward only Id.  The PFM
+signature is verified upon receipt of all PFM payloads.  PFMs are activated upon
+the activation command.  Note if a system is rebooted after receiving a PFM, the
 PFM is atomically activated.  To activate before reboot, issue the Activate PFM
 command.
-
 
 ## Activate PFM
 
@@ -1830,12 +1725,17 @@ committing immediately, flash reads and writes should be suspended when this
 command is issued.  The RoT will master the SPI bus and verify the newly updated
 PFM.  This command can only follow a valid PFM update.
 
-#### Request
+`message PFM.Activate.Request`
+| Type                  | Name         | Description                           |
+|-----------------------|--------------|---------------------------------------|
+| `b8`                  | `port_id`    | Port ID the PFM describes.            |
+| `Manifest.Activation` | `activation` | Activation strategy for the manifest. |
 
-| Payload | Description                                         |
-|---------|-----------------------------------------------------|
-| 1       | Port Id                                             |
-| 2       | Activation:  0x00 = Reboot only, 0x01 = Immediately |
+`enum Manifest.Activation`
+| Value  | Name        | Description           |
+|--------|-------------|-----------------------|
+| `0x00` | `reboot`    | Activate on reboot.   |
+| `0x01` | `immediate` | Activate immediately. |
 
 If reboot only has been issued, the option for "Immediately" committing the PFM
 is not available until a new PFM is updated.
@@ -1845,47 +1745,37 @@ is not available until a new PFM is updated.
 
 Retrieves the Component Firmware Manifest Id
 
-#### Request
+`message CFM.GetId.Request`
+| Type                  | Name         | Description          |
+|-----------------------|--------------|----------------------|
+| `Manifest.Region`     | `pfm_region` | CFM region to query. |
+| `Manifest.Identifier` | `id`         | Identifier returned. |
 
-| Payload      | Description                                                  |
-|--------------|--------------------------------------------------------------|
-| 1            | Port Id                                                      |
-| 2            | CFM Region:  0x00 = Active, 0x01 = Pending                   |
-| 3 (optional) | Identifier:  0x00 = Version Id (default), 0x01 = Platform Id |
-
-#### Response
-
-| Payload | Description              |
-|---------|--------------------------|
-| 1       | CFM Valid (0x00 or 0x01) |
-| 2:5     | CFM Version Id           |
-
-| Payload | Description                              |
-|---------|------------------------------------------|
-| 1       | CFM Valid (0 or 1)                       |
-| 2:N     | CFM Platform Id as null-terminated ASCII |
+`message CFM.GetId.Response`
+| Type  | Name    | Description                        |
+|-------|---------|------------------------------------|
+| `b8`  | `valid` | Whether the CFM is valid (0 or 1). |
+| `...` | `id`    | The requested ID value.            |
 
 
 ### Prepare CFM
 
 Provisions RoT for incoming Component Firmware Manifest.
 
-#### Request
-
-| Payload | Description |
-|---------|-------------|
-| 1:5     | Total size  |
+`message CFM.Prepare.Request`
+| Type  | Name         | Description                        |
+|-------|--------------|------------------------------------|
+| `u32` | `total_size` | Total size of the update in bytes. |
 
 
 ### Update CFM
 
 The flash descriptor structure describes the regions of flash for the device.
 
-#### Request
-
-| Payload | Description |
-|---------|-------------|
-| 1:N     | CFM Payload |
+`message CFM.Update.Request`
+| Type  | Name      | Description             |
+|-------|-----------|-------------------------|
+| `...` | `payload` | The next chunk of data. |
 
 The CFM payload includes CFM signature and monotonic forward only Id.  CFM
 signature is verified upon receipt of all CFM payloads.  CFMs are activated
@@ -1900,30 +1790,26 @@ Upon valid CFM update, the update command seals the CFM committal method.  The
 RoT will master I2C and attest Components in the Platform Configuration Data
 against the CFM.
 
-#### Request
-
-| Payload | Description                                         |
-|---------|-----------------------------------------------------|
-| 1       | Activation:  0x00 = Reboot only, 0x01 = Immediately |
+`message CFM.Activate.Request`
+| Type                  | Name         | Description                           |
+|-----------------------|--------------|---------------------------------------|
+| `Manifest.Activation` | `activation` | Activation strategy for the manifest. |
 
 
 ### Get CFM Component IDs
 
-#### Request
+`message CFM.GetSupportedFW.Request`
+| Type              | Name         | Description          |
+|-------------------|--------------|----------------------|
+| `Manifest.Region` | `pfm_region` | CFM region to query. |
+| `u32`             | `offset`     | Offset in bytes.     |
 
-| Payload | Description                                |
-|---------|--------------------------------------------|
-| 1       | CFM Region: 0x00 = Active,  0x01 = Pending |
-| 2:5     | Offset                                     |
-
-
-#### Response
-
-| Payload | Description                 |
-|---------|-----------------------------|
-| 1       | CFM Valid (0x00 or 0x01)    |
-| 2:5     | CFM Version Id              |
-| 6:N     | CFM supported component IDs |
+`message CFM.GetSupportedFW.Response`
+| Type  | Name       | Description                        |
+|-------|------------|------------------------------------|
+| `b8`  | `valid`    | Whether the CFM is valid (0 or 1). |
+| `[4]` | `id`       | The CFM's version.                 |
+| `...` | `versions` | The supported component IDs.       |
 
 If response spans multiple MCTP messages, end of response will be determined by
 an MCTP packet which has payload less than maximum payload supported by both
@@ -1935,45 +1821,35 @@ boundary, the responder should send back an extra packet with zero payload.
 
 Retrieves the PCD Id.
 
-#### Request
+`message PCD.GetId.Request`
+| Type                  | Name | Description          |
+|-----------------------|------|----------------------|
+| `Manifest.Identifier` | `id` | Identifier returned. |
 
-| Payload      | Description                                                 |
-|--------------|-------------------------------------------------------------|
-| 1 (optional) | Identifier: 0x00 = Version Id (default), 0x01 = Platform Id |
-
-#### Response
-
-| Payload | Description              |
-|---------|--------------------------|
-| 1       | PCD Valid (0x00 or 0x01) |
-| 2:5     | PCD Version Id           |
-
-| Payload | Description                              |
-|---------|------------------------------------------|
-| 1       | PCD Valid (0x00 or 0x01)                 |
-| 2:N     | PCD Platform Id as null-terminated ASCII |
+`message PCD.GetId.Response`
+| Type  | Name    | Description                        |
+|-------|---------|------------------------------------|
+| `b8`  | `valid` | Whether the PCD is valid (0 or 1). |
+| `...` | `id`    | The requested ID value.            |
 
 
 ### Prepare PCD
 
 Provisions RoT for incoming Platform Configuration Data.
 
-#### Request
-
-| Payload | Description |
-|---------|-------------|
-| 1:4     | Total size  |
-
+`message PCD.Prepare.Request`
+| Type  | Name         | Description                        |
+|-------|--------------|------------------------------------|
+| `u32` | `total_size` | Total size of the update in bytes. |
 
 ### Update PCD
 
 The flash descriptor structure describes the regions of flash for the device.
 
-#### Request
-
-| Payload | Description |
-|---------|-------------|
-| 1:N     | PCD Payload |
+`message PCD.Update.Request`
+| Type  | Name      | Description             |
+|-------|-----------|-------------------------|
+| `...` | `payload` | The next chunk of data. |
 
 
 The PCD payload includes PCD signature and monotonic forward only Id.  PCD
@@ -1985,123 +1861,69 @@ the activation command.  Note if a system is rebooted after receiving a PCD.
 
 Upon valid PCD update, the activate command seals the PCD committal.
 
-#### Request
-
-Empty body.
+`message PCD.Activate.Request`
+| Type | Name | Description |
+|------|------|-------------|
 
 
 ### Platform Configuration
 
 The following table describes the Platform Configuration Data Structure.
 
-<!-- TODO: convert this to a proper table -->
-<table>
-    <tr>
-        <td><strong>Payload</strong> </td>
-        <td><strong>Description</strong> </td>
-    </tr>
-    <tr>
-        <td>1:3 </td>
-        <td>Platform Configuration Data Id </td>
-    </tr>
-    <tr>
-        <td>4:5 </td>
-        <td>Length </td>
-    </tr>
-    <tr>
-        <td>6 </td>
-        <td>Policy Count </td>
-    </tr>
-    <tr>
-        <td>7:N </td>
-        <td>Each AC-RoT has 1 entry.
-            The Configuration Data determines the feature
-            enablement and attestation
-            <br>
-            <table>
-                <tr>
-                    <td>Byte </td>
-                    <td>Description </td>
-                </tr>
-                <tr>
-                    <td>1 </td>
-                    <td>Device Id </td>
-                </tr>
-                <tr>
-                    <td>4 </td>
-                    <td>Channel </td>
-                </tr>
-                <tr>
-                    <td>5 </td>
-                    <td>Slave Address </td>
-                </tr>
-                <tr>
-                    <td>6 </td>
-                    <td>[7:5] Threshold Count
-                        <br> [4] Power Control
-                        <br> 0 = Disabled
-                        <br> 1 = Enabled
-                        <br> [3] Debug Enabled
-                        <br> 0 = Disabled
-                        <br> 1 = Enabled
-                        <br> [2] Auto Recovery
-                        <br> 0 = Disabled
-                        <br> 1 = Enabled
-                        <br> [1] Policy Active
-                        <br> 0 = Disabled
-                        <br> 1 = Enabled
-                        <br> [0] Threshold Active
-                        <br> 0 = Disabled
-                        <br> 1 = Enabled </td>
-                </tr>
-                <tr>
-                    <td>7 </td>
-                    <td>Power Ctrl Index </td>
-                </tr>
-                <tr>
-                    <td>8 </td>
-                    <td>Failure Action </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-    <tr>
-        <td>N:N </td>
-        <td>Signature of payload </td>
-    </tr>
-</table>
+`message PCD.Structure`
+| Type         | Name         | Description                             |
+|--------------|--------------|-----------------------------------------|
+| `[4]`        | `version_id` | The PCD version ID.                     |
+| `u16`        | `len`        | The length of the PCD.                  |
+| `Policy[b8]` | `policies`   | The policies in the PCD.                |
+| `...`        | `signature`  | Signature over the contents of the PCD. |
+
+`message PCD.Policy`
+| Type            | Name                | Description |
+|-----------------|---------------------|-------------|
+| `b32`           | `device_id`         |             |
+| `b8`            | `channel`           |             |
+| `b8`            | `address`           |             |
+| `b1`            | `threshold_active`  |             |
+| `b1`            | `policy_active`     |             |
+| `b1`            | `auto_recovery`     |             |
+| `b1`            | `debug_enabled`     |             |
+| `b1`            | `power_control`     |             |
+| `0b000`         | `_`                 |             |
+| `b8`            | `power_control_idx` |             |
+| `FailureAction` | `failure_action`    |             |
+
+`enum PCD.FailureAction`
+| Value  | Name                 | Description |
+|--------|----------------------|-------------|
+| `0x00` | `platform_defined`   |             |
+| `0x01` | `report_only`        |             |
+| `0x02` | `automatic_recovery` |             |
+| `0x03` | `power_control`      |             |
 
 The Power Control Index informs the PA-RoT of the index assigned to power
 sequence the Component.  This informs the PA-RoT which control register needs
 to be asserted in the platform power sequencer.
-
-Possible failure actions:
-*   0x00: Platform defined.
-*   0x01: Report only.
-*   0x02: Automatic recovery.
-*   0x03: Power control.
 
 
 ### Prepare Firmware Update
 
 Provisions RoT for incoming firmware update.
 
-#### Request
-
-| Payload | Description |
-|---------|-------------|
-| 1:4     | Total size  |
+`message Firmware.Prepare.Request`
+| Type  | Name         | Description                        |
+|-------|--------------|------------------------------------|
+| `u32` | `total_size` | Total size of the update in bytes. |
 
 
 ### Update Firmware
 
 The flash descriptor structure describes the regions of flash for the device.
 
-#### Request
-
-| Payload | Description                                |
-|---------|--------------------------------------------|
-| 1:N     | Firmware Update payload, header signature. |
+`message Firmware.Update.Request`
+| Type  | Name      | Description             |
+|-------|-----------|-------------------------|
+| `...` | `payload` | The next chunk of data. |
 
 
 ### Update Status
@@ -2110,27 +1932,27 @@ The Update Status reports the update payload status.  The update status will be
 status for the last operation that was requested.  This status will remain the
 same until another operation is performed or Cerberus is reset.
 
-#### Request
+`message UpdateStatus.Request`
+| Type         | Name          | Description                                   |
+|--------------|---------------|-----------------------------------------------|
+| `UpdateType` | `update_type` | The update type to query.                     |
+| `b8`         | `port_id`     | The port ID associated with this update, if any. |
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Update Type |
-| 2       | Port Id     |
+`message UpdateStatus.Response`
+| Type  | Name     | Description                                               |
+|-------|----------|-----------------------------------------------------------|
+| `[4]` | `status` | The status of the update; see the Firmware Update specification for details. |
 
-Possible update type:
-*   0x00: Firmware
-*   0x01: PFM
-*   0x02: CFM
-*   0x03: PCD
-*   0x04: Host Firmware
-*   0x05: Recovery Firmware
-*   0x06: Reset Configuration
-
-#### Response
-
-| Payload | Description                                                    |
-|---------|----------------------------------------------------------------|
-| 1:4     | Update Status.  See firmware update specification for details. |
+`enum UpdateStatus.UpdateType`
+| Value  | Name                | Description                   |
+|--------|---------------------|-------------------------------|
+| `0x00` | `firmware`          | An RoT firmware update.       |
+| `0x01` | `pfm`               | A PFM update.                 |
+| `0x02` | `cfm`               | A CFM update.                 |
+| `0x03` | `pcd`               | A PCD update.                 |
+| `0x04` | `host_firmware`     | The host's firmware update.   |
+| `0x05` | `recovery_firmware` | RoT recovery image update.    |
+| `0x06` | `reset_config`      | A reset configuration update. |
 
 
 ### Extended Update Status
@@ -2140,28 +1962,17 @@ remaining number of update bytes expected.  The update status will be status for
 the last operation that was requested.  This status will remain the same until
 another operation is performed or Cerberus is reset.
 
-#### Request
+`message ExtendedUpdateStatus.Request`
+| Type                      | Name          | Description                      |
+|---------------------------|---------------|----------------------------------|
+| `UpdateStatus.UpdateType` | `update_type` | The update type to query.        |
+| `b8`                      | `port_id`     | The port ID associated with this update, if any. |
 
-| Payload | Description |
-|---------|-------------|
-| 1       | Update Type |
-| 2       | Port Id     |
-
-Possible update type:
-*   0x00: Firmware
-*   0x01: PFM
-*   0x02: CFM
-*   0x03: PCD
-*   0x04: Host Firmware
-*   0x05: Recovery Firmware
-*   0x06: Reset Configuration
-
-#### Response
-
-| Payload | Description                                                    |
-|---------|----------------------------------------------------------------|
-| 1:4     | Update Status.  See firmware update specification for details. |
-| 5:8     | Expected update bytes remaining.                               |
+`message ExtendedUpdateStatus.Response`
+| Type  | Name              | Description                                      |
+|-------|-------------------|--------------------------------------------------|
+| `[4]` | `status`          | The status of the update; see the Firmware Update specification for details. |
+| `u32` | `bytes_remaining` | Expected update bytes remaining.                 |
 
 
 ### Activate Firmware Update
@@ -2170,9 +1981,9 @@ Alerts Cerberus that sending of update bytes is complete, and that verification
 of update should start.  This command has no payload, the ERROR response zero is
 expected.
 
-#### Request
-
-Empty body.
+`message Firmware.Activate.Request`
+| Type | Name | Description |
+|------|------|-------------|
 
 
 ### Reset Configuration
@@ -2201,24 +2012,22 @@ following behavior:
 If authorization is not required, or the request is sent with a signed token, a
 standard error response will be returned indicating the status.
 
-#### Request
+`message ResetConfig.Request`
+| Type      | Name          | Description                                      |
+|-----------|---------------|--------------------------------------------------|
+| `ResetOp` | `operation`   | Type of reset operation to request.              |
+| `...`     | `authz_token` | Device-specific authorization token, signed with a PFM key. |
 
-| Payload | Description                                                          |
-|---------|----------------------------------------------------------------------|
-| 1       | Type of reset operation to request.                                  |
-| 2:N     | (Optional) Device-specific authorization token, signed with PFM key. |
+`enum ResetConfig.ResetOp`
+| Value  | Name              | Description                                     |
+|--------|-------------------|-------------------------------------------------|
+| `0x00` | `erase_manifests` | Revert the device to unprotected bypass state by erasing all PFMs and CFMs. |
+| `0x01` | `factory_reset`   | Erase all configuration data except for imported certificates. |
 
-Possible reset types:
-*   0x00: Revert the device into the unprotected (bypass) state by erasing all
-    PFMs and CFMs.
-*   0x01: Perform a factory reset by removing all configuration.  This does not
-    include signed device certificates.
-
-#### Response
-
-| Payload | Description                         |
-|---------|-------------------------------------|
-| 1:N     | Device-specific authorization token |
+`message ResetConfig.Response`
+| Type  | Name          | Description                          |
+|-------|---------------|--------------------------------------|
+| `...` | `authz_token` | Device-specific authorization token. |
 
 
 ### Get Configuration Ids
@@ -2226,22 +2035,19 @@ Possible reset types:
 This command retrieves PFM Ids, CFM Ids, PCD Id, and signed digest of request
 nonce and response ids.
 
-#### Request
-
-| Payload | Description  |
-|---------|--------------|
-| 1:32    | Random Nonce |
-
-#### Response
-
-| Payload                 | Description                 |
-|-------------------------|-----------------------------|
-| 1:32                    | Random Nonce                |
-| 33                      | Number of PFM Ids (P)       |
-| 34                      | Number of CFM Ids (C)       |
-| 35:(P*4 + C*4 + 4) (V') | PFM, CFM, PCD Version IDs   |
-| V'+1:M                  | PFM, CFM, PCD Platfomrm IDs |
-| M+1:SIGN                | `SIGN(request || response)` |
+<!-- Currently cannot express `platform_id`s; it's not quite specified how to
+  separate it into separate IDs; two `...`s in a row is actually forbidden. -->
+`message GetConfigIDs.Request`
+| Type             | Name           | Description                  |
+|------------------|----------------|------------------------------|
+| `[32]`           | `nonce`        | Random nonce.                |
+| `b8`             | `pfm_count`    | Number of PFM IDs.           |
+| `b8`             | `cfm_count`    | Number of PFM IDs.           |
+| `[4][pfm_count]` | `pfm_ids`      | The PFM Version IDs.         |
+| `[4][cfm_count]` | `cfm_ids`      | The CFM Version IDs.         |
+| `[4]`            | `pcd_id`       | The PCD Version ID.          |
+| `...`            | `platform_ids` | The Platform IDs.            |
+| `...`            | `signature`    | `SIGN(request || response)`. |
 
 
 ### Recover Firmware
@@ -2249,36 +2055,32 @@ nonce and response ids.
 Start the firmware recovery process for the device.  Not all devices will
 support all types of recovery.  The implementation is device specific.
 
-#### Request
-
-| Payload | Description                                                        |
-|---------|--------------------------------------------------------------------|
-| 1       | Port Id                                                            |
-| 2       | Firmware image to use: 0x00 = Exit Recovery, 0x01 = Enter Recovery |
-
+`message RecoverFirmware.Request`
+| Type | Name             | Description                                 |
+|------|------------------|---------------------------------------------|
+| `b8` | `port_id`        | The port to begin recovery for.             |
+| `b8` | `enter_recovery` | Whether to enter recovery mode, or exit it. |
 
 ### Prepare Recovery Image
 
 Provisions RoT for incoming Recovery Image for Port.
 
-#### Requests
-
-| Payload | Description |
-|---------|-------------|
-| 1       | Port Id     |
-| 2:5     | Total size  |
+`message RecoveryImage.Prepare.Request`
+| Type  | Name         | Description                        |
+|-------|--------------|------------------------------------|
+| `b8`  | `port_id`    | Port ID of the device.             |
+| `u32` | `total_size` | Total size of the update in bytes. |
 
 
 ### Update Recovery Image
 
 The flash descriptor structure describes the regions of flash for the device.
 
-#### Request
-
-| Payload | Description            |
-|---------|------------------------|
-| 1       | Port Id                |
-| 2:N     | Recovery Image Payload |
+`message RecoveryImage.Update.Request`
+| Type  | Name      | Description             |
+|-------|-----------|-------------------------|
+| `b8`  | `port_id` | Port ID of the device.  |
+| `...` | `payload` | The next chunk of data. |
 
 
 ### Activate Recovery Image
@@ -2287,29 +2089,27 @@ Signals recovery image has been completely sent and verification of the image
 should start.  Once the image has been verified, it can be used for host
 firmware recovery.
 
-### Request
-
-| Payload | Description |
-|---------|-------------|
-| 1       | Port Id     |
+`message RecoveryImage.Activate.Request`
+| Type | Name      | Description            |
+|------|-----------|------------------------|
+| `b8` | `port_id` | Port ID of the device. |
 
 
 ### Get Recovery Image Id
 
 Retrieves the recovery image identifiers.
 
-#### Request
+`message RecoveryImage.GetId.Request`
+| Type                  | Name      | Description            |
+|-----------------------|-----------|------------------------|
+| `b8`                  | `port_id` | Port ID of the device. |
+| `Manifest.Identifier` | `id`      | Identifier returned.   |
+<!-- There isn't a way to specify a default value for `id`. -->
 
-| Payload      | Description                                                 |
-|--------------|-------------------------------------------------------------|
-| 1            | Port Id                                                     |
-| 2 (optional) | Identifier: 0x00 = Version Id (default), 0x01 = Platform Id |
-
-#### Response
-
-| Payload | Description                                         |
-|---------|-----------------------------------------------------|
-| 1:N     | Recovery Image Platform Id as null-terminated ASCII |
+`message RecoveryImage.GetId.Response`
+| Type  | Name | Description             |
+|-------|------|-------------------------|
+| `...` | `id` | The requested ID value. |
 
 
 ### Get Platform Measurement Register
@@ -2327,21 +2127,18 @@ that was run to boot the device.  For ease of attestation, PMR0 is intended to
 only contain static information.  If variable data will also be measured, these
 measurements should be exposed through PMR1-2.
 
-#### Request
+`message GetPMR.Request`
+| Type   | Name        | Description                        |
+|--------|-------------|------------------------------------|
+| `b8`   | `pmr_index` | The index of the PMR to read from. |
+| `[32]` | `nonce`     | A random nonce.                    |
 
-| Payload | Description                 |
-|---------|-----------------------------|
-| 1       | Platform Measurement Number |
-| 2:33    | Random Nonce                |
-
-#### Response
-
-| Payload | Description                 |
-|---------|-----------------------------|
-| 1:32    | Random Nonce                |
-| 33      | Measurement length (L)      |
-| 34:33+L | Platform Measurement Value  |
-| 34+L:N  | `SIGN(request ++ response)` |
+`message GetPMR.Response`
+| Type   | Name    | Description     |
+|--------|---------|-----------------|
+| `[32]` | `nonce` | A random nonce. |
+[`[b8]`| `pmr_value` | The contents of the PMR. |
+|`...` | `signature` | `SIGN(request || response)`. |
 
 PMR1-4 are cleared on component reset.  PMR0 is cleared and re-built on Cerberus
 reset.
@@ -2354,145 +2151,102 @@ error.  Only SHA2 is supported for measurement extension.  SHA1 and SHA3 are
 not applicable.  Note:  The measurement can only be updated over an
 authenticated and secured channel.
 
-#### Reqyest
-
-| Payload | Description                 |
-|---------|-----------------------------|
-| 1       | Platform Measurement Number |
-| 2:N     | Measurement Extension       |
+`message UpdatePMR.Request`
+| Type  | Name        | Description                     |
+|-------|-------------|---------------------------------|
+| `b8`  | `pmr_index` | The index of the PMR to extend. |
+| `...` | `data`      | The data to extend by.          |
 
 
 ### Reset Counter
 
 Provides Cerberus and Component Reset Counter since power-on.
 
-#### Request
+`message ResetCounter.Request`
+| Type      | Name      | Description                |
+|-----------|-----------|----------------------------|
+| `Counter` | `counter` | The counter type.          |
+| `b8`      | `port_id` | The port ID of the device. |
 
-| Payload | Description        |
-|---------|--------------------|
-| 1       | Reset Counter Type |
-| 2       | Port Id            |
+`message ResetCounter.Response`
+| Type  | Name          | Description                    |
+|-------|---------------|--------------------------------|
+| `b16` | `reset_count` | The number of resets recorded. |
 
-Possible reset counter types:
-*   0x00: Local Device
-*   0x01: Protected External Devices (if applicable).
-    These does not include external AC-RoTs that are challenged by the device.
-*   Other values are vendor-defined.
-
-#### Response
-
-| Payload | Description |
-|---------|-------------|
-| 1:2     | Reset Count |
+`enum ResetCounter.Counter`
+| Value  | Name              | Description                                     |
+|--------|-------------------|-------------------------------------------------|
+| `0x00` | `local_device`    | A local device.                                 |
+| `0x01` | `external_device` | A protected external device, not including external AC-RoTs challenged by the device. |
+<!-- NOTE: we cannot specify an open enum yet. -->
 
 
-### Message Unseal 
+### Message Unseal
 
 This command starts unsealing an attestation message.  The ciphertext is limited
 to what can fit in a single message along with the other pieces necessary for
 unsealing.
 
-#### Request
+`message Unseal.Request`
+| Type                    | Name          | Description                        |
+|-------------------------|---------------|------------------------------------|
+| `SeedType`              | `seed_type`   | The seed for the decryption key.   |
+| `HashType`              | `hash_type`   | The hash to use for the HMAC.      |
+| `b3`                    | `_`           | Reserved.                          |
+| `SeedParams(seed_type)` | `seed_params` | Additional parameters for the seed.|
+| `[b16]`                 | `seed`        | Seed data.                         |
+| `[b16]`                 | `ciphertext`  | Encrypted, sealed messaged.        |
+| `[64]`                  | `pmr0_policy` | Sealing value for PMR0. Unused bytes should be zeroed. |
+| `[64]`                  | `pmr1_policy` | Sealing value for PMR1. Unused bytes should be zeroed. |
+| `[64]`                  | `pmr2_policy` | Sealing value for PMR2. Unused bytes should be zeroed. |
+| `[64]`                  | `pmr3_policy` | Sealing value for PMR3. Unused bytes should be zeroed. |
+| `[64]`                  | `pmr4_policy` | Sealing value for PMR4. Unused bytes should be zeroed. |
 
-<!-- TODO: make this a proper table. -->
-<table>
-    <tr>
-        <td><strong>Payload</strong> </td>
-        <td><strong>Description</strong> </td>
-    </tr>
-    <tr>
-        <td>1 </td>
-        <td>[7:5] Reserved
-            <br> [4:2] HMAC Type:
-            <br> 000 – SHA256
-            <br> [1:0] Seed Type:
-            <br> 00 – RSA: Seed is encrypted with an RSA public key
-            <br> 01 – ECDH: Seed is an ECC public key, ASN.1/DER encoded </td>
-    </tr>
-    <tr>
-        <td>2 </td>
-        <td>Additional Seed Parameters
-            <br> RSA:
-            <br> [7:3] Reserved
-            <br> [2:0] Padding Scheme:
-            <br> 000 – PKCS#1 v1.5
-            <br> 001 – OAEP using SHA1
-            <br> 010 – OAEP using SHA256
-            <br> ECDH:
-            <br> [7:1] Reserved
-            <br> [0]: Seed Processing:
-            <br> 0 – No additional processing. Raw ECDH output is the seed.
-            <br> 1 – Seed is a SHA256 hash of the ECDH output. </td>
-    </tr>
-    <tr>
-        <td>3:4 </td>
-        <td>Seed Length (S) </td>
-    </tr>
-    <tr>
-        <td>5:4+S (S') </td>
-        <td>Seed </td>
-    </tr>
-    <tr>
-        <td>S'+1:S'+2 </td>
-        <td>Cipher Text Length (C) </td>
-    </tr>
-    <tr>
-        <td>S'+3:S'+2+C (C') </td>
-        <td>Cipher Text </td>
-    </tr>
-    <tr>
-        <td>C'+1:C'+2 </td>
-        <td>HMAC Length (H) </td>
-    </tr>
-    <tr>
-        <td>C'+3:C'+2+H (H') </td>
-        <td>HMAC </td>
-    </tr>
-    <tr>
-        <td>H'+1:H'+64 (P0') </td>
-        <td>PMR0 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
-    </tr>
-    <tr>
-        <td>P0'+1:P0'+64 (P1') </td>
-        <td>PMR1 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
-    </tr>
-    <tr>
-        <td>P1'+1:P1'+64 (P2') </td>
-        <td>PMR2 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
-    </tr>
-    <tr>
-        <td>P2'+1:P2'+64 (P3') </td>
-        <td>PMR3 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
-    </tr>
-    <tr>
-        <td>P3'+1:P3'+64 </td>
-        <td>PMR4 Sealing, 0's to ignore. Unused bytes are first and must be set to 0. </td>
-    </tr>
-</table>
+`enum Unseal.SeedType`
+| Value  | Name   | Description                                    |
+|--------|--------|------------------------------------------------|
+| `0b00` | `rsa`  | Seed is encrypted with an RSA public key.      |
+| `0b01` | `ecdh` | Seed is an ECDH public key, ASN.1 DER-encoded. |
+
+`enum Unseal.SeedData(Unseal.SeedKind)`
+| Type              | Name   |
+|-------------------|--------|
+| `SeedParams.RSA`  | `rsa`  |
+| `SeedParams.ECDH` | `ecdh` |
+
+`message Unseal.SeedParams.RSA`
+| Type            | Name             | Description                    |
+|-----------------|------------------|--------------------------------|
+| `PaddingScheme` | `padding_scheme` | The RSA padding scheme to use. |
+| `b7`            | `_`              | Reserved.                      |
+
+`enum Unseal.SeedParams.PaddingScheme`
+| Value   | Name          | Description        |
+|---------|---------------|--------------------|
+| `0b000` | `pkcs1`       | PKCS#1 v1.5        |
+| `0b001` | `oeap_sha1`   | OEAP with SHA-1.   |
+| `0b010` | `oeap_sha256` | OEAP with SHA-256. |
+
+`message Unseal.SeedParams.ECDH`
+| Type | Name        | Description                                             |
+|------|-------------|---------------------------------------------------------|
+| `b1` | `hash_seed` | Whether the actual seed is a SHA-256 hash of the raw seed value. |
+| `b7` | `_`         | Reserved.                                               |
 
 
 ### Message Unseal Result
 
 This command retrieves the current status of an unsealing process.
 
-#### Request
+`message UnsealResult.Request`
+| Type | Name | Description |
+|------|------|-------------|
 
-Empty body.
-
-#### Response
-
-| Payload | Description      |
-|---------|------------------|
-| 1:4     | Unsealing status |
-
-| Payload | Description           |
-|---------|-----------------------|
-| 1:4     | Unsealing status      |
-| 5:6     | Encryption Key Length |
-| 7:N     | Encryption Key        |
-
-The Seal/Unseal flow is described in the Cerberus Attestation Integration
-specification.
+`message UnsealResult.Response`
+| Type    | Name               | Description                  |
+|---------|--------------------|------------------------------|
+| `b32`   | `unsealing_status` | Unsealing status.            |
+| `[b16]` | `unsealed_key`     | The unsealed encryption key. |
 
 
 # Platform Active RoT (PA-RoT)
@@ -2730,10 +2484,18 @@ register is issued between writing the challenge nonce and reading the
 Measurement.  The delay time for deriving the Measurement must comply with the
 Capabilities command.
 
-| Payload | Description                                               |
-|---------|-----------------------------------------------------------|
-| 1       | Status: 0x00 = Complete, 0x01 = In Progress, 0x02 = Error |
-| 2       | Error Data or Zero                                        |
+`message SMBUS.Status`
+| Type   | Name         | Description          |
+|--------|--------------|----------------------|
+| `Code` | `code`       | The status code.     |
+| `b8`   | `error_data` | Optional error data. |
+
+`enum SMBUS.Status.Code`
+| Value  | Name          | Description |
+|--------|---------------|-------------|
+| `0x00` | `complete`    |             |
+| `0x01` | `in_progress` |             |
+| `0x02` | `error`       |             |
 
 <!-- NOTE: all of the table references below are broken and ened to be replaced
      with proper anchor links. -->
@@ -2775,9 +2537,10 @@ present in the reduced challenge
 
 The SMBUS write command writes a nonce for measurement freshness.
 
-| Payload | Description                           |
-|---------|---------------------------------------|
-| 1:32    | Random 32 byte nonce chosen by PA-RoT |
+`message SMBUS.Certificate`
+| Type   | Name    | Description   |
+|--------|---------|---------------|
+| `[32]` | `nonce` | Random nonce. |
 
 #### Measurement
 
@@ -2785,11 +2548,11 @@ The SMBUS read command that reads the signed measurement with the nonce from the
 hallenge above.  The PA-RoT must poll the Status register for completion after
 issuing the Challenge and before reading the Measurement.
 
-| Payload | Description                          |
-|---------|--------------------------------------|
-| 1       | Length (L) of following hash digest. |
-| 2:33    | `H(Challenge Nonce ** H(PMR0))`      |
-| 34:N    | Signature of HASH [2:33]             |
+`message SMBUS.Measurement`
+| Type   | Name        | Description                 |
+|--------|-------------|-----------------------------|
+| `[b8]` | `hash`      | `Hash(nonce || Hash(PMR0))` |
+| `...`  | `signature` | Signature over `hash`.      |
 
 
 # References
