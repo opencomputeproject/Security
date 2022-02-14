@@ -15,7 +15,7 @@ Authors:
 ## Revision History
 
 - v0.01 (2018-10-18)
-    - Initial draft.
+  - Initial draft.
 
 # Summary
 
@@ -383,16 +383,16 @@ boundaries.  For example:
 ### Manifest Header
 
 `bitfield Manifest.Header`
-| Type            | Name               | Description                                                        |
-|-----------------|--------------------|--------------------------------------------------------------------|
+| Type            | Name               | Description                           |
+|-----------------|--------------------|---------------------------------------|
 | `16`            | `total_length`     | Total length of all data in the manifest, including the signature. |
-| `16`            | `manifest_type`    | Identifier indicating the type of manifest.                        |
+| `16`            | `manifest_type`    | Identifier indicating the type of manifest. |
 | `32`            | `version_id`       | Version identifier for the manifest.  The version ID is a monotonically increasing value, preventing rollback to earlier manifest versions. |
-| `16`            | `signature_length` | Length of the signature appended to the end of the manifest data.  |
-| `PublicKeyType` | `public_key_type`  | The type of public key used to generate the manifest signature.    |
-| `KeyStrength`   | `key_strength`     | Key strength used to generate the manifest signature.              |
-| `HashType`      | `hash_type`        | Hash algorithm used to generate the manifest signature.            |
-| `0x00`          | `_`                | Reserved.                                                          |
+| `16`            | `signature_length` | Length of the signature appended to the end of the manifest data. |
+| `PublicKeyType` | `public_key_type`  | The type of public key used to generate the manifest signature. |
+| `KeyStrength`   | `key_strength`     | Key strength used to generate the manifest signature. |
+| `HashType`      | `hash_type`        | Hash algorithm used to generate the manifest signature. |
+| `0x00`          | `_`                | Reserved.                             |
 
 `enum Manifest.PublicKeyType`
 | Value   | Name    | Description            |
@@ -417,26 +417,26 @@ boundaries.  For example:
 ### Manifest Table of Contents
 
 `bitfield Manifest.TOC.Header`
-| Type        | Name           | Description                          |
-|-------------|----------------|--------------------------------------|
-| `8`         | `entry_count`  | The number of entries in the table.  |
+| Type        | Name           | Description                                   |
+|-------------|----------------|-----------------------------------------------|
+| `8`         | `entry_count`  | The number of entries in the table.           |
 | `8`         | `hash_count`   | The number of entries in the table that have an associated hash.  It is not required that all entries have a hash. |
 | `00000b`    | `_`            | Padding for the unused HashType bits.  This must be 0. |
 | `HashType`  | `hash_type`    | Specifies the type of hash added for table validation.  This is also the type of hash used to generate individual element hashes. |
-| `0x00`      | `_`            | Reserved.                            |
+| `0x00`      | `_`            | Reserved.                                     |
 
 Each element within the manifest must have an entry in the Table of Contents.
 The entries must be in order based on position within the manifest.
 
 `bitfield Manifest.TOC.Entry`
-| Type   | Name       | Description                                 |
-|--------|------------|---------------------------------------------|
-| `8`    | `type_id`  | An identifier indicating the element type.  |
+| Type   | Name       | Description                                            |
+|--------|------------|--------------------------------------------------------|
+| `8`    | `type_id`  | An identifier indicating the element type.             |
 | `8`    | `parent`   | A Type ID representing the parent for this element.  The first element preceding this element with the matching Type ID is the parent element.  If the element has no parent, this will be set to `0xff`. |
 | `8`    | `format`   | Format version of the data contained in the element.  New format versions must be backwards compatible with older versions.  Fields cannot be moved or reordered. |
 | `8`    | `hash_id`  | Identifier specifying the index in the hash table for this element.  An element hash is optional.  A hash ID equal to or greater than the total number of hashes in the table indicates there is no hash for the element.  It is recommended that a hash ID of `0xff` should be used for this purpose. |
 | `16`   | `offset`   | The offset from the start of the manifest where the element data is located. |
-| `16`   | `length`   | Length of the element data.                 |
+| `16`   | `length`   | Length of the element data.                            |
 
 After the element entries, there is a hash table for element validation.  This
 table is an array of equal sized hashes, whose length is determined by the hash
@@ -469,7 +469,7 @@ on performance requirements and memory capabilities.
    accesses are quicker.  Element accesses would not need to revalidate the
    Table of Contents and would only need to validate element data.
 
-      This approach may not work on memory constrained devices since a Table of
+   This approach may not work on memory constrained devices since a Table of
    Contents with 255 entries and 255 hashes using SHA2-512 would require a cache
    of about 18k of memory.
 
@@ -486,11 +486,11 @@ are limited to 255 bytes and do not have any terminator stored in the manifest.
 There are a base set of elements defined that are common across all manifest
 types.  Specific manifests can define additional types.
 
-| Type ID        | Element Type        | Format | Top-Level | Singleton | Description                                             |
-|----------------|---------------------|--------|-----------|-----------|---------------------------------------------------------|
+| Type ID        | Element Type        | Format | Top-Level | Singleton | Description |
+|----------------|---------------------|--------|-----------|-----------|-------------|
 | `0x00`         | `Platform ID`       |   1    |     X     |     X     | An identifier for the platform that uses this manifest. |
-| `0x01 - 0x0f`  | `Reserved`          |        |           |           | Reserved for future use.                                |
-| `0xe0 - 0xfe`  | `Vendor Extensions` |        |           |           | Reserved for vendor-specific element types.             |
+| `0x01 - 0x0f`  | `Reserved`          |        |           |           | Reserved for future use. |
+| `0xe0 - 0xfe`  | `Vendor Extensions` |        |           |           | Reserved for vendor-specific element types. |
 | `0xff`         | `Unavailable`       |        |           |           | Cannot be used as an element type since it is used as part of parent/child relationships. |
 
 #### Platform ID Element
@@ -552,11 +552,11 @@ is managing access to one flash or the other at any point in time.  The layout
 and validation of either device should be the same.
 
 `bitfield PFM.FlashDevice`
-| Type     | Name         | Description                                            |
-|----------|--------------|--------------------------------------------------------|
+| Type     | Name         | Description                                        |
+|----------|--------------|----------------------------------------------------|
 | `8`      | `blank_byte` | The value that represents an unused byte of flash.  During validation, all unused regions of flash will be checked against this value to ensure no unexpected data is stored. |
 | `8`      | `fw_count`   | The number of firmware components stored in the flash. |
-| `0x0000` | `_`          | Reserved.                                              |
+| `0x0000` | `_`          | Reserved.                                          |
 
 ### Firmware Element
 
@@ -579,9 +579,9 @@ individually.
 | `ALIGN(32)`     | `_`               | Zero padding.                          |
 
 `enum PFM.Firmware.UpdateApplied`
-| Value  | Name       | Description                                                   |
-|--------|------------|---------------------------------------------------------------|
-| `0b`   | `reboot`   | Updates are applied only on reboot of the processor.          |
+| Value  | Name       | Description                                            |
+|--------|------------|--------------------------------------------------------|
+| `0b`   | `reboot`   | Updates are applied only on reboot of the processor.   |
 | `1b`   | `run_time` | Updates can be applied without notifying the RoT of a reboot. |
 
 ### Firmware Version Element
@@ -686,7 +686,7 @@ metadata that can be consumed by generation scripts to create the binary format.
 	<SignedImage>
 		<Hash>
 			0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-            202122232425262728292a2b2c2d2e2f
+				202122232425262728292a2b2c2d2e2f
 		</Hash>
 		<HashType>SHA384</HashType>
 		<Region>
@@ -709,7 +709,7 @@ metadata that can be consumed by generation scripts to create the binary format.
 | `platform`           | Platform string identifier.                           |
 | `VersionAddr`        | Address on flash of the version string identifier.    |
 | `UnusedByte`         | Byte to check for in unused flash regions.            |
-| `RuntimeUpdate`      | Flag to indicate if the firmware can update at run-time.|
+| `RuntimeUpdate`      | Flag to indicate if the firmware can update at run-time. |
 | `ReadWrite`          | Defines a single R/W data region.                     |
 | `Region`             | Defines a region of contiguous flash.                 |
 | `StartAddr`          | First valid address within the region.                |
@@ -745,13 +745,13 @@ independently of PFMs and CFMs.
 A PCD will report a `manifest_type` of `0x1029` in the manifest header.  The PCD
 defines the following additional manifest element types.
 
-| Type ID | Element Type                            | Format | Top-Level | Singleton | Description                                                                        |
-|---------|-----------------------------------------|--------|-----------|-----------|------------------------------------------------------------------------------------|
-| `0x40`  | `RoT`                                   |   1    |     X     |     X     | Provides general configuration for the device.                                     |
+| Type ID | Element Type                            | Format | Top-Level | Singleton | Description |
+|---------|-----------------------------------------|--------|-----------|-----------|-------------|
+| `0x40`  | `RoT`                                   |   1    |     X     |     X     | Provides general configuration for the device. |
 | `0x41`  | `SPI Flash Port`                        |   1    |           |           | A single protected firmware store on SPI flash.  This is a child of a RoT element. |
-| `0x42`  | `I2C Power Management Controller`       |   1    |     X     |           | Defines a power management device utilized by the RoT.                             |
-| `0x43`  | `Component with Direct I2C Connection`  |   1    |     X     |           | Defines an AC-RoT connected directly to the device over I2C.                       |
-| `0x44`  | `Component with MCTP Bridge Connection` |   1    |     X     |           | Defines an AC-RoT connected through an MCTP bridge.                                |
+| `0x42`  | `I2C Power Management Controller`       |   1    |     X     |           | Defines a power management device utilized by the RoT. |
+| `0x43`  | `Component with Direct I2C Connection`  |   1    |     X     |           | Defines an AC-RoT connected directly to the device over I2C. |
+| `0x44`  | `Component with MCTP Bridge Connection` |   1    |     X     |           | Defines an AC-RoT connected through an MCTP bridge. |
 
 ### RoT Element
 
@@ -805,14 +805,14 @@ protected by the RoT.  The firmware for this processor is stored on SPI flash.
 | `1b`  | `enabled`  | Watchdog monitoring supported.     |
 
 `enum PCD.SPIFlashPort.RuntimeVerification`
-| Value | Name       | Description                         |
-|-------|------------|-------------------------------------|
+| Value | Name       | Description                          |
+|-------|------------|--------------------------------------|
 | `0b`  | `disabled` | Run-time verification not supported. |
 | `1b`  | `enabled`  | Run-time verification supported.     |
 
 `enum PCD.SPIFlashPort.FlashMode`
-| Value | Name                     | Description                             |
-|-------|--------------------------|-----------------------------------------|
+| Value | Name                     | Description                               |
+|-------|--------------------------|-------------------------------------------|
 | `00b` | `dual`                   | The SPI bus is connected to two flash devices for storing firmware. |
 | `01b` | `single`                 | There is a single flash device for processor firmware. |
 | `10b` | `dual_filtered_bypass`   | Dual flash chips for firmware.  In this mode, RoT protection can never be fully disabled.  Even in bypass mode, the interposed RoT will block some set of unwanted commands. |
@@ -861,11 +861,11 @@ utilize MCTP, the EID field can be set to `0x00`.
 | `I2CMux(mux_count)` | `mux`       | List of I2C muxes.                       |
 
 `bitfield PCD.I2CMux`
-| Type        | Name          | Description                                    |
-|-------------|---------------|------------------------------------------------|
-| `8`         | `mux_address` | I2C address of the mux.                        |
-| `8`         | `mux_channel` | Mux channel that the device is connected to.   |
-| `0x0000`    | `_`           | Reserved.                                      |
+| Type        | Name          | Description                                  |
+|-------------|---------------|----------------------------------------------|
+| `8`         | `mux_address` | I2C address of the mux.                      |
+| `8`         | `mux_channel` | Mux channel that the device is connected to. |
+| `0x0000`    | `_`           | Reserved.                                    |
 
 `enum PCD.I2CMode`
 | Value    | Name           | Description                     |
@@ -961,7 +961,7 @@ generation scripts to create the binary format.
 				<WatchdogMonitoring>Disabled</WatchdogMonitoring>
 			</Port>
 		</Ports>
-		<Interface interface_type="I2C">
+		<Interface type="I2C">
 			<Address>Hex integer</Address>
 			<RoTEID>Hex integer</RoTEID>
 			<BridgeEID>Hex integer</BridgeEID>
@@ -969,7 +969,7 @@ generation scripts to create the binary format.
 		</Interface>
 	</RoT>
 	<PowerController>
-		<Interface interface_type="I2C">
+		<Interface type="I2C">
 			<Bus>Decimal integer</Bus>
 			<EID>Hex integer</EID>
 			<Address>Hex integer</Address>
@@ -983,9 +983,9 @@ generation scripts to create the binary format.
 		</Interface>
 	</PowerController>
 	<Components>
-		<Component component_type="Identifier" connection="Direct">
+		<Component type="Identifier" connection="Direct">
 			<Policy>Passive</Policy>
-			<Interface interface_type="I2C">
+			<Interface type="I2C">
 				<Bus>Decimal integer</Bus>
 				<Address>Hex integer</Address>
 				<I2CMode>MultiMaster</I2CMode>
@@ -1002,7 +1002,7 @@ generation scripts to create the binary format.
 				<Mask>Hex integer</Mask>
 			</PwrCtrl>
 		</Component>
-		<Component component_type="Identifier" connection="MCTPBridge" count="Decimal integer">
+		<Component type="Identifier" connection="MCTPBridge" count="Decimal integer">
 			<Policy>Passive</Policy>
 			<DeviceID>Hex integer</DeviceID>
 			<VendorID>Hex integer</VendorID>
@@ -1035,7 +1035,7 @@ generation scripts to create the binary format.
 | `RuntimeVerification` | Port run-time verification setting.                  |
 | `WatchdogMonitoring`  | Port watchdog monitoring setting.                    |
 | `Interface`           | Communication interface to the RoT.                  |
-| `interface_type`      | Specifies communication interface type.              |
+| `type`                | Communication interface type or component type identifier string. |
 | `Address`             | 7-bit I2C address.                                   |
 | `RoTEID`              | Default MCTP EID of the root of trust.               |
 | `BridgeEID`           | MCTP bridge EID.                                     |
@@ -1050,7 +1050,6 @@ generation scripts to create the binary format.
 | `Channel`             | Channel to activate on mux.                          |
 | `Components`          | Collection of components to attest.                  |
 | `Component`           | A single component's attestation information.        |
-| `component_type`      | Component type identifier string.                    |
 | `connection`          | Component connection type.                           |
 | `PwrCtrl`             | Component power control information.                 |
 | `Register`            | Power control register address.                      |
@@ -1109,23 +1108,28 @@ present in the XML, the default value will be used.
 The Component Firmware Manifest (CFM) describes a list of allowable measurements
 or policies for each component in the system.  This is similar to a PFM but for
 the purpose of attesting remote AC-RoT devices.  Only Cerberus devices that will
-attest other AC-RoTs will consume a CFM.  Each component in a CFM must have at
-lest one corresponding entry in the PCD.  Multiple PCD entries for the same type
-of component device will map to a single component in the CFM.
+attest other AC-RoTs will consume a CFM.  Elements in the CFM describe how to
+attest a device using either the Cerberus Challenge Protocol or the DMTF SPDM
+protocol.  Each component in a CFM must have at least one corresponding entry in
+the PCD.  Multiple PCD entries for the same type of component device will map to
+a single component in the CFM.
 
 A CFM will report a `manifest_type` of `0xa592` in the manifest header.  The CFM
 defines the following additional manifest element types.
 
-| Type ID | Element Type        | Format | Top-Level | Singleton | Description |
-|---------|---------------------|--------|-----------|-----------|-------------|
-| `0x70`  | `Component Device`  |   0    |     X     |           | Defines a single type of AC-RoT to attest. |
-| `0x71`  | `PMR Digest`        |   0    |           |           | A list of allowable values for a single PMR.  This is a child of a Component Device element. |
-| `0x72`  | `PMR Measurement`   |   0    |           |           | A list of allowable values for individual entries in a PMR.  This is a child of a Component Device element. |
-| `0x73`  | `PMR Data`          |   0    |           |           | A list of allowable contents for measurement data reported for a single PMR entry.  This is a child of a Component Device element. |
-| `0x74`  | `Allowable PFM `    |   0    |           |           | A list of allowable PFM IDs for a single port.  This is a child of a Component Device element. |
-| `0x75`  | `Allowable CFM`     |   0    |           |           | A list of allowable CFM IDs.  This is a child of a Component Device element. |
-| `0x76`  | `Allowable PCD`     |   0    |           |           | A list of allowable PCD IDs.  This is a child of a Component Device element. |
-| `0x77`  | `Root CAs`          |   0    |           |           | The Root CAs that can be used for certificate chain authentication.  This is a child of a Component Device element. |
+| Type ID | Element Type       | Format | Top-Level | Singleton | Description  |
+|---------|--------------------|--------|-----------|-----------|--------------|
+| `0x70`  | `Component Device` |   0    |     X     |           | Defines a single type of AC-RoT to attest. |
+| `0x71`  | `PMR`              |   0    |           |           | Provides information necessary when regenerating PMR. This is a child of a Component Device element. |
+| `0x72`  | `PMR Digest`       |   0    |           |           | A list of allowable values for a single PMR.  This is a child of a Component Device element. |
+| `0x73`  | `Measurement`      |   0    |           |           | A list of allowable values for a measurement digest.  This is a child of a Component Device element. |
+| `0x74`  | `Measurement Data` |   0    |           |           | Provides information about raw measurement data checks.  This is a child of a Component Device element. |
+| `0x75`  | `Allowable Data`   |   0    |           |           | Provides information about a single check for raw measurement data.  This is a child of a Measurement Data element. |
+| `0x76`  | `Allowable PFM `   |   0    |           |           | A list of allowable PFM IDs for a single port.  This is a child of a Component Device element. |
+| `0x77`  | `Allowable CFM`    |   0    |           |           | A list of allowable CFM IDs.  This is a child of a Component Device element. |
+| `0x78`  | `Allowable PCD`    |   0    |           |           | A list of allowable PCD IDs.  This is a child of a Component Device element. |
+| `0x79`  | `Allowable ID`     |   0    |           |           | Provides information about a single check for manifest IDs.  This is a child of an Allowable PFM, CFM, or PCD element. |
+| `0x7A`  | `Root CAs`         |   0    |           |           | The Root CAs that can be used for certificate chain authentication.  This is a child of a Component Device element. |
 
 ### Component Device Element
 
@@ -1137,40 +1141,45 @@ AC-RoT described in the PCD is matched with a Component Device element using the
 `type` attribute.  Each Component Device element needs to have at least one
 child element.
 
-<!-- There needs to be some way to specify the initial PMR value to use when
-regenerating expected PMR values from individual measurements.  Each PMR can
-have a different initial value, so a new element that provides this information
-may be the best approach. -->
-
 `bitfield CFM.ComponentDevice`
-| Type        | Name                   | Description                           |
-|-------------|------------------------|---------------------------------------|
-| `8`         | `pmr_digest_count`     | Number of PMR digests to check during attestation. | <!-- Cerberus only supports 5 PMRs, so this could be a 4-bit field, and could be combined with PFM count. -->
-| `8`         | `pmr_entry_count`      | Number of individual PMR entries to check during attestation. |
-| `8`         | `pmr_data_count`       | Number of PMR entries whose measured data should beck checked during attestation. |
-| `8`         | `allowable_pfm_count`  | Number of PFM IDs to check during attestation. | <!-- PFM count probably only needs to be 4 bits.  We might want to leave CFM as 8 bits for future flexibility. -->
-| `8`         | `allowable_cfm_count`  | Number of CFM IDs to check during attestation. |
-| `8`         | `allowable_pcd_count`  | Presence of a PCD ID check during attestation. | <!-- Why do we need this? Would presence of the element achieve this?  And if we really do, why not just a flag? -->
-| `8`         | `cert_slot`            | Slot number of the certificate chain to use for attestation challenges. |
-| `8`         | `attestation_protocol` | Protocol to use for attestation requests to the component. | <!-- This needs to be an enum. -->
-| `8`         | `type_len`             | Length of the component type string.  |
-| `type_len`  | `type`                 | ASCII string type for the component.  This is not null terminated. |
-| `ALIGN(32)` | `_`                    | Zero padding.                         |
+| Type                  | Name                     | Description               |
+|-----------------------|--------------------------|---------------------------|
+| `8`                   | `cert_slot`              | Slot number of the certificate chain to use for attestation challenges. |
+| `AttestationProtocol` | `attestation_protocol`   | Protocol to use for attestation requests to the component. |
+| `0x00`                | `_`                      | Reserved.                 |
+| `8`                   | `type_len`               | Length of the component type string. |
+| `type_len`            | `type`                   | ASCII string type for the component.  This is not null terminated. |
+| `ALIGN(32)`           | `_`                      | Zero padding.             |
+
+`enum CFM.AttestationProtocol`
+| Value  | Name                | Description                      |
+|--------|---------------------|----------------------------------|
+| `0x00` | `cerberus_protocol` | The Cerberus challenge protocol. |
+| `0x01` | `dmtf_spdm`         | The DMTF SPDM protocol.          |
 
 `enum CFM.ComponentDevice.Check`
-| Value  | Name               | Description                              |
-|--------|--------------------|------------------------------------------|
+| Value  | Name               | Description                                    |
+|--------|--------------------|------------------------------------------------|
 | `0x00` | `equal`            | Ensure the reported data is equal to the specified value. |
 | `0x01` | `not_equal`        | Ensure the reported data is not equal to the specified value. |
 | `0x02` | `less_than`        | Ensure the reported data is less than the specified value. |
 | `0x03` | `less_or_equal`    | Ensure the reported data is less than or equal to the specified value. |
 | `0x04` | `greater_than`     | Ensure the reported data is greater than the specified value. |
 | `0x05` | `greater_or_equal` | Ensure the reported data is greater than or equal to the specified value. |
-| `0x06` | `string`           | Ensure strings are equal, only valid for Allowable Data and no bitmask should be provided. |
-<!-- Do we really need String compare?  How is that any different than Equal? -->
-<!-- Why can't we use bitmasks with string comparison?  Seems like that could be
-handy to igore parts of a string that don't matter.  But really, I don't
-understand why this is different than 'equal' -->
+
+### PMR Element
+
+The PMR element contains information necessary to regenerate a PMR digest.  If
+this element in not present for a PMR ID, the initial value of zeroes is used
+for any flows that are required to calculate the PMR.
+
+`bitfield CFM.ComponentDevice.PMR`
+| Type                | Name            | Description                          |
+|---------------------|-----------------|--------------------------------------|
+| `Manifest.HashType` | `hash_type`     | The type of hash used to generate the PMR digest. |
+| `00000b`            | `_`             | Padding for the unused HashType bits.  This must be 0. |
+| `0x000000`          | `_`             | Reserved.                            |
+| `hash_type`         | `initial_value` | Initial value to use when generating PMR. |
 
 ### PMR Digest Element
 
@@ -1179,68 +1188,86 @@ PMR.  These digests represent the final measurement reported by the PMR, as
 would be reported by `Challenge` or `Get PMR` requests.
 
 `bitfield CFM.ComponentDevice.PMRDigest`
-| Type                      | Name             | Description                   |
-|---------------------------|------------------|-------------------------------|
-| `8`                       | `pmr_id`         | Identifier for the PMR to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
-| `8`                       | `pmr_data_count` | Number of measurement entries used to compute this PMR. | <!-- I'm not sure why we need this.  It also could change between versions. -->
-| `00000b`                  | `_`              | Padding for the unused HashType bits.  This must be 0. |
-| `Manifest.HashType`       | `hash_type`      | The type of hash used to generate the PMR digest. |
-| `8`                       | `digest_count`   | Number of allowable digests for this PMR. |
-| `hash_type(digest_count)` | `pmr_digest`     | Expected digest for the PMR.  |
-
-### PMR Measurement Element
-
-The PMR Measurement element contains a list of allowable digests for a single
-entry within a specific PMR.  These are digests that would be reported by the
-`Get Log` request when the Attestation or TCG Log is provided.
-
-`bitfield CFM.ComponentDevice.PMRMeasurement`
 | Type                      | Name           | Description                     |
 |---------------------------|----------------|---------------------------------|
-| `8`                       | `pmr_id`       | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
-| `8`                       | `entry_id`     | Index of the specific entry within the PMR to attest. | <!-- Should we really be using index?  Event ID seems more portable across versions. -->
+| `8`                       | `pmr_id`       | Identifier for the PMR to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
 | `00000b`                  | `_`            | Padding for the unused HashType bits.  This must be 0. |
-| `Manifest.HashType`       | `hash_type`    | The type of hash used to generate the measurement digest. |
-| `8`                       | `digest_count` | Number of allowable digests for this measurement. |
-| `hash_type(digest_count)` | `digest`       | Expected digest for the entry.  |
+| `Manifest.HashType`       | `hash_type`    | The type of hash used to generate the PMR digest. |
+| `8`                       | `digest_count` | Number of allowable digests for this PMR. |
+| `0x00`                    | `_`            | Reserved.                       |
+| `hash_type(digest_count)` | `pmr_digest`   | Expected digest for the PMR.    |
 
-### PMR Data Element
+### Measurement Element
 
-<!-- Matching one of a set of checks probably works for some cases, and
-certainly works for scenarios where there is a single check
-(e.g. PFM ID > a cert value>.  This is the 'or' case, but what about the 'and'
-case?  Maybe we add a flag to indicate how the list of data has to match. -->
-The PMR Data element contains a list of checks to perform against the raw data
-measured for a single PMR entry.  This allows for more sophisticated policy
-checks than simply comparing digests and has the potential for more efficient
-use of space within the CFM.  The data that is compared would be reported by the
-`Get Attestation Data` request.
+The Measurement element contains a list of allowable digests for a single
+measurement.  For a Cerberus PMR, this will be an entry within a specific PMR
+reported by the `Get Log` request when the Attestation or TCG log is provided.
+In SPDM, this will be the digest for a single measurement block and can be
+aggregated with all other measurement blocks when reported by `SPDM Challenge`
+requests or reported separately by the `SPDM Get Measurement` request.
 
-`bitfield CFM.ComponentDevice.PMRData`
-| Type                        | Name         | Description                     |
-|-----------------------------|--------------|---------------------------------|
-| `8`                         | `pmr_id`     | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
-| `8`                         | `entry_id`   | Index of the specific entry within the PMR to attest. | <!-- Same comment here around index vs. event ID. -->
-| `8`                         | `data_count` | Number of allowable values for PMR data. |
-| `Check`                     | `check`      | The type of comparison to execute. | <!-- This seems like it should be part of the AllowableData part.  We shouldn't need to check against all data in the same way. -->
-| `AllowableData(data_count)` | `data`       | List of comparisons against the reported entry data. |
+`bitfield CFM.ComponentDevice.Measurement`
+| Type                      | Name             | Description                   |
+|---------------------------|------------------|-------------------------------|
+| `8`                       | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM protocol. |
+| `8`                       | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM protocol, this is the measurement block index. |
+| `00000b`                  | `_`              | Padding for the unused HashType bits.  This must be 0. |
+| `Manifest.HashType`       | `hash_type`      | The type of hash used to generate the measurement digest. |
+| `8`                       | `digest_count`   | Number of allowable digests for this measurement. |
+| `hash_type(digest_count)` | `digest`         | Expected digest for the entry. |
 
-`bitfield CFM.ComponentDevice.PMRData.AllowableData`
-| Type          | Name           | Description                                 |
-|---------------|----------------|---------------------------------------------|
-| `16`          | `data_length`  | Length of the data to use for comparison.   | <!-- This can probably be limited to 2 bytes.  We really shouldn't be getting data any bigger than 4k. -->
-| `0x0000`      | `_`            | Reserved.                                   |
-| `data_length` | `data`         | Data to use for comparison.                 |
-| `ALIGN(32)`   | `_`            | Zero padding.                               |
-| `data_length` | `data_bitmask` | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary. | <!-- Maybe this should be optional in some way?  Maybe use some newly reserved bits to indicate its presence? -->
-| `ALIGN(32)`   | `_`            | Zero padding.                               |
+### Measurement Data Element
+
+The Measurement Data element contains a list of checks to perform against the
+raw data measured for a single measurement block.  For a Cerberus PMR, this will
+be an entry within a specific PMR reported by the `Get Attestation Data`
+request.  In SPDM, this will be the raw form for a single measurement block and
+can be reported separately by the `SPDM Get Measurement` request.  This allows
+for more sophisticated policy checks than simply comparing digests and has the
+potential for more efficient use of space within the CFM.  There is as many
+checks as there are child AllowableData elements, and all need to succeed for
+successful attestation.
+
+`bitfield CFM.ComponentDevice.MeasurementData`
+| Type                        | Name             | Description                 |
+|-----------------------------|------------------|-----------------------------|
+| `8`                         | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM protocol. |
+| `8`                         | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM protocol, this is the measurement block index. |
+| `0x0000`                    | `_`              | Reserved.                   |
+
+### Allowable Data Element
+
+The Allowable Data element contains a list of allowable values for a single
+measurement data check.  For "equal" and "not equal" checks, there can be as
+many data entries in a single Allowable Data element as allowed or not allowed 
+values.  For "greater than", "greater than or equal to", "less than" or 
+"less than or equal to" checks, there should be only a single data entry in 
+the Allowable Data element. 
+
+To combine multiple measurement data checks (e.g. "not equal" and "greater 
+than"), multiple Allowable Data elements can be used, one for each check. 
+
+`bitfield CFM.ComponentDevice.MeasurementData.AllowableData`
+| Type                     | Name               | Description                  |
+|--------------------------|--------------------|------------------------------|
+| `0000000b`               | `_`                | Padding for the unused bitmask_presence bits.  This must be 0. |
+| `1`                      | `bitmask_presence` | Flag indicating presence of a bitmask for this comparison. |
+| `Check`                  | `check`            | The type of comparison to execute. |
+| `8`	                     | `num_data`         | The total number of values that will be checked. |
+| `16`                     | `data_len`         | Length of the data to use for comparison. |
+| `0x000000`               | `_`                | Reserved.                    |
+| `data_length`            | `data_bitmask`     | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary. |
+| `ALIGN(32)`              | `_`                | Zero padding.                |
+| `data_length (num_data)` | `data`             | Data to use for comparison.  |
+| `ALIGN(32)`              | `_`                | Zero padding.                |
 
 ### Allowable PFM Element
 
 The Allowable PFM element provides a mechanism to attest an AC-RoT based on the
 active PFM configuration.  Each allowable PFM element will compare against the
 active PFM for a single port.  The data that is compared would be reported by
-the `Get Configuration Ids` request.
+the `Get Configuration Ids` request.  Child Allowable ID elements will provide
+the checks to run against the PFM ID.
 
 `bitfield CFM.ComponentDevice.AllowablePFM`
 | Type                | Name      | Description                                |
@@ -1251,26 +1278,38 @@ the `Get Configuration Ids` request.
 `bitfield CFM.ComponentDevice.AllowableManifest`
 | Type                | Name             | Description                         |
 |---------------------|------------------|-------------------------------------|
-| `8`                 | `count`          | Number of manifest ID comparisons.  |
 | `8`                 | `plat_id_length` | Length of the expected platform ID. |
-| `0x00`              | `_`              | Reserved.                           | <!-- Maybe use a bit here to indicate 'or' vs. 'and' comparisons. -->
 | `plat_id_length`    | `plat_id_string` | Platform ID string.  This is an ASCII string that is not null terminated. |
 | `ALIGN(32)`         | `_`              | Zero padding.                       |
-| `ManifestId(count)` | `ids`            | List of manifest ID comparisons to execute. |
 
-`bitfield CFM.ComponentDevice.ManifestId`
-| Type       | Name        | Description                        |
-|------------|-------------|------------------------------------|
-| `32`       | `id`        | Identifier for the manifest.       |
-| `Check`    | `check`     | The type of comparison to execute. |
-| `0x000000` | `_`         | Reserved.                          |
+### Allowable ID Element
+
+The Allowable ID element contains a list of allowable IDs for a single manifest
+check.  This element can be a child to the Allowable PFM, CFM, or PCD elements.
+For "equal" and "not equal" checks, there can be as many data entries in a 
+single Allowable ID element as allowed or not allowed values.  For 
+"greater than", "greater than or equal to", "less than" or 
+"less than or equal to" checks, there should be only a single data entry in 
+the Allowable ID element. 
+
+To combine multiple manifest ID checks (e.g. "not equal" and "greater than"), 
+multiple Allowable ID elements can be used, one for each check. 
+
+`bitfield CFM.ComponentDevice.AllowableID`
+| Type            | Name     | Description                                   |
+|-----------------|----------|-----------------------------------------------|
+| `Check`         | `check`  | The type of comparison to execute.            |
+| `8`             | `num_id` | The total number of IDs that will be checked. |
+| `16`            | `_`      | Reserved.                                     |
+| `32 (num_data)` | `ids`    | Manifest identifiers to use for comparison.   |
 
 ### Allowable CFMs Element
 
 The Allowable CFM element provides a mechanism to attest an AC-RoT based on the
 active CFM configuration.  Each allowable CFM element will compare against a
 single CFM.  The data that is compared would be reported by the
-`Get Configuration Ids` request.
+`Get Configuration Ids` request.  Child Allowable ID elements will provide the
+checks to run against the PFM ID.
 
 `bitfield CFM.ComponentDevice.AllowableCFM`
 | Type                | Name        | Description                              |
@@ -1282,13 +1321,14 @@ single CFM.  The data that is compared would be reported by the
 
 The Allowable PCD element provides a mechanism to attest an AC-RoT based on the
 active PCD configuration.  The data that is compared would be reported by the
-`Get Configuration Ids` request.
+`Get Configuration Ids` request.  Child Allowable ID elements will provide the
+checks to run against the PFM ID.
 
 `bitfield CFM.ComponentDevice.AllowablePCD`
-| Type                | Name      | Description                                |
-|---------------------|-----------|--------------------------------------------|
-| `0x00`              | `_`       | Reserved.                                  |
-| `AllowableManifest` | `allowed` | Attestation to perform for the CFM IDs.    |
+| Type                | Name      | Description                             |
+|---------------------|-----------|-----------------------------------------|
+| `0x00`              | `_`       | Reserved.                               |
+| `AllowableManifest` | `allowed` | Attestation to perform for the PCD IDs. |
 
 ### Root CAs Element
 
@@ -1311,103 +1351,144 @@ AC-RoT must share a root CA with the requestor.
 Each RoT that must attest AC-RoT devices needs to have at least one CFM with
 information about the components to attest.  Unlike a PFM that only deals in one
 flash device, the CFM is intended to hold attestation information for multiple
-components.  This is an example using XML to store the platform configuration
-that can be consumed by generation scripts to create the binary format.
+components.  XML files with a CFMComponent element are used to define attestable
+components.  A single CFM XML file is used to select attestable components to
+include in the CFM binary. This is an example of both XML formats that can be
+consumed by generation scripts to create the binary format.
 
-<!-- We should consider making this more modular, like PFMs, so that there are
-two XML definitions.  One that defines attestation information for a single
-component type and another that pulls multiple components into a CFM. -->
 ```xml
-<CFM sku="Identifier">
-	<Component type="identifier" attestation_protocol="Cerberus" slot_num="Decimal integer">
-      <RootCADigest>
-         <HashType>SHA256</HashType>
-			<Digest>
-				Root CA Digest
-			</Digest>
-      </RooTCADigest>
-		<PMRDigest pmr_id="Decimal integer">
-			<DataCount>Decimal integer</DataCount>
-			<HashType>SHA256</HashType>
-			<Digest>
-				PMR Digest
-			</Digest>
-			<Digest>
-				PMR Digest
-			</Digest>
-		</PMRDigest>
-		<PMRData pmr_id="Decimal integer" entry_id="Decimal integer">
-			<Check>Equal</Check>
-			<AllowableData>
-				<Data>
-					PMR Data
-				</Data>
-				<Bitmask>
-					PMR Data Bitmask
-				</Bitmask>
-			</AllowableData>
-			<AllowableData>
-				<Data>
-					PMR Data
-				</Data>
-				<Bitmask>
-					PMR Data Bitmask
-				</Bitmask>
-			</AllowableData>
-		</PMRData>
-        <PMRData pmr_id="Decimal integer" entry_id="Decimal integer">
-			<Check>StringComp</Check>
-			<AllowableData>
-				<Data>
-					"String"
-				</Data>
-			</AllowableData>
-		</PMRData>
-		<AllowablePFM port="Decimal integer" platform="Identifier">
-			<Check>Equal</Check>
-			<ID>Hex Integer</ID>
-			<ID>Hex Integer</ID>
-		</AllowablePFM>
-		<AllowableCFM index="Decimal integer" platform="Identifier">
-			<Check>GreaterThan</Check>
-			<ID>Hex Integer</ID>
-		</AllowableCFM>
-		<AllowablePCD platform="Identifier">
-			<Check>LessOrEqual</Check>
-			<ID>Hex Integer</ID>
-		</AllowablePCD>
+<CFM sku="identifier">
+	<Component>
+		"Component type string"
+	</Component>
+	<Component>
+		"Component type string"
 	</Component>
 </CFM>
+
+<CFMComponent type="identifier" attestation_protocol="Cerberus" slot_num="Decimal integer">
+	<RootCADigest>
+		<HashType>SHA256</HashType>
+		<Digest>
+			Root CA Digest
+		</Digest>
+		<Digest>
+			Root CA Digest
+		</Digest>
+	</RooTCADigest>
+	<PMR pmr_id="Decimal integer">
+		<SingleEntry>True</SingleEntry>
+		<HashType>SHA256</HashType>
+		<InitialValue>
+			Initial value digest
+		</InitialValue>
+	</PMR>
+	<PMRDigest pmr_id="Decimal integer">
+		<HashType>SHA256</HashType>
+		<Digest>
+			PMR Digest
+		</Digest>
+		<Digest>
+			PMR Digest
+		</Digest>
+	</PMRDigest>
+	<Measurement pmr_id = "Decimal integer" measurement_id="Decimal integer">
+		<HashType>SHA256</HashType>
+		<Digest>
+			Measurement Digest
+		</Digest>
+		<Digest>
+			Measurement Digest
+		</Digest>
+	</Measurement>
+	<MeasurementData pmr_id="Decimal integer" measurement_id="Decimal integer">
+		<AllowableData>
+			<Check>Equal</Check>
+			<Data>
+				Allowable Data 1
+			</Data>
+			<Data>
+				Allowable Data 2
+			</Data>
+			<Bitmask>
+				Measurement Data Bitmask
+			</Bitmask>
+		</AllowableData>
+		<AllowableData>
+			<Check>GreaterOrEqual</Check>
+			<Data>
+				Allowable Data
+			</Data>
+		</AllowableData>
+	</MeasurementData>
+	<MeasurementData pmr_id="Decimal integer" measurement_id="Decimal integer">
+		<AllowableData>
+			<Check>Equal</Check>
+			<Data>
+				"String"
+			</Data>
+			<Bitmask>
+				Measurement Data Bitmask
+			</Bitmask>
+		</AllowableData>
+	</MeasurementData>
+	<AllowablePFM port="Decimal integer" platform="Identifier">
+		<ManifestID>
+			<Check>Equal</Check>
+			<ID>Hex Integer</ID>
+			<ID>Hex Integer</ID>
+		</ManifestID>
+		<ManifestID>
+			<Check>GreaterThan</Check>
+			<ID>Hex Integer</ID>
+		</ManifestID>
+	</AllowablePFM>
+	<AllowableCFM index="Decimal integer" platform="Identifier">
+		<ManifestID>
+			<Check>Equal</Check>
+			<ID>Hex Integer</ID>
+		</ManifestID>
+	</AllowableCFM>
+	<AllowablePCD platform="Identifier">
+		<ManifestID>
+			<Check>Equal</Check>
+			<ID>Hex Integer</ID>
+		</ManifestID>
+	</AllowablePCD>
+</CFMComponent>
 ```
 
-<!-- It seems like this will need a version attribute, just like the PCD XML. -->
-<!-- Need a definition for single entry measurements. -->
 | Field                  | Description                                         |
 |------------------------|-----------------------------------------------------|
-| `sku`                  | String identifier for the platform configuration.  This becomes the platform ID. |
-| `Component`            | Defines a single component device.  The XML can contain multiple `Component` tags. |
+| `sku`                  | String identifier for the platform configuration. This becomes the platform ID. |
+| `Component`            | Defines a single component device to include in CFM.|
+| `CFMComponent`         | Defines a single component device.                  |
 | `type`                 | Component type string identifier.                   |
 | `attestation_protocol` | The protocol used by the AC-RoT for attestation.    |
 | `slot_num`             | Certificate chain slot number to be used for component attestation. |
-| `RootCADigest`         | Defines trusted root CAs to be used for certificate chain validation. |
+| `RootCADigest`         | Defines trusted root CAs to be used for certificate chain validation.  This is an optional tag. |
 | `HashType`             | Hashing algorithm used to compute a digest.         |
 | `Digest`               | The expected digest.                                |
+| `PMR`                  | Defines information needed to regenerate a PMR.  This is an optional tag. |
+| `SingleEntry`          | Boolean indicating if PMR has a single entry measurement. |
+| `InitialValue`         | Initial value to utilize when generating a PMR.     |
 | `PMRDigest`            | Defines allowable digests for a single PMR.         |
 | `pmr_id`               | Identifier for the PMR.                             |
-| `DataCount`            | Number of measurement entries used to compute PMR.  |
-| `PMRData`              | Defines group of allowable data for a single entry part of a PMR. |
-| `entry_id`             | PMR entry ID.                                       |
+| `Measurement`          | Defines group of allowable measurements.            |
+| `measurement_id`       | Measurement ID.                                     |
+| `MeasurementData`      | Defines group of allowable measurement data.        |
+| `AllowableData`        | Defines allowable values for single measurement data check. |
 | `Check`                | Type of comparison to perform on data.              |
-| `AllowableData`        | Defines a single allowable value for PMR entry data. |
-| `Data`                 | The expected data for the PMR entry.                |
+| `Data`                 | The expected data for the measurement data entry.   |
 | `Bitmask`              | The bitmask to apply to the data during comparison. |
-| `AllowablePFM`         | Defines attestation to be performed on PFM IDs.     |
+| `AllowablePFM`         | Defines attestation to be performed on PFM IDs.  This tag is not supported for attesting SPDM devices. |
 | `port`                 | Port PFM is applied to.                             |
 | `platform`             | The expected manifest platform ID.                  |
-| `ID`                   | A single manifest ID to compare.                    |
-| `AllowableCFM`         | Defines attestation to be performed on CFM IDs.     |
+| `ManifestID`           | A single manifest ID comparison.                    |
+| `ID`                   | A manifest ID to compare.                           |
+| `AllowableCFM`         | Defines attestation to be performed on CFM IDs.  This tag is not supported for attesting SPDM devices. |
 | `index`                | Index of the target CFM.                            |
-| `AllowablePCD`         | Defines attestation to be performed on PCD IDs.     |
+| `AllowablePCD`         | Defines attestation to be performed on PCD IDs.  This tag is not supported for attesting SPDM devices. |
 
 #### Allowed Values for XML Enums
 
@@ -1421,9 +1502,10 @@ present in the XML, the default value will be used.
  - LessOrEqual
  - GreaterThan
  - GreaterOrEqual
- - StringComp
 
-<!-- Missing enum definition for attestation_protocol -->
+**Component/attestation_protocol**
+ - Cerberus
+ - SPDM
 
 # Attestation Flows
 
@@ -1470,8 +1552,10 @@ modifications to the flow.
 Attestation of an AC-RoT commences with extracting a certificate chain from a
 device, validating it, then getting a report of measurements.  The measurements
 are then compared to CFM contents and the attestation result is stored in the
-attestor's attestation log.  All Cerberus Protocol commands used in the
-attestation flow are described in the Cerberus Challenge Protocol.
+attestor's attestation log.  Cerberus devices can support attestation flows
+using the Cerberus Challenge Protocol and/or the DMTF SPDM attestation protocol.
+All Cerberus Protocol commands used in the attestation flow are described in the
+Cerberus Challenge Protocol.
 
 ### Cerberus to Cerberus Communication
 
@@ -1490,6 +1574,11 @@ will then look to match each EID with a PCD component entry by sending the
 Cerberus Protocol `Get Device Ids` request to all EIDs.  Matching responses with
 entries in the PCD will identify the type of device assigned each EID.
 
+Since the Cerberus Protocol `Get Device Ids` request is utilized in matching PCD
+device entries and EIDs assigned by the MCTP bridge, this command is required
+for all AC-RoT devices.  This applies equally to devices that support the
+Cerberus Challenge protocol as well as those that use SPDM for attestation.
+
 ### AC-RoT Attestation
 
 To perform attestation of an AC-RoT, remote Cerberus instances send back flash
@@ -1498,20 +1587,20 @@ challenge.  The Cerberus device performing the challenge will then compare the
 information received with allowable values contained in the corresponding entry
 in the Component Firmware Manifest for the target device.
 
-### Attestation Procedure
+Cerberus devices can support the Cerberus Challenge protocol, the DMTF SPDM
+protocol, or both protocols to perform attestation of an AC-RoT.  It is expected
+that PA-RoT devices would support both protocols to allow it to attest any type
+of component.
 
-<!-- The firmware version comparison doesn't seem to exist anymore.  I can see
-some cases where having a version-defined container would help (e.g. PMR entry
-IDs), but in other cases it wouldn't matter (e.g. PMR hashes, PFM IDs). -->
+### Attestation Procedure using Cerberus Protocol
+
 After successful receipt and validation of the Alias certificate chain, the
-attestor will issue a `Get Firmware Version` request to the target device.  The
-attestor will then use the version response to select an entry in the CFM for
-the device and ensure all digests and measurement data listed in the CFM entry
-matches values returned by the component device.
+attestor will then ensure all digests and measurement data listed in the CFM
+entry matches values returned by the component device.
 
-If the CFM entry contains only a Platform Measurement Register (PMR) digest for
+If the CFM contains only a Platform Measurement Register (PMR) digest for
 register 0, only the `Challenge` request will be issued.  The PMR0 digest
-value from the response will be compared to the CFM entry contents.  This
+value from the response will be compared to the CFM element contents.  This
 process is illustrated below:
 
 ```
@@ -1528,10 +1617,10 @@ process is illustrated below:
                     | <-                              |
 ```
 
-If the CFM entry contains multiple PMR digest entries, the
+If the CFM contains multiple PMR digest elements, the
 `Get Platform Measurement Register` request will be issued to the device for
 each PMR that is required.  All listed digests will be compared with the CFM
-entry contents, and if any of them mismatches, then the attestation will have
+element contents, and if any of them mismatches, then the attestation will have
 failed.  This flow is shown below:
 
 ```
@@ -1548,19 +1637,63 @@ failed.  This flow is shown below:
                    \| <-                              |
 ```
 
-<!-- Need to add the flow for attesting entry measurements only, without
-needing to attest measured data. -->
+If the CFM contains measurement elements, the attestor will inspect the
+attestation log to compare expected measurement entries to those in the log.
+All listed digests will be compared with the CFM element contents, and if any of
+them mismatches, then the attestation will have failed. Then, the attestor will
+issue a `Get Platform Measurement Register` request for all PMR IDs that have
+CFM measurement entries. The PMR values returned will be compared to those in
+the attestation log. This process takes the following flow.
 
-If the CFM entry contains PMR data entries, it is required that the attestor
+1. The attestor issues the `Get Log` request to get the attestation log from the
+   device.
+2. The digests reported in the attestation log are compared to the CFM elements.
+3. The attestor issues the `Get Platform Measurement Register` request to get
+   the PMR value containing this entry.
+4. The expected PMR value is calculated from the retrieved attestation log and
+   compared against the value reported by the device.
+
+If any comparison fails, the process terminates and attestation of the device
+has failed.  If the attestor has several entries in a single PMR to validate,
+the flow could be optimized to get and check all measurements first, then
+proceed to validate up the layers to the PMR value.
+
+This process is show below:
+
+```
+                 Attestor                           Device
+                    |  -------Get Log Request------>  |
+                    |                              -- |
+                    |   Respond with attestation  |   |
+                    |   log                       |   |
+                    |                              -> |
+                    |  <-------Get Log Response-----  |
+                    | --                              |
+                    |   | Compare CFM measurement to  |
+                    |   | digest in attestation log   |
+                    | <-                              |
+                    |  -------Get PMR Request------>  |
+                    |                              -- |
+                    |   Respond with requested    |   |
+                    |   PMR digest                |   |
+                    |                              -> |
+                    |  <------Get PMR Response------  |
+                    | --                              |
+                    |   | Compare PMR digest to one   |
+                    |   | from attestation log        |
+                    | <-                              |
+```
+
+If the CFM contains measurement data elements, it is required that the attestor
 check the actual measured data to determine if the device is operating in an
 allowed configuration.  This process takes the following flow.
 
 1. The attestor issues the `Get Attestation Data` request to get the measurement
    data from the device.
-2. The returned data is compared against the expected data in the CFM entry.
+2. The returned data is compared against the expected data in the CFM element.
 3. The attestor issues the `Get Log` request to get the attestation log from the
    device.
-4. The measurement date received earlier is hashed and compared against the
+4. The measurement data received earlier is hashed and compared against the
    digest reported in the attestation log.
 5. The attestor issues the `Get Platform Measurement Register` request to get
    the PMR value containing this entry.
@@ -1608,10 +1741,10 @@ This process is show below:
                     | <-                              |
 ```
 
-If the CFM entry contains a configuration ID entry, then the
-`Get Configuration IDs` command is used to get active manifest IDs from the
-device.  The attestor will compare the received IDs against the values contained
-in the CFM.  This process is shown below:
+If the CFM contains a PFM, CFM, or PCD element, then the `Get Configuration IDs`
+command is used to get active manifest IDs from the device.  The attestor will
+compare the received IDs against the values contained in the CFM.  This process
+is shown below:
 
 ```
                  Attestor                           Device
@@ -1623,9 +1756,107 @@ in the CFM.  This process is shown below:
                     |  <---Get Config IDs Response--  |
                     | --                              |
                     |   | Compare all IDs to CFM      |
-                    |   | entry                       |
+                    |   | element                     |
                     | <-                              |
 ```
+
+### Attestation Procedure using SPDM Attestation Protocol
+
+After successful version and capabilities negotiation, then receipt and
+validation of the Alias certificate chain, the attestor will issue a `Challenge`
+request to the device if the device supports the command.  This will always be
+done irrespective of whether the CFM contains a PMR digest element or not.  In
+SPDM, only PMR 0 is considered valid, and if the CFM contains an element for a
+PMR digest for register 0, the value returned by the `Challenge` response will
+be compared to the CFM element contents.  If not, the `Challenge` is still
+performed as recommended by the SPDM specification, and to ensure the
+authenticity of the prior transactions.  This process is illustrated below:
+
+```
+                 Attestor                           Device
+                    |  -------Challenge Request---->  |
+                    |                              -- |
+                    |   Generate signed challenge |   |
+                    |   response for PMR 0        |   |
+                    |                              -> |
+                    |  <-----Challenge Response-----  |
+                    | --                              |
+                    |   | Verify challenge signature  |
+                    |   | and measurement             |
+                    | <-                              |
+```
+
+If the device supports SPDM 1.2 or higher, and does not support the `Challenge`
+command, the `Get Measurement` command is used instead if applicable.  The CFM
+contains a PMR digest element but the device does not support the `Challenge`
+command, the `Get Measurement` command is used and all measurement blocks are
+requested.  The attestor then combines all measurement blocks into a single
+digest and compares it to the PMR0 digest CFM element.  This process takes the
+following flow:
+
+```
+                 Attestor                           Device
+                    |  ---Get Measurement Request-->  |
+                    |                              -- |
+                    |   Generate measurement      |   |
+                    |   response with hashes of   |   |
+                    |   all measurement blocks    |   |
+                    |                              -> |
+                    |  <--Get Measurement Response--  |
+                    | --                              |
+                    |   | Aggregate all measurement   |
+                    |   | block hashes and compare    |
+                    |   | result to CFM PMR digest    |
+                    |   | element                     |
+                    | <-                              |
+```
+
+If the CFM contains measurement elements, and the device supports SPDM 1.2+, the
+attestor will request the specific measurement blocks as indicated by
+measurement IDs as digests from the device using the `Get Measurement` command
+with the RawBitStreamRequested request attribute set to 0.  This process takes
+the following flow:
+
+```
+                 Attestor                           Device
+                    |  ---Get Measurement Request-->  |
+                    |                              -- |
+                    |   Generate measurement      |   |
+                    |   response with hash of     |   |
+                    |   requested measurement     |   |
+                    |   block                     |   |
+                    |                              -> |
+                    |  <--Get Measurement Response--  |
+                    | --                              |
+                    |   | Compare response content    |
+                    |   | to CFM measurement element  |
+                    | <-                              |
+```
+
+If the CFM contains measurement data elements, the attestor will request the
+specific measurement blocks as indicated by measurement IDs from the device
+using the `Get Measurement` command.  This process takes the following flow:
+
+```
+                 Attestor                           Device
+                    |  ---Get Measurement Request-->  |
+                    |                              -- |
+                    |   Generate measurement      |   |
+                    |   response with requested   |   |
+                    |   measurement block         |   |
+                    |                              -> |
+                    |  <--Get Measurement Response--  |
+                    | --                              |
+                    |   | Compare response content    |
+                    |   | to CFM measurement data     |
+                    |   | element                     |
+                    | <-                              |
+```
+
+The SPDM protocol does not explicitly support verification of configuration IDs.
+To verify a device's configuration IDs, a measurement block can be generated
+with the configuration IDs as the expected content, and the aforementioned flows
+for measurement or measurement data attestation can be utilized.
 
 ## References
 
@@ -1635,3 +1866,5 @@ https://github.com/opencomputeproject/Security/blob/master/RoT/Protocol/Challeng
 https://trustedcomputinggroup.org/work-groups/dice-architectures/
 3. TCG TPM:<br>
 https://trustedcomputinggroup.org/work-groups/trusted-platform-module/
+4. Security Protocol and Data Model Specification:<br>
+https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.2.0.pdf
