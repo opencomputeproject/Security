@@ -685,8 +685,7 @@ metadata that can be consumed by generation scripts to create the binary format.
 	</SignedImage>
 	<SignedImage>
 		<Hash>
-			0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-				202122232425262728292a2b2c2d2e2f
+			0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f
 		</Hash>
 		<HashType>SHA384</HashType>
 		<Region>
@@ -747,7 +746,7 @@ defines the following additional manifest element types.
 
 | Type ID | Element Type                            | Format | Top-Level | Singleton | Description |
 |---------|-----------------------------------------|--------|-----------|-----------|-------------|
-| `0x40`  | `RoT`                                   |   1    |     X     |     X     | Provides general configuration for the device. |
+| `0x40`  | `RoT`                                   |   2    |     X     |     X     | Provides general configuration for the device. |
 | `0x41`  | `SPI Flash Port`                        |   1    |           |           | A single protected firmware store on SPI flash.  This is a child of a RoT element. |
 | `0x42`  | `I2C Power Management Controller`       |   1    |     X     |           | Defines a power management device utilized by the RoT. |
 | `0x43`  | `Component with Direct I2C Connection`  |   1    |     X     |           | Defines an AC-RoT connected directly to the device over I2C. |
@@ -760,17 +759,23 @@ firmware it directly protects.  The RoT communicates to the BMC and other
 devices over I2C.
 
 `bitfield PCD.RoT`
-| Type       | Name               | Description                                |
-|------------|--------------------|--------------------------------------------|
-| `0000000b` | `_`                | Reserved.                                  |
-| `RoTType`  | `rot_type`         | Indicates the type of RoT in the attestation hierarchy. |
-| `8`        | `port_count`       | The number of external processors directly protected by an external RoT. |
-| `8`        | `components_count` | The number of remote components the RoT must attest. |
-| `8`        | `rot_address`      | The physical bus address for the RoT device. |
-| `8`        | `rot_default_eid`  | The default MCTP EID the RoT should use.  An external MCTP bridge can assign a different EID at run-time. |
-| `8`        | `bridge_address`   | Physical bus address for a connected MCTP bridge. |
-| `8`        | `bridge_eid`       | EID for the MCTP bridge.                   |
-| `0x00`     | `_`                | Reserved.                                  |
+| Type       | Name                             | Description                      |
+|------------|----------------------------------|----------------------------------|
+| `0000000b` | `_`                              | Reserved.                        |
+| `RoTType`  | `rot_type`                       | Indicates the type of RoT in the attestation hierarchy. |
+| `8`        | `port_count`                     | The number of external processors directly protected by an external RoT. |
+| `8`        | `components_count`               | The number of remote components the RoT must attest. |
+| `8`        | `rot_address`                    | The physical bus address for the RoT device. |
+| `8`        | `rot_default_eid`                | The default MCTP EID the RoT should use.  An external MCTP bridge can assign a different EID at run-time. |
+| `8`        | `bridge_address`                 | Physical bus address for a connected MCTP bridge. |
+| `8`        | `bridge_eid`                     | EID for the MCTP bridge.         |
+| `0x00`     | `_`                              | Reserved.                        |
+| `32`       | `attestation_success_retry`      | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
+| `32`       | `attestation_fail_retry`         | Duration in milliseconds after device fails attestation to wait before reattesting. |
+| `32`       | `discovery_fail_retry`           | Duration in milliseconds after device fails a discovery step to wait before retrying. |
+| `32`       | `mctp_ctrl_timeout`              | MCTP control protocol response timeout period in milliseconds. |
+| `32`       | `mctp_bridge_get_table_wait`     | Duration in milliseconds to wait after RoT boots before sending a MCTP Get Routing Table Request to MCTP bridge, if MCTP bridge does not support dynamic EID assignments. If set to 0, RoT will only wait for EID assignment. |
+| `32`       | `mctp_bridge_additional_timeout` | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
 
 `enum PCD.RoT.RoTType`
 | Value | Name     | Description                        |
@@ -882,15 +887,12 @@ methods an attestor will use to communicate with the AC-RoT.  The Component type
 identifier will match a type specified in the CFM.
 
 `bitfield PCD.Component`
-| Type        | Name              | Description                                |
-|-------------|-------------------|--------------------------------------------|
-| `0000000b`  | `_`               | Reserved.                                  |
-| `Policy`    | `policy`          | Action that should be taken on authentication failures.  Active policies are only possible if there is power controller present. |
-| `8`         | `power_ctrl_reg`  | Register address in the power controller that manages this component. |
-| `8`         | `power_ctrl_mask` | A bitmask indicating the bit(s) used to control power to this component. |
-| `8`         | `type_length`     | Length of the component type string.       |
-| `type_len`  | `type`            | ASCII string type for the component.  This is not null terminated. |
-| `ALIGN(32)` | `_`               | Zero padding.                              |
+| Type     | Name              | Description                                   |
+|----------|-------------------|-----------------------------------------------|
+| `Policy` | `policy`          | Action that should be taken on authentication failures.  Active policies are only possible if there is power controller present. |
+| `8`      | `power_ctrl_reg`  | Register address in the power controller that manages this component. |
+| `8`      | `power_ctrl_mask` | A bitmask indicating the bit(s) used to control power to this component. |
+| `8`      | `component_id`    | Component ID that maps to a PCD entry.        |
 
 #### Component with Direct I2C Connection Element
 
@@ -940,7 +942,8 @@ generation scripts to create the binary format.
 
 ```xml
 <PCD sku="Identifier" version="Hex integer">
-	<RoT type="PA-RoT">
+	<RoT type="PA-RoT" mctp_ctrl_timeout="Decimal Integer"
+		mctp_bridge_get_table_wait="Decimal Integer">
 		<Ports>
 			<Port id="Decimal integer">
 				<SPIFreq>Decimal integer</SPIFreq>
@@ -983,7 +986,9 @@ generation scripts to create the binary format.
 		</Interface>
 	</PowerController>
 	<Components>
-		<Component type="Identifier" connection="Direct">
+		<Component type="Identifier" connection="Direct"
+			attestation_success_retry="Decimal Integer"
+			attestation_fail_retry="Decimal Integer">
 			<Policy>Passive</Policy>
 			<Interface type="I2C">
 				<Bus>Decimal integer</Bus>
@@ -1002,7 +1007,12 @@ generation scripts to create the binary format.
 				<Mask>Hex integer</Mask>
 			</PwrCtrl>
 		</Component>
-		<Component type="Identifier" connection="MCTPBridge" count="Decimal integer">
+		<Component type="Identifier" connection="MCTPBridge"
+			count="Decimal integer"
+			attestation_success_retry="Decimal Integer"
+			attestation_fail_retry="Decimal Integer"
+			discovery_fail_retry="Decimal Integer"
+			mctp_bridge_additional_timeout="Decimal Integer">
 			<Policy>Passive</Policy>
 			<DeviceID>Hex integer</DeviceID>
 			<VendorID>Hex integer</VendorID>
@@ -1018,47 +1028,53 @@ generation scripts to create the binary format.
 </PCD>
 ```
 
-| Field                 | Description                                          |
-|-----------------------|------------------------------------------------------|
-| `sku`                 | String identifier for this platform configuration.  This becomes the platform ID. |
-| `version`             | Version of the PCD.  This becomes the manifest ID.   |
-| `RoT`                 | Container for the RoT configuration.                 |
-| `type`                | RoT type identifier.                                 |
-| `Ports`               | Collection of ports an external RoT protects.        |
-| `Port`                | A single protected port.                             |
-| `id`                  | Integer identifier for the port.                     |
-| `SPIFreq`             | SPI flash frequency in Hz.                           |
-| `ResetCtrl`           | Reset control setting when validation occurs.        |
-| `FlashMode`           | Flash configuration for the protected device.        |
-| `Policy`              | Attestation policy.                                  |
-| `PulseInterval`       | Reset pulse width if the port uses a pulsed reset.   |
-| `RuntimeVerification` | Port run-time verification setting.                  |
-| `WatchdogMonitoring`  | Port watchdog monitoring setting.                    |
-| `Interface`           | Communication interface to the RoT.                  |
-| `type`                | Communication interface type or component type identifier string. |
-| `Address`             | 7-bit I2C address.                                   |
-| `RoTEID`              | Default MCTP EID of the root of trust.               |
-| `BridgeEID`           | MCTP bridge EID.                                     |
-| `BridgeAddress`       | MCTP bridge 7-bit I2C address.                       |
-| `Bus`                 | Identifier for the I2C bus the device is on.         |
-| `EID`                 | Device MCTP EID.                                     |
-| `I2CMode`             | I2C communication mode.                              |
-| `Muxes`               | A series of I2C muxes connected to a device.         |
-| `Mux`                 | A single I2C mux.                                    |
-| `level`               | The mux level in the I2C path.  0 if the first mux, 1 is second, etc. |
-| `Address`             | 7-bit I2C address of the mux.                        |
-| `Channel`             | Channel to activate on mux.                          |
-| `Components`          | Collection of components to attest.                  |
-| `Component`           | A single component's attestation information.        |
-| `connection`          | Component connection type.                           |
-| `PwrCtrl`             | Component power control information.                 |
-| `Register`            | Power control register address.                      |
-| `Mask`                | Power control bitmask.                               |
-| `count`               | Number of identical components this element describes. |
-| `DeviceID`            | Device ID.  See the `Get Device ID` request.         |
-| `VendorID`            | Vendor ID.  See the `Get Device ID` request.         |
-| `SubsystemDeviceID`   | Subsystem device ID.  See the `Get Device ID` request. |
-| `SubsystemVendorID`   | Subsystem vendor ID.  See the `Get Device ID` request. |
+| Field                            | Description                               |
+|----------------------------------|-------------------------------------------|
+| `sku`                            | String identifier for this platform configuration.  This becomes the platform ID. |
+| `version`                        | Version of the PCD.  This becomes the manifest ID. |
+| `RoT`                            | Container for the RoT configuration.      |
+| `type`                           | RoT type identifier.                      |
+| `mctp_ctrl_timeout`              | MCTP control protocol response timeout period in milliseconds. |
+| `mctp_bridge_get_table_wait`     | Duration in milliseconds to wait after RoT boots before sending a MCTP Get Routing Table Request to MCTP bridge, if MCTP bridge does not support dynamic EID assignments. If set to 0, RoT will only wait for EID assignment. |
+| `Ports`                          | Collection of ports an external RoT protects. |
+| `Port`                           | A single protected port.                  |
+| `id`                             | Integer identifier for the port.          |
+| `SPIFreq`                        | SPI flash frequency in Hz.                |
+| `ResetCtrl`                      | Reset control setting when validation     |
+| `FlashMode`                      | Flash configuration for the protected device. |
+| `Policy`                         | Attestation policy.                       |
+| `PulseInterval`                  | Reset pulse width if the port uses a pulsed reset. |
+| `RuntimeVerification`            | Port run-time verification setting.       |
+| `WatchdogMonitoring`             | Port watchdog monitoring setting.         |
+| `Interface`                      | Communication interface to the RoT.       |
+| `type`                           | Communication interface type or component type identifier string. |
+| `Address`                        | 7-bit I2C address.                        |
+| `RoTEID`                         | Default MCTP EID of the root of trust.    |
+| `BridgeEID`                      | MCTP bridge EID.                          |
+| `BridgeAddress`                  | MCTP bridge 7-bit I2C address.            |
+| `Bus`                            | Identifier for the I2C bus the device is on. |
+| `EID`                            | Device MCTP EID.                          |
+| `I2CMode`                        | I2C communication mode.                   |
+| `Muxes`                          | A series of I2C muxes connected to a device. |
+| `Mux`                            | A single I2C mux.                         |
+| `level`                          | The mux level in the I2C path.  0 if the first mux, 1 is second, etc. |
+| `Address`                        | 7-bit I2C address of the mux.             |
+| `Channel`                        | Channel to activate on mux.               |
+| `Components`                     | Collection of components to attest.       |
+| `Component`                      | A single component's attestation information. |
+| `connection`                     | Component connection type.                |
+| `attestation_success_retry`      | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
+| `attestation_fail_retry`         | Duration in milliseconds after device fails attestation to wait before reattesting. |
+| `PwrCtrl`                        | Component power control information.      |
+| `Register`                       | Power control register address.           |
+| `Mask`                           | Power control bitmask.                    |
+| `count`                          | Number of identical components this element describes. |
+| `discovery_fail_retry`           | Duration in milliseconds after device fails a discovery step to wait before retrying. |
+| `mctp_bridge_additional_timeout` | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
+| `DeviceID`                       | Device ID.  See the `Get Device ID` request. |
+| `VendorID`                       | Vendor ID.  See the `Get Device ID` request. |
+| `SubsystemDeviceID`              | Subsystem device ID.  See the `Get Device ID` request. |
+| `SubsystemVendorID`              | Subsystem vendor ID.  See the `Get Device ID` request. |
 
 #### Allowed Values for XML Enums
 
@@ -1146,10 +1162,11 @@ child element.
 |-----------------------|--------------------------|---------------------------|
 | `8`                   | `cert_slot`              | Slot number of the certificate chain to use for attestation challenges. |
 | `AttestationProtocol` | `attestation_protocol`   | Protocol to use for attestation requests to the component. |
+| `Manifest.HashType`   | `transcript_hash_type`   | The type of hash used for SPDM transcript hashing. |
+| `Manifest.HashType`   | `measurement_hash_type`  | The type of hash used to generate measurement, PMR, and root CA digests. |
+| `00b`                 | `_`                      | Padding for the unused HashType bits.  This must be 0. |
 | `0x00`                | `_`                      | Reserved.                 |
-| `8`                   | `type_len`               | Length of the component type string. |
-| `type_len`            | `type`                   | ASCII string type for the component.  This is not null terminated. |
-| `ALIGN(32)`           | `_`                      | Zero padding.             |
+| `32`                  | `component_id`           | Component ID that maps to a PCD entry. |
 
 `enum CFM.AttestationProtocol`
 | Value  | Name                | Description                      |
@@ -1174,12 +1191,9 @@ this element in not present for a PMR ID, the initial value of zeroes is used
 for any flows that are required to calculate the PMR.
 
 `bitfield CFM.ComponentDevice.PMR`
-| Type                | Name            | Description                          |
-|---------------------|-----------------|--------------------------------------|
-| `Manifest.HashType` | `hash_type`     | The type of hash used to generate the PMR digest. |
-| `00000b`            | `_`             | Padding for the unused HashType bits.  This must be 0. |
-| `0x000000`          | `_`             | Reserved.                            |
-| `hash_type`         | `initial_value` | Initial value to use when generating PMR. |
+| Type                    | Name            | Description                      |
+|-------------------------|-----------------|----------------------------------|
+| `measurement_hash_type` | `initial_value` | Initial value to use when generating PMR. |
 
 ### PMR Digest Element
 
@@ -1188,14 +1202,12 @@ PMR.  These digests represent the final measurement reported by the PMR, as
 would be reported by `Challenge` or `Get PMR` requests.
 
 `bitfield CFM.ComponentDevice.PMRDigest`
-| Type                      | Name           | Description                     |
-|---------------------------|----------------|---------------------------------|
-| `8`                       | `pmr_id`       | Identifier for the PMR to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
-| `00000b`                  | `_`            | Padding for the unused HashType bits.  This must be 0. |
-| `Manifest.HashType`       | `hash_type`    | The type of hash used to generate the PMR digest. |
-| `8`                       | `digest_count` | Number of allowable digests for this PMR. |
-| `0x00`                    | `_`            | Reserved.                       |
-| `hash_type(digest_count)` | `pmr_digest`   | Expected digest for the PMR.    |
+| Type                                  | Name           | Description         |
+|---------------------------------------|----------------|---------------------|
+| `8`                                   | `pmr_id`       | Identifier for the PMR to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
+| `8`                                   | `digest_count` | Number of allowable digests for this PMR. |
+| `0x0000`                              | `_`            | Reserved.           |
+| `measurement_hash_type(digest_count)` | `pmr_digest`   | Expected digest for the PMR. |
 
 ### Measurement Element
 
@@ -1207,14 +1219,13 @@ aggregated with all other measurement blocks when reported by `SPDM Challenge`
 requests or reported separately by the `SPDM Get Measurement` request.
 
 `bitfield CFM.ComponentDevice.Measurement`
-| Type                      | Name             | Description                   |
-|---------------------------|------------------|-------------------------------|
-| `8`                       | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM protocol. |
-| `8`                       | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM protocol, this is the measurement block index. |
-| `00000b`                  | `_`              | Padding for the unused HashType bits.  This must be 0. |
-| `Manifest.HashType`       | `hash_type`      | The type of hash used to generate the measurement digest. |
-| `8`                       | `digest_count`   | Number of allowable digests for this measurement. |
-| `hash_type(digest_count)` | `digest`         | Expected digest for the entry. |
+| Type                                  | Name             | Description       |
+|---------------------------------------|------------------|-------------------|
+| `8`                                   | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM protocol. |
+| `8`                                   | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM protocol, this is the measurement block index. |
+| `8`                                   | `digest_count`   | Number of allowable digests for this measurement. |
+| `0x00`                                | `_`              | Reserved.         |
+| `measurement_hash_type(digest_count)` | `digest`         | Expected digest for the entry. |
 
 ### Measurement Data Element
 
@@ -1239,13 +1250,13 @@ successful attestation.
 
 The Allowable Data element contains a list of allowable values for a single
 measurement data check.  For "equal" and "not equal" checks, there can be as
-many data entries in a single Allowable Data element as allowed or not allowed 
-values.  For "greater than", "greater than or equal to", "less than" or 
-"less than or equal to" checks, there should be only a single data entry in 
-the Allowable Data element. 
+many data entries in a single Allowable Data element as allowed or not allowed
+values.  For "greater than", "greater than or equal to", "less than" or
+"less than or equal to" checks, there should be only a single data entry in
+the Allowable Data element.
 
-To combine multiple measurement data checks (e.g. "not equal" and "greater 
-than"), multiple Allowable Data elements can be used, one for each check. 
+To combine multiple measurement data checks (e.g. "not equal" and "greater
+than"), multiple Allowable Data elements can be used, one for each check.
 
 `bitfield CFM.ComponentDevice.MeasurementData.AllowableData`
 | Type                     | Name               | Description                  |
@@ -1286,14 +1297,14 @@ the checks to run against the PFM ID.
 
 The Allowable ID element contains a list of allowable IDs for a single manifest
 check.  This element can be a child to the Allowable PFM, CFM, or PCD elements.
-For "equal" and "not equal" checks, there can be as many data entries in a 
-single Allowable ID element as allowed or not allowed values.  For 
-"greater than", "greater than or equal to", "less than" or 
-"less than or equal to" checks, there should be only a single data entry in 
-the Allowable ID element. 
+For "equal" and "not equal" checks, there can be as many data entries in a
+single Allowable ID element as allowed or not allowed values.  For
+"greater than", "greater than or equal to", "less than" or
+"less than or equal to" checks, there should be only a single data entry in
+the Allowable ID element.
 
-To combine multiple manifest ID checks (e.g. "not equal" and "greater than"), 
-multiple Allowable ID elements can be used, one for each check. 
+To combine multiple manifest ID checks (e.g. "not equal" and "greater than"),
+multiple Allowable ID elements can be used, one for each check.
 
 `bitfield CFM.ComponentDevice.AllowableID`
 | Type            | Name     | Description                                   |
@@ -1338,13 +1349,11 @@ component does not contain a Root CAs element, the certificate chain of the
 AC-RoT must share a root CA with the requestor.
 
 `bitfield CFM.ComponentDevice.RootCAs`
-| Type                  | Name        | Description                            |
-|-----------------------|-------------|----------------------------------------|
-| `00000b`              | `_`         | Padding for the unused HashType bits.  This must be 0. |
-| `Manifest.HashType`   | `hash_type` | The type of hash used to generate root CA hashes. |
-| `8`                   | `ca_count`  | Number of allowable root CA digests.   |
-| `0x0000`              | `_`         | Reserved.                              |
-| `hash_type(ca_count)` | `root_ca`   | List of hashes for trusted root certificates.  This represents the hash over the entire certificate, including the signature. |
+| Type                              | Name       | Description                 |
+|-----------------------------------|------------|-----------------------------|
+| `8`                               | `ca_count` | Number of allowable root CA digests. |
+| `0x000000`                        | `_`        | Reserved.                   |
+| `measurement_hash_type(ca_count)` | `root_ca`  | List of hashes for trusted root certificates.  This represents the hash over the entire certificate, including the signature. |
 
 ### XML Representation for CFM Generation
 
@@ -1366,7 +1375,9 @@ consumed by generation scripts to create the binary format.
 	</Component>
 </CFM>
 
-<CFMComponent type="identifier" attestation_protocol="Cerberus" slot_num="Decimal integer">
+<CFMComponent type="identifier" attestation_protocol="Cerberus"
+	slot_num="Decimal integer" transcript_hash_type="SHA256"
+	measurement_hash_type="SHA384">
 	<RootCADigest>
 		<HashType>SHA256</HashType>
 		<Digest>
@@ -1461,13 +1472,15 @@ consumed by generation scripts to create the binary format.
 | Field                  | Description                                         |
 |------------------------|-----------------------------------------------------|
 | `sku`                  | String identifier for the platform configuration. This becomes the platform ID. |
-| `Component`            | Defines a single component device to include in CFM.|
+| `Component`            | Defines a single component device to include in CFM. ID of component is used here. |
 | `CFMComponent`         | Defines a single component device.                  |
 | `type`                 | Component type string identifier.                   |
 | `attestation_protocol` | The protocol used by the AC-RoT for attestation.    |
 | `slot_num`             | Certificate chain slot number to be used for component attestation. |
+| `transcript_hash_type` | Hashing algorithm used for transcript hashing.      |
+| `measurement_hash_type`| Hashing algorithm used to compute PMR, measurement, and root CA digests. |
 | `RootCADigest`         | Defines trusted root CAs to be used for certificate chain validation.  This is an optional tag. |
-| `HashType`             | Hashing algorithm used to compute a digest.         |
+| `HashType`             | Hashing algorithm used to compute a digest.  This needs to be the same as the measurement_hash_type. |
 | `Digest`               | The expected digest.                                |
 | `PMR`                  | Defines information needed to regenerate a PMR.  This is an optional tag. |
 | `SingleEntry`          | Boolean indicating if PMR has a single entry measurement. |
