@@ -380,6 +380,10 @@ boundaries.  For example:
   `byte0[3:0] = [3:0]`<br>
   `byte1[7:0] = [11:4]`
 
+The exception to this are fields that are an array of bytes, particularly
+digests.  Unless otherwise specified, all digests and other byte arrays are
+stored in big endian.
+
 ### Manifest Header
 
 `bitfield Manifest.Header`
@@ -759,23 +763,26 @@ firmware it directly protects.  The RoT communicates to the BMC and other
 devices over I2C.
 
 `bitfield PCD.RoT`
-| Type       | Name                             | Description                      |
-|------------|----------------------------------|----------------------------------|
-| `0000000b` | `_`                              | Reserved.                        |
-| `RoTType`  | `rot_type`                       | Indicates the type of RoT in the attestation hierarchy. |
-| `8`        | `port_count`                     | The number of external processors directly protected by an external RoT. |
-| `8`        | `components_count`               | The number of remote components the RoT must attest. |
-| `8`        | `rot_address`                    | The physical bus address for the RoT device. |
-| `8`        | `rot_default_eid`                | The default MCTP EID the RoT should use.  An external MCTP bridge can assign a different EID at run-time. |
-| `8`        | `bridge_address`                 | Physical bus address for a connected MCTP bridge. |
-| `8`        | `bridge_eid`                     | EID for the MCTP bridge.         |
-| `0x00`     | `_`                              | Reserved.                        |
-| `32`       | `attestation_success_retry`      | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
-| `32`       | `attestation_fail_retry`         | Duration in milliseconds after device fails attestation to wait before reattesting. |
-| `32`       | `discovery_fail_retry`           | Duration in milliseconds after device fails a discovery step to wait before retrying. |
-| `32`       | `mctp_ctrl_timeout`              | MCTP control protocol response timeout period in milliseconds. |
-| `32`       | `mctp_bridge_get_table_wait`     | Duration in milliseconds to wait after RoT boots before sending a MCTP Get Routing Table Request to MCTP bridge, if MCTP bridge does not support dynamic EID assignments. If set to 0, RoT will only wait for EID assignment. |
-| `32`       | `mctp_bridge_additional_timeout` | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
+| Type       | Name                                     | Description          |
+|------------|------------------------------------------|----------------------|
+| `0000000b` | `_`                                      | Reserved.            |
+| `RoTType`  | `rot_type`                               | Indicates the type of RoT in the attestation hierarchy. |
+| `8`        | `port_count`                             | The number of external processors directly protected by an external RoT. |
+| `8`        | `components_count`                       | The number of remote components the RoT must attest. |
+| `8`        | `rot_address`                            | The physical bus address for the RoT device. |
+| `8`        | `rot_default_eid`                        | The default MCTP EID the RoT should use.  An external MCTP bridge can assign a different EID at run-time. |
+| `8`        | `bridge_address`                         | Physical bus address for a connected MCTP bridge. |
+| `8`        | `bridge_eid`                             | EID for the MCTP bridge. |
+| `0x00`     | `_`                                      | Reserved.            |
+| `32`       | `attestation_success_retry`              | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
+| `32`       | `attestation_fail_retry`                 | Duration in milliseconds after device fails attestation to wait before reattesting. |
+| `32`       | `discovery_fail_retry`                   | Duration in milliseconds after device fails a discovery step to wait before retrying. |
+| `32`       | `mctp_ctrl_timeout`                      | MCTP control protocol response timeout period in milliseconds. |
+| `32`       | `mctp_bridge_get_table_wait`             | Duration in milliseconds to wait after RoT boots before sending a MCTP Get Routing Table Request to MCTP bridge, if MCTP bridge does not support dynamic EID assignments. If set to 0, RoT will only wait for EID assignment. |
+| `32`       | `mctp_bridge_additional_timeout`         | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
+| `32`       | `attestation_rsp_not_ready_max_duration` | Whan an SPDM device responds with a ResponseNotReady error, this is the maximum duration in milliseconds the RoT is permitted to wait before retrying the request. |
+| `8`        | `attestation_rsp_not_ready_max_retry`    | The maximum number of SPDM ResponseNotReady retries allowed per request.  If this is exceeded, the RoT will fail attestation for the device. |
+| `0x000000` | `_`                                      | Reserved.            |
 
 `enum PCD.RoT.RoTType`
 | Value | Name     | Description                        |
@@ -988,7 +995,9 @@ generation scripts to create the binary format.
 	<Components>
 		<Component type="Identifier" connection="Direct"
 			attestation_success_retry="Decimal Integer"
-			attestation_fail_retry="Decimal Integer">
+			attestation_fail_retry="Decimal Integer"
+			attestation_rsp_not_ready_max_retry="Decimal Integer"
+			attestation_rsp_not_ready_max_duration="Decimal Integer">
 			<Policy>Passive</Policy>
 			<Interface type="I2C">
 				<Bus>Decimal integer</Bus>
@@ -1012,7 +1021,9 @@ generation scripts to create the binary format.
 			attestation_success_retry="Decimal Integer"
 			attestation_fail_retry="Decimal Integer"
 			discovery_fail_retry="Decimal Integer"
-			mctp_bridge_additional_timeout="Decimal Integer">
+			mctp_bridge_additional_timeout="Decimal Integer"
+			attestation_rsp_not_ready_max_retry="Decimal Integer"
+			attestation_rsp_not_ready_max_duration="Decimal Integer">
 			<Policy>Passive</Policy>
 			<DeviceID>Hex integer</DeviceID>
 			<VendorID>Hex integer</VendorID>
@@ -1028,53 +1039,55 @@ generation scripts to create the binary format.
 </PCD>
 ```
 
-| Field                            | Description                               |
-|----------------------------------|-------------------------------------------|
-| `sku`                            | String identifier for this platform configuration.  This becomes the platform ID. |
-| `version`                        | Version of the PCD.  This becomes the manifest ID. |
-| `RoT`                            | Container for the RoT configuration.      |
-| `type`                           | RoT type identifier.                      |
-| `mctp_ctrl_timeout`              | MCTP control protocol response timeout period in milliseconds. |
-| `mctp_bridge_get_table_wait`     | Duration in milliseconds to wait after RoT boots before sending a MCTP Get Routing Table Request to MCTP bridge, if MCTP bridge does not support dynamic EID assignments. If set to 0, RoT will only wait for EID assignment. |
-| `Ports`                          | Collection of ports an external RoT protects. |
-| `Port`                           | A single protected port.                  |
-| `id`                             | Integer identifier for the port.          |
-| `SPIFreq`                        | SPI flash frequency in Hz.                |
-| `ResetCtrl`                      | Reset control setting when validation     |
-| `FlashMode`                      | Flash configuration for the protected device. |
-| `Policy`                         | Attestation policy.                       |
-| `PulseInterval`                  | Reset pulse width if the port uses a pulsed reset. |
-| `RuntimeVerification`            | Port run-time verification setting.       |
-| `WatchdogMonitoring`             | Port watchdog monitoring setting.         |
-| `Interface`                      | Communication interface to the RoT.       |
-| `type`                           | Communication interface type or component type identifier string. |
-| `Address`                        | 7-bit I2C address.                        |
-| `RoTEID`                         | Default MCTP EID of the root of trust.    |
-| `BridgeEID`                      | MCTP bridge EID.                          |
-| `BridgeAddress`                  | MCTP bridge 7-bit I2C address.            |
-| `Bus`                            | Identifier for the I2C bus the device is on. |
-| `EID`                            | Device MCTP EID.                          |
-| `I2CMode`                        | I2C communication mode.                   |
-| `Muxes`                          | A series of I2C muxes connected to a device. |
-| `Mux`                            | A single I2C mux.                         |
-| `level`                          | The mux level in the I2C path.  0 if the first mux, 1 is second, etc. |
-| `Address`                        | 7-bit I2C address of the mux.             |
-| `Channel`                        | Channel to activate on mux.               |
-| `Components`                     | Collection of components to attest.       |
-| `Component`                      | A single component's attestation information. |
-| `connection`                     | Component connection type.                |
-| `attestation_success_retry`      | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
-| `attestation_fail_retry`         | Duration in milliseconds after device fails attestation to wait before reattesting. |
-| `PwrCtrl`                        | Component power control information.      |
-| `Register`                       | Power control register address.           |
-| `Mask`                           | Power control bitmask.                    |
-| `count`                          | Number of identical components this element describes. |
-| `discovery_fail_retry`           | Duration in milliseconds after device fails a discovery step to wait before retrying. |
-| `mctp_bridge_additional_timeout` | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
-| `DeviceID`                       | Device ID.  See the `Get Device ID` request. |
-| `VendorID`                       | Vendor ID.  See the `Get Device ID` request. |
-| `SubsystemDeviceID`              | Subsystem device ID.  See the `Get Device ID` request. |
-| `SubsystemVendorID`              | Subsystem vendor ID.  See the `Get Device ID` request. |
+| Field                                    | Description                       |
+|------------------------------------------|-----------------------------------|
+| `sku`                                    | String identifier for this platform configuration.  This becomes the platform ID. |
+| `version`                                | Version of the PCD.  This becomes the manifest ID. |
+| `RoT`                                    | Container for the RoT configuration. |
+| `type`                                   | RoT type identifier.              |
+| `mctp_ctrl_timeout`                      | MCTP control protocol response timeout period in milliseconds. |
+| `mctp_bridge_get_table_wait`             | Duration in milliseconds to wait after RoT boots before sending a MCTP Get Routing Table Request to MCTP bridge, if MCTP bridge does not support dynamic EID assignments. If set to 0, RoT will only wait for EID assignment. |
+| `Ports`                                  | Collection of ports an external RoT protects. |
+| `Port`                                   | A single protected port.          |
+| `id`                                     | Integer identifier for the port.  |
+| `SPIFreq`                                | SPI flash frequency in Hz.        |
+| `ResetCtrl`                              | Reset control setting when validation. |
+| `FlashMode`                              | Flash configuration for the protected device. |
+| `Policy`                                 | Attestation policy.               |
+| `PulseInterval`                          | Reset pulse width if the port uses a pulsed reset. |
+| `RuntimeVerification`                    | Port run-time verification setting. |
+| `WatchdogMonitoring`                     | Port watchdog monitoring setting. |
+| `Interface`                              | Communication interface to the RoT. |
+| `type`                                   | Communication interface type or component type identifier string. |
+| `Address`                                | 7-bit I2C address.                |
+| `RoTEID`                                 | Default MCTP EID of the root of trust. |
+| `BridgeEID`                              | MCTP bridge EID.                  |
+| `BridgeAddress`                          | MCTP bridge 7-bit I2C address.    |
+| `Bus`                                    | Identifier for the I2C bus the device is on. |
+| `EID`                                    | Device MCTP EID.                  |
+| `I2CMode`                                | I2C communication mode.           |
+| `Muxes`                                  | A series of I2C muxes connected to a device. |
+| `Mux`                                    | A single I2C mux.                 |
+| `level`                                  | The mux level in the I2C path.  0 if the first mux, 1 is second, etc. |
+| `Address`                                | 7-bit I2C address of the mux.     |
+| `Channel`                                | Channel to activate on mux.       |
+| `Components`                             | Collection of components to attest. |
+| `Component`                              | A single component's attestation information. |
+| `connection`                             | Component connection type.        |
+| `attestation_success_retry`              | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
+| `attestation_fail_retry`                 | Duration in milliseconds after device fails attestation to wait before reattesting. |
+| `attestation_rsp_not_ready_max_retry`    | Maximum number of SPDM ResponseNotReady retries permitted for the device. |
+| `attestation_rsp_not_ready_max_duration` | Maximum wait time between retries after receiving an SPDM ResponseNotReady error. |
+| `PwrCtrl`                                | Component power control information. |
+| `Register`                               | Power control register address.   |
+| `Mask`                                   | Power control bitmask.            |
+| `count`                                  | Number of identical components this element describes. |
+| `discovery_fail_retry`                   | Duration in milliseconds after device fails a discovery step to wait before retrying. |
+| `mctp_bridge_additional_timeout`         | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
+| `DeviceID`                               | Device ID.  See the `Get Device ID` request. |
+| `VendorID`                               | Vendor ID.  See the `Get Device ID` request. |
+| `SubsystemDeviceID`                      | Subsystem device ID.  See the `Get Device ID` request. |
+| `SubsystemVendorID`                      | Subsystem vendor ID.  See the `Get Device ID` request. |
 
 #### Allowed Values for XML Enums
 
@@ -1261,15 +1274,16 @@ than"), multiple Allowable Data elements can be used, one for each check.
 `bitfield CFM.ComponentDevice.MeasurementData.AllowableData`
 | Type                     | Name               | Description                  |
 |--------------------------|--------------------|------------------------------|
-| `0000000b`               | `_`                | Padding for the unused bitmask_presence bits.  This must be 0. |
+| `000000b`                | `_`                | Padding for the unused bitmask_presence and multi_byte_format bits.  This must be 0. |
 | `1`                      | `bitmask_presence` | Flag indicating presence of a bitmask for this comparison. |
+| `1`                      | `endianness`       | Endianness of multi-byte data values.  This will be 0 if the data is presented in little endian or 1 if the data is big endian.  If the data is only a single byte, this value does not matter. |
 | `Check`                  | `check`            | The type of comparison to execute. |
-| `8`	                     | `num_data`         | The total number of values that will be checked. |
+| `8`                      | `num_data`         | The total number of values that will be checked. |
 | `16`                     | `data_len`         | Length of the data to use for comparison. |
 | `0x000000`               | `_`                | Reserved.                    |
-| `data_length`            | `data_bitmask`     | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary. |
+| `data_length`            | `data_bitmask`     | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary.  This bitmask must be created accounting for the endianness of the data. |
 | `ALIGN(32)`              | `_`                | Zero padding.                |
-| `data_length (num_data)` | `data`             | Data to use for comparison.  |
+| `data_length (num_data)` | `data`             | Data to use for comparison.  This must be stored in the format dictacted by the `endianness` flag. |
 | `ALIGN(32)`              | `_`                | Zero padding.                |
 
 ### Allowable PFM Element
@@ -1414,6 +1428,7 @@ consumed by generation scripts to create the binary format.
 	</Measurement>
 	<MeasurementData pmr_id="Decimal integer" measurement_id="Decimal integer">
 		<AllowableData>
+			<Endianness>BigEndian</Endianness>
 			<Check>Equal</Check>
 			<Data>
 				Allowable Data 1
@@ -1426,6 +1441,7 @@ consumed by generation scripts to create the binary format.
 			</Bitmask>
 		</AllowableData>
 		<AllowableData>
+			<Endianness>LittleEndian</Endianness>
 			<Check>GreaterOrEqual</Check>
 			<Data>
 				Allowable Data
@@ -1434,6 +1450,7 @@ consumed by generation scripts to create the binary format.
 	</MeasurementData>
 	<MeasurementData pmr_id="Decimal integer" measurement_id="Decimal integer">
 		<AllowableData>
+			<Endianness>LittleEndian</Endianness>
 			<Check>Equal</Check>
 			<Data>
 				"String"
@@ -1491,6 +1508,7 @@ consumed by generation scripts to create the binary format.
 | `measurement_id`       | Measurement ID.                                     |
 | `MeasurementData`      | Defines group of allowable measurement data.        |
 | `AllowableData`        | Defines allowable values for single measurement data check. |
+| `Endianness`           | Multi-byte format of data.                          |
 | `Check`                | Type of comparison to perform on data.              |
 | `Data`                 | The expected data for the measurement data entry.   |
 | `Bitmask`              | The bitmask to apply to the data during comparison. |
@@ -1519,6 +1537,10 @@ present in the XML, the default value will be used.
 **Component/attestation_protocol**
  - Cerberus
  - SPDM
+
+**Endianness**
+- LittleEndian
+- BigEndian
 
 # Attestation Flows
 
