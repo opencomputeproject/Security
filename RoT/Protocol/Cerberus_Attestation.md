@@ -14,8 +14,8 @@ Authors:
 
 ## Revision History
 
-- v0.01 (2018-10-18)
-  - Initial draft.
+- v1.00 (2022-07-01)
+  - Initial version.
 
 # Summary
 
@@ -383,6 +383,8 @@ boundaries.  For example:
 The exception to this are fields that are an array of bytes, particularly
 digests.  Unless otherwise specified, all digests and other byte arrays are
 stored in big endian.
+
+All lengths are represented in bytes.
 
 ### Manifest Header
 
@@ -800,7 +802,8 @@ protected by the RoT.  The firmware for this processor is stored on SPI flash.
 | Type                  | Name                   | Description                 |
 |-----------------------|------------------------|-----------------------------|
 | `8`                   | `port_id`              | Port identifier.  This maps to Port ID arguments in protocol messages. |
-| `00b`                 | `_`                    | Reserved.                   |
+| `0b`                  | `_`                    | Reserved.                   |
+| `HostResetAction`     | `host_reset_action`    | Action taken by the RoT on a host reset. |
 | `WatchdogMonitoring`  | `watchdog_monitoring`  | Indication if the port supports watchdog monitoring to trigger recovery flows. |
 | `RuntimeVerification` | `runtime_verification` | Indication if the port supports run-time verification of firmware updates. |
 | `FlashMode`           | `flash_mode`           | Configuration of the flash device(s) containing firmware. |
@@ -809,6 +812,12 @@ protected by the RoT.  The firmware for this processor is stored on SPI flash.
 | `Policy`              | `policy`               | Action that should be taken on authentication failures. |
 | `8`                   | `pulse_interval`       | Pulse width of the reset signal if the port used a pulsed reset control.  This value is in multiples of 10 ms. |
 | `32`                  | `spi_frequency_hz`     | SPI clock frequency to use for flash communication.  This value is represented in Hz. |
+
+`enum PCD.SPIFlashPort.HostResetAction`
+| Value | Name           | Description                        |
+|-------|----------------|------------------------------------|
+| `0b`  | `none`         | On host reset, no additional actions will be taken by the RoT.  Normal reset handling will still be executed. |
+| `1b`  | `reset_flash`  | On host reset, always reset host flash.  This is in addition to any normal reset handling and means the RoT will be involved in every host reset. |
 
 `enum PCD.SPIFlashPort.WatchdogMonitoring`
 | Value | Name       | Description                        |
@@ -931,10 +940,10 @@ multiple devices for attestation.
 | Type         | Name                  | Description                           |
 |--------------|-----------------------|---------------------------------------|
 | `Component`  | `component`           | AC-RoT attestation configuration.     |
-| `16`         | `device_id`           | Device identifier as would be returned from the `Get Device ID` request. |
-| `16`         | `vendor_id`           | Vendor identifier as would be returned from the `Get Device ID` request. |
-| `16`         | `subsystem_device_id` | Subsystem device identifier as would be returned from the `Get Device ID` request. |
-| `16`         | `subsystem_vendor_id` | Subsystem vendor identifier as would be returned from the `Get Device ID` request. |
+| `16`         | `device_id`           | Device identifier used to identify this device during the discovery phase of attestation. |
+| `16`         | `vendor_id`           | Vendor identifier used to identify this device during the discovery phase of attestation. |
+| `16`         | `subsystem_device_id` | Subsystem device identifier used to identify this device during the discovery phase of attestation. |
+| `16`         | `subsystem_vendor_id` | Subsystem vendor identifier used to identify this device during the discovery phase of attestation. |
 | `8`          | `components_count`    | Number of identical components this element describes. |
 | `8`          | `eid`                 | Default EID to use if the EID is not dynamically discoverable from the MCTP bridge. |
 | `0x0000`     | `_`                   | Reserved.                             |
@@ -1084,10 +1093,10 @@ generation scripts to create the binary format.
 | `count`                                  | Number of identical components this element describes. |
 | `discovery_fail_retry`                   | Duration in milliseconds after device fails a discovery step to wait before retrying. |
 | `mctp_bridge_additional_timeout`         | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
-| `DeviceID`                               | Device ID.  See the `Get Device ID` request. |
-| `VendorID`                               | Vendor ID.  See the `Get Device ID` request. |
-| `SubsystemDeviceID`                      | Subsystem device ID.  See the `Get Device ID` request. |
-| `SubsystemVendorID`                      | Subsystem vendor ID.  See the `Get Device ID` request. |
+| `DeviceID`                               | Device ID.  See the device discovery description. |
+| `VendorID`                               | Vendor ID.  See the device discovery description. |
+| `SubsystemDeviceID`                      | Subsystem device ID.  See the device discovery description. |
+| `SubsystemVendorID`                      | Subsystem vendor ID.  See the device discovery description. |
 
 #### Allowed Values for XML Enums
 
@@ -1551,7 +1560,8 @@ authentication of flash contents, challenging remote devices, or both.
 
 Flash authentication is typically used by external RoT devices connected to SPI
 flash.  The PCD is used as part of this flow to provide configuration for the
-SPI clock frequency to use when accessing the flash device.  The rest of the
+SPI clock frequency to use when accessing the flash device and other parameters
+related to interactions with the external processor.  The rest of the
 authentication flow only requires a PFM.
 
 ### Authentication of Firmware Updates
@@ -1584,35 +1594,133 @@ modifications to the flow.
 
 ## Attestation of Remote Devices
 
-Attestation of an AC-RoT commences with extracting a certificate chain from a
-device, validating it, then getting a report of measurements.  The measurements
-are then compared to CFM contents and the attestation result is stored in the
-attestor's attestation log.  Cerberus devices can support attestation flows
-using the Cerberus Challenge Protocol and/or the DMTF SPDM attestation protocol.
+Attestation of an AC-RoT follows this general flow:
+
+1. Determine the type of device that is being attested.
+2. Retrieve the device certificate chain, validate it, and establish that the
+   device is trusted.
+3. Get a report of measurements from the device representing the current state.
+4. Compare the measurements to the attestation policy in the CFM.
+5. Store the attestation result in the requesting RoT's attestation log.
+
+Cerberus devices can support attestation using the Cerberus Challenge Protocol
+and/or the DMTF SPDM attestation protocol.  While there are differences in the
+execution details between protocols, the overall flow is the same.
+
 All Cerberus Protocol commands used in the attestation flow are described in the
-Cerberus Challenge Protocol.
+Cerberus Challenge Protocol specification.  MCTP and SPDM commands are described
+in those respective specifications.
 
-### Cerberus to Cerberus Communication
+### Cerberus to AC-RoT Communication
 
-To facilitate Cerberus AC-RoT attestation, Cerberus to Cerberus communication
-needs to be enabled.  Cerberus devices will all act as MCTP endpoints, and will
-either be connected directly on the same physical bus or will communicate
-through an MCTP bridge.  A Cerberus instance that needs to attest other
-AC-RoTs needs to be aware of the addressing details and the platform
-configuration as a whole.  The Platform Configuration Data manifest provides
-these details to the requesting device.
+As a prerequisite to attestation of AC-RoT components, communication to the
+AC-RoT needs to be enabled.  Cerberus and AC-RoT component devices will all act
+as MCTP endpoints and will either be connected directly on the same physical bus
+or will communicate through an MCTP bridge.  A Cerberus instance that needs to
+attest other AC-RoTs needs to be aware of the addressing details and the
+platform configuration as a whole.  The Platform Configuration Data manifest
+provides these details to the Cerberus RoT.
 
-To communicate with an AC-RoT through an MCTP bridge, the requesting device will
-first need to fetch the target device's EID by sending a
-`Get Routing Table Entries` MCTP control request to the MCTP bridge.  The device
-will then look to match each EID with a PCD component entry by sending the
-Cerberus Protocol `Get Device Ids` request to all EIDs.  Matching responses with
-entries in the PCD will identify the type of device assigned each EID.
+#### AC-RoT Discovery with an MCTP Bridge
 
-Since the Cerberus Protocol `Get Device Ids` request is utilized in matching PCD
-device entries and EIDs assigned by the MCTP bridge, this command is required
-for all AC-RoT devices.  This applies equally to devices that support the
-Cerberus Challenge protocol as well as those that use SPDM for attestation.
+To communicate with an AC-RoT through an MCTP bridge, Cerberus will first need
+to fetch the target device's EID by sending a `Get Routing Table Entries` MCTP
+control request to the MCTP bridge.  Cerberus will then issue a
+`Get Message Type Support` MCTP control request to each EID in the received
+routing table to discover the attestation protocol supported by the AC-RoT.
+
+##### AC-RoT Discovery using Cerberus Challenge Protocol
+
+Support for the Cerberus Challenge Protocol is determined when both of the
+following conditions are true:
+
+1. The AC-RoT supports a vendor defined message type.
+2. Support for the Microsoft PCI Vendor ID (0x1414) is advertised in reponse to
+   a `Get Vendor Defined Message Support` MCTP control request.
+
+Once it is determined that an AC-RoT supports the Cerberus Challenge Protocol,
+the type of device is identified by sending the Cerberus Protocol `Device ID`
+request.  The response to this request is used to search component entries in
+the PCD for a match.
+
+##### AC-RoT Discovery using SPDM
+
+Since SPDM has a defined message type in MCTP, support for SPDM is determined by
+simply looking for support of this message type.  Once it is determined that the
+AC-RoT supports SPDM, it is necessary to match this device to a component entry
+in the PCD, just as it is when using Cerberus Challenge Protocol.  However, as
+of SPDM 1.2, there is no protocol-defined method to achieve this.  In the
+absence of any standardized SPDM workflow, the following will be used by
+Cerberus, which must be implemented by any SPDM-based AC-RoT that needs to be
+attested.  If a later version of the SPDM specification is updated to include
+a way to determine this information, that method will be used for AC-RoTs that
+support it.
+
+To provide an SPDM-compliant way for devices to identify themselves for
+attestation, the same PCD IDs that are reported by the Cerberus Protocol
+`Device ID` command will be reported in a SPDM measurement block.  For AC-RoTs
+that support SPDM 1.1.x, this information will be reported in the last
+measurement block index supported by the device.  For other AC-RoTs, this
+information will be at the fixed measurement index of `0xef`.
+
+Retrieval of the measurement block is achieved through this sequence of SPDM
+commands:
+
+1. `Get Version`
+2. `Get Capabilities`
+3. `Negotiate Algorithms`
+4. If the AC-RoT supports SPDM 1.1.x, Cerberus will get the total number of
+   measurement blocks supported by the device using `Get Measurements` with no
+   signature requested and measurement operation set to `0`.  Cerberus follows
+   this with a `Get Measurements` request with no signature requested for the
+   last measurement index.
+5. If the AC-RoT supports SPDM 1.2.x or later, Cerberus will send a
+   `Get Measurements` request with no signature requested for the raw bit stream
+   at measurement index `0xef`.
+
+In all cases, the response is expected to contain the raw bit stream of the
+measurement block.  The format of this measurement block is based on the
+`QueryDeviceIdentifiers` command from
+[DMTF DSP0267 1.1.0, PLDM for Firmware Update](https://www.dmtf.org/sites/default/files/standards/documents/DSP0267_1.1.0.pdf).
+
+`bitfield DeviceIds`
+| Type                           | Name                | Description           |
+|--------------------------------|---------------------|-----------------------|
+| `8`                            | `completion_code`   | PLDM_BASE_CODES completion code. |
+| `32`                           | `descriptor_length` | Total length of all descriptors provided. |
+| `8`                            | `descriptor_count`  | Total number of descriptors. |
+| `Descriptor(descriptor_count)` | `descriptors`       | List of device descriptors. |
+
+`bitfield Descriptor`
+| Type        | Name       | Description                                       |
+|-------------|------------|---------------------------------------------------|
+| `16`        | `type`     | Type identifier for the descriptor.               |
+| `16`        | `length`   | Length of the descriptor data.                    |
+| `length`    | `data`     | The raw descriptor data.  What this represents will depend on the type of descriptor. |
+
+While the descriptors included in the response may include more than the PCI
+IDs, at least descriptors for `PCI Vendor ID`, `PCI Device ID`,
+`PCI Subsystem Vendor ID`, and `PCI Subsystem ID` must be included.  Included
+here is a quick reference for the values to assign to `Descriptor` fields for
+this information.
+
+| `type`   | `length` | `data`                   |
+|----------|----------|--------------------------|
+| `0x0000` | `2`      | PCI Vendor ID.           |
+| `0x0100` | `2`      | PCI Device ID.           |
+| `0x0101` | `2`      | PCI Subsystem Vendor ID. |
+| `0x0102` | `2`      | PCI Subsystem ID         |
+
+For more details regarding descriptor types and formats, refer to Table 8 in
+[DSP0267 1.1.0](https://www.dmtf.org/sites/default/files/standards/documents/DSP0267_1.1.0.pdf).
+
+#### AC-RoT Discovery Without an MCTP Bridge
+
+When the system does not use an MCTP bridge, the Cerberus device would be
+directly connected the required AC-RoTs.  In this scenario, the discovery
+procedure is the same as the one followed with an MCTP bridge.  The only
+difference is there is no `Get Routing Table Entries` command sent.  Instead,
+AC-RoT information is determined from PCD component entries.
 
 ### AC-RoT Attestation
 
@@ -1903,3 +2011,7 @@ https://trustedcomputinggroup.org/work-groups/dice-architectures/
 https://trustedcomputinggroup.org/work-groups/trusted-platform-module/
 4. Security Protocol and Data Model Specification:<br>
 https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.2.0.pdf
+5. Platform Level Data Model (PLDM) Base Specification:<br>
+https://www.dmtf.org/sites/default/files/standards/documents/DSP0267_1.1.0.pdf
+6. Management Component Transport Protocol (MCTP) Base Specification:<br>
+https://www.dmtf.org/sites/default/files/standards/documents/DSP0236_1.1.0.pdf
