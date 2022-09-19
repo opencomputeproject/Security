@@ -908,7 +908,8 @@ identifier will match a type specified in the CFM.
 | `Policy` | `policy`          | Action that should be taken on authentication failures.  Active policies are only possible if there is power controller present. |
 | `8`      | `power_ctrl_reg`  | Register address in the power controller that manages this component. |
 | `8`      | `power_ctrl_mask` | A bitmask indicating the bit(s) used to control power to this component. |
-| `8`      | `component_id`    | Component ID that maps to a PCD entry.        |
+| `0x00`   | `_`               | Reserved.                                     |
+| `32`     | `component_id`    | Identifier for the component type.  This ID will be used to match against an attestation policy in the CFM.  If there are multiple components in the PCD with the same component ID, they will all use the same policy in the CFM. |
 
 #### Component with Direct I2C Connection Element
 
@@ -1188,7 +1189,7 @@ child element.
 | `Manifest.HashType`   | `measurement_hash_type`  | The type of hash used to generate measurement, PMR, and root CA digests. |
 | `00b`                 | `_`                      | Padding for the unused HashType bits.  This must be 0. |
 | `0x00`                | `_`                      | Reserved.                 |
-| `32`                  | `component_id`           | Component ID that maps to a PCD entry. |
+| `32`                  | `component_id`           | Identifier for the component type that will be attested.  This must be a unique identifier within the CFM. |
 
 `enum CFM.AttestationProtocol`
 | Value  | Name                | Description                      |
@@ -1196,15 +1197,22 @@ child element.
 | `0x00` | `cerberus_protocol` | The Cerberus challenge protocol. |
 | `0x01` | `dmtf_spdm`         | The DMTF SPDM protocol.          |
 
-`enum CFM.ComponentDevice.Check`
+`bitfield CFM.ComponentDevice.Check`
+| Type             | Name               | Description                          |
+|------------------|--------------------|--------------------------------------|
+| `CheckType`      | `check`            | The type of comparison to execute.   |
+| `0000b`          | `_`                | Unused bits.  This must be 0.        |
+| `1`              | `endianness`       | Endianness of multi-byte data values.  This will be 0 if the data is presented in little endian or 1 if the data is big endian.  If the data is only a single byte, this value does not matter. |
+
+`enum CFM.ComponentDevice.CheckType`
 | Value  | Name               | Description                                    |
 |--------|--------------------|------------------------------------------------|
-| `0x00` | `equal`            | Ensure the reported data is equal to the specified value. |
-| `0x01` | `not_equal`        | Ensure the reported data is not equal to the specified value. |
-| `0x02` | `less_than`        | Ensure the reported data is less than the specified value. |
-| `0x03` | `less_or_equal`    | Ensure the reported data is less than or equal to the specified value. |
-| `0x04` | `greater_than`     | Ensure the reported data is greater than the specified value. |
-| `0x05` | `greater_or_equal` | Ensure the reported data is greater than or equal to the specified value. |
+| `000b` | `equal`            | Ensure the reported data is equal to the specified value. |
+| `001b` | `not_equal`        | Ensure the reported data is not equal to the specified value. |
+| `010b` | `less_than`        | Ensure the reported data is less than the specified value. |
+| `011b` | `less_or_equal`    | Ensure the reported data is less than or equal to the specified value. |
+| `100b` | `greater_than`     | Ensure the reported data is greater than the specified value. |
+| `101b` | `greater_or_equal` | Ensure the reported data is greater than or equal to the specified value. |
 
 ### PMR Element
 
@@ -1229,7 +1237,7 @@ would be reported by `Challenge` or `Get PMR` requests.
 | `8`                                   | `pmr_id`       | Identifier for the PMR to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
 | `8`                                   | `digest_count` | Number of allowable digests for this PMR. |
 | `0x0000`                              | `_`            | Reserved.           |
-| `measurement_hash_type(digest_count)` | `pmr_digest`   | Expected digest for the PMR. |
+| `measurement_hash_type(digest_count)` | `pmr_digest`   | List of allowed digests for the PMR. |
 
 ### Measurement Element
 
@@ -1241,13 +1249,32 @@ aggregated with all other measurement blocks when reported by `SPDM Challenge`
 requests or reported separately by the `SPDM Get Measurement` request.
 
 `bitfield CFM.ComponentDevice.Measurement`
-| Type                                  | Name             | Description       |
-|---------------------------------------|------------------|-------------------|
-| `8`                                   | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM protocol. |
-| `8`                                   | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM protocol, this is the measurement block index. |
-| `8`                                   | `digest_count`   | Number of allowable digests for this measurement. |
-| `0x00`                                | `_`              | Reserved.         |
-| `measurement_hash_type(digest_count)` | `digest`         | Expected digest for the entry. |
+| Type                                      | Name                     | Description |
+|-------------------------------------------|--------------------------|-------------|
+| `8`                                       | `pmr_id`                 | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices using SPDM, since SPDM does not provide an equivalent to PMRs. |
+| `8`                                       | `measurement_id`         | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM, this is the measurement block index. |
+| `8`                                       | `allowable_digest_count` | Number of allowable digests for this measurement. |
+| `0x00`                                    | `_`                      | Reserved.   |
+| `AllowableDigest(allowable_digest_count)` | `digests_list`           | List of allowable digests across all versions of expected firmware. |
+
+`bitfield CFM.ComponentDevice.Measurement.AllowableDigest`
+| Type                                  | Name           | Description         |
+|---------------------------------------|----------------|---------------------|
+| `16`                                  | `version_set`  | Identifier for a set of measurements associated with the same version of firmware on the device.  This will be 0 if the same set of measurements applies to all versions of firmware. |
+| `8`                                   | `digest_count` | The number of allowable digests for this version set. |
+| `0x00`                                | `_`            | Reserved.           |
+| `measurement_hash_type(digest_count)` | `digest`       | List of expected measurements digests for this version set. |
+
+When attesting individual measurements, it is necessary to ensure that the
+measurements reported by the device represent an expected state across all
+measurements.  Attesting individual measurements alone does not ensure this,
+since each would be checked independently from other checks.  This would allow a
+device reporting one measurement from firmware A and another measurement from
+firmware B to be viewed as healthy, even if it is required that both
+measurements represent state for either firmware A or B, exclusively.  The
+`version_set` identifier provides a way to ensure that reported measurements can
+be checked within a broader attestation context, providing coupling between
+separate measurement checks.
 
 ### Measurement Data Element
 
@@ -1257,43 +1284,72 @@ be an entry within a specific PMR reported by the `Get Attestation Data`
 request.  In SPDM, this will be the raw form for a single measurement block and
 can be reported separately by the `SPDM Get Measurement` request.  This allows
 for more sophisticated policy checks than simply comparing digests and has the
-potential for more efficient use of space within the CFM.  There is as many
-checks as there are child AllowableData elements, and all need to succeed for
-successful attestation.
+potential for more efficient use of space within the CFM.  There are as many
+checks executed against this data as there are child Allowable Data elements,
+and all need to succeed for successful attestation.
+
+The use of `version_set` within individual checks for Measurement Data elements
+is the same as with Measurement elements.  Additionally, the coupling between
+Measurement elements that exists due to `version_set` also extends to
+Measurement Data elements.  This means that all Measurement and Measurement Data
+checks must attest within same `version_set` for attestation to pass.
 
 `bitfield CFM.ComponentDevice.MeasurementData`
 | Type                        | Name             | Description                 |
 |-----------------------------|------------------|-----------------------------|
-| `8`                         | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM protocol. |
-| `8`                         | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM protocol, this is the measurement block index. |
+| `8`                         | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM. |
+| `8`                         | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM, this is the measurement block index. |
 | `0x0000`                    | `_`              | Reserved.                   |
 
 ### Allowable Data Element
 
 The Allowable Data element contains a list of allowable values for a single
-measurement data check.  For "equal" and "not equal" checks, there can be as
-many data entries in a single Allowable Data element as allowed or not allowed
-values.  For "greater than", "greater than or equal to", "less than" or
-"less than or equal to" checks, there should be only a single data entry in
-the Allowable Data element.
+measurement data check.  For `equal` and `not equal` checks, there can be as
+many data entries in a single Allowable Data element as required to cover all
+allowed or disallowed values.  For any other type of check, there should be only
+a single data entry in the Allowable Data element.
 
-To combine multiple measurement data checks (e.g. "not equal" and "greater
-than"), multiple Allowable Data elements can be used, one for each check.
+To combine multiple measurement data checks (e.g. `not equal` and
+`greater than`), multiple Allowable Data elements must be used, one for each
+check.
 
 `bitfield CFM.ComponentDevice.MeasurementData.AllowableData`
-| Type                     | Name               | Description                  |
-|--------------------------|--------------------|------------------------------|
-| `000000b`                | `_`                | Padding for the unused bitmask_presence and multi_byte_format bits.  This must be 0. |
-| `1`                      | `bitmask_presence` | Flag indicating presence of a bitmask for this comparison. |
-| `1`                      | `endianness`       | Endianness of multi-byte data values.  This will be 0 if the data is presented in little endian or 1 if the data is big endian.  If the data is only a single byte, this value does not matter. |
-| `Check`                  | `check`            | The type of comparison to execute. |
-| `8`                      | `num_data`         | The total number of values that will be checked. |
-| `16`                     | `data_len`         | Length of the data to use for comparison. |
-| `0x000000`               | `_`                | Reserved.                    |
-| `data_length`            | `data_bitmask`     | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary.  This bitmask must be created accounting for the endianness of the data. |
-| `ALIGN(32)`              | `_`                | Zero padding.                |
-| `data_length (num_data)` | `data`             | Data to use for comparison.  This must be stored in the format dictacted by the `endianness` flag. |
-| `ALIGN(32)`              | `_`                | Zero padding.                |
+| Type              | Name               | Description                         |
+|-------------------|--------------------|-------------------------------------|
+| `Check`           | `check`            | The type of comparison to execute on the data.   |
+| `8`               | `num_data`         | The total number of values that will be checked. |
+| `16`              | `bitmask_length`   | Length of the bitmask to apply to the measurement data before applying any checks.  If this is 0, no bitmask will be applied and the raw data will be checked. |
+| `bitmask_lengtnh` | `data_bitmask`     | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary.  This bitmask must be created accounting for the endianness of the data.  The same bitmask applies to all data entries.  If the bitmask is longer than the measurement data, unused mask bits are ignored. |
+| `ALIGN(32)`       | `_`                | Zero padding.                       |
+| `Data(num_data)`  | `data_list`        | List of supported data.             |
+
+`bitfield CFM.ComponentDevice.MeasurementData.AllowableData.Data`
+| Type                     | Name          | Description                       |
+|--------------------------|---------------|-----------------------------------|
+| `16`                     | `version_set` | Identifier for a set of measurements associated with the same version of firmware on the device.  This will be 0 if the same measurement data check applies to all versions of firmware. |
+| `16`                     | `data_length` | Length of the data to use for comparison. |
+| `data_length (num_data)` | `data`        | Data to use for comparison.  This must be stored in the format indicated by the `Check.endianness` flag. |
+| `ALIGN(32)`              | `_`           | Zero padding.                     |
+
+In order to group a set of data into a single Allowable Data element, each data
+check must use the same bitmask.  Each unique bitmask must be a separate
+Allowable Data element.  Since the raw data can be different lengths between
+different versions of firmware, it is not required that the data length be the
+same.  However, using bitmasks with data of different lengths presents some
+challenges, so the following properties must hold to allow for efficient
+grouping of checks.
+
+1. The `bitmask_length` must be at least equal to the largest `data_length`
+   across all supported data.
+2. If `bitmask_length` is greater than `data_length` for any given `data`, any
+   `data_bitmask` bytes that exceed `data_length` will be ignored by the
+   comparison.
+3. `data_bitmask` is always applied starting with the least significant byte of
+   data.  If the data and bitmask lengths do not match, the most significant
+   bytes of the bitmask will be ignored.  The `Check.endianness` flag indicates
+   how that data and bitmask are stored and in which order they need to be
+   processed.
+
 
 ### Allowable PFM Element
 
@@ -1320,14 +1376,13 @@ the checks to run against the PFM ID.
 
 The Allowable ID element contains a list of allowable IDs for a single manifest
 check.  This element can be a child to the Allowable PFM, CFM, or PCD elements.
-For "equal" and "not equal" checks, there can be as many data entries in a
-single Allowable ID element as allowed or not allowed values.  For
-"greater than", "greater than or equal to", "less than" or
-"less than or equal to" checks, there should be only a single data entry in
-the Allowable ID element.
+For `equal` and `not equal` checks, there can be as many data entries in a
+single Allowable ID element as required to cover all allowed or disallowed
+values.  For any other type of check, there should be only a single data entry
+in the Allowable ID element.
 
-To combine multiple manifest ID checks (e.g. "not equal" and "greater than"),
-multiple Allowable ID elements can be used, one for each check.
+To combine multiple manifest ID checks (e.g. `not equal` and `greater than`),
+multiple Allowable ID elements must be used, one for each check.
 
 `bitfield CFM.ComponentDevice.AllowableID`
 | Type            | Name     | Description                                   |
@@ -1385,8 +1440,15 @@ information about the components to attest.  Unlike a PFM that only deals in one
 flash device, the CFM is intended to hold attestation information for multiple
 components.  XML files with a CFMComponent element are used to define attestable
 components.  A single CFM XML file is used to select attestable components to
-include in the CFM binary. This is an example of both XML formats that can be
-consumed by generation scripts to create the binary format.
+include in the CFM binary.  Each component will have a single XML per firmware
+version, and the resulting CFM binary will differentiate measurements belonging
+to different firmware versions using the `version_set` field.  Each component
+XML shall have at least one Measurement or MeasurementData element that is
+unique for each firmware version.  This unique entry must be the first
+Measurement or MeasurementData child element to CFMComponent in the XML.
+
+This is an example of both XML formats that can be consumed by generation
+scripts to create the binary format.
 
 ```xml
 <CFM sku="identifier">
@@ -1402,7 +1464,7 @@ consumed by generation scripts to create the binary format.
 	slot_num="Decimal integer" transcript_hash_type="SHA256"
 	measurement_hash_type="SHA384">
 	<RootCADigest>
-		<HashType>SHA256</HashType>
+		<!-- Digest type is determined by measurement_hash_type. -->
 		<Digest>
 			Root CA Digest
 		</Digest>
@@ -1412,13 +1474,13 @@ consumed by generation scripts to create the binary format.
 	</RooTCADigest>
 	<PMR pmr_id="Decimal integer">
 		<SingleEntry>True</SingleEntry>
-		<HashType>SHA256</HashType>
+		<!-- InitialValue type is determined by measurement_hash_type. -->
 		<InitialValue>
 			Initial value digest
 		</InitialValue>
 	</PMR>
 	<PMRDigest pmr_id="Decimal integer">
-		<HashType>SHA256</HashType>
+		<!-- Digest type is determined by measurement_hash_type. -->
 		<Digest>
 			PMR Digest
 		</Digest>
@@ -1427,7 +1489,7 @@ consumed by generation scripts to create the binary format.
 		</Digest>
 	</PMRDigest>
 	<Measurement pmr_id = "Decimal integer" measurement_id="Decimal integer">
-		<HashType>SHA256</HashType>
+		<!-- Digest type is determined by measurement_hash_type. -->
 		<Digest>
 			Measurement Digest
 		</Digest>
@@ -1506,7 +1568,6 @@ consumed by generation scripts to create the binary format.
 | `transcript_hash_type` | Hashing algorithm used for transcript hashing.      |
 | `measurement_hash_type`| Hashing algorithm used to compute PMR, measurement, and root CA digests. |
 | `RootCADigest`         | Defines trusted root CAs to be used for certificate chain validation.  This is an optional tag. |
-| `HashType`             | Hashing algorithm used to compute a digest.  This needs to be the same as the measurement_hash_type. |
 | `Digest`               | The expected digest.                                |
 | `PMR`                  | Defines information needed to regenerate a PMR.  This is an optional tag. |
 | `SingleEntry`          | Boolean indicating if PMR has a single entry measurement. |
@@ -1930,12 +1991,12 @@ authenticity of the prior transactions.  This process is illustrated below:
 ```
 
 If the device supports SPDM 1.2 or higher, and does not support the `Challenge`
-command, the `Get Measurement` command is used instead if applicable.  The CFM
-contains a PMR digest element but the device does not support the `Challenge`
-command, the `Get Measurement` command is used and all measurement blocks are
-requested.  The attestor then combines all measurement blocks into a single
-digest and compares it to the PMR0 digest CFM element.  This process takes the
-following flow:
+command, the `Get Measurement` command is used instead if applicable.  If the
+CFM contains a PMR digest element but the device does not support the
+`Challenge` command, the `Get Measurement` command is used and all measurement
+blocks are requested.  The attestor then combines all measurement blocks into a
+single digest and compares it to the PMR0 digest CFM element.  This process
+takes the following flow:
 
 ```
                  Attestor                           Device
@@ -2000,6 +2061,33 @@ The SPDM protocol does not explicitly support verification of configuration IDs.
 To verify a device's configuration IDs, a measurement block can be generated
 with the configuration IDs as the expected content, and the aforementioned flows
 for measurement or measurement data attestation can be utilized.
+
+### Handling Measurement Version Sets
+
+Regardless of whether Cerberus Challenge protocol or SPDM is used to attest the
+AC-RoT, the attestor must ensure that all measurements represent the same
+version of firmware, as required by the CFM.  In these scenarios, there are
+additional checks that take place when attesting Measumement and Measurement
+Data elements.
+
+The first Measurement or Measurement Data element in the CFM must correspond to
+a measumerent that has an entry for all supported versions of firmware and is
+unique between each version.  For example, a measumerent of the version number
+or string could be used here.  Once the first measurement is attested
+successfully, the attestor must determine the version set identifier specified
+in the CFM for the matching entry.  All subsequent Measurement and Measurement
+Data elements will be attested with these additional conditions, using the
+selected version set identifier from this first check.
+
+1. If the element contains an entry with version set identifier equal to 0, this
+   check must always succeed, irrespective of any selected version set
+   identifier.
+2. If the element contains an entry matching the selected version set
+   identifier, attestation of the device state must match only that element
+   entry.
+3. If the element contains no entries for the selected version set identifier
+   and no entries with a version set identifier of 0, that element is ignored as
+   part of the current attestation.
 
 ## References
 
