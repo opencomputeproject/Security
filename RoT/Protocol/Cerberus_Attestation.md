@@ -389,16 +389,16 @@ All lengths are represented in bytes.
 ### Manifest Header
 
 `bitfield Manifest.Header`
-| Type            | Name               | Description                           |
-|-----------------|--------------------|---------------------------------------|
+| Type            | Name               | Description                                               |
+|-----------------|--------------------|-----------------------------------------------------------|
 | `16`            | `total_length`     | Total length of all data in the manifest, including the signature. |
-| `16`            | `manifest_type`    | Identifier indicating the type of manifest. |
+| `16`            | `manifest_type`    | Identifier indicating the type of manifest.               |
 | `32`            | `version_id`       | Version identifier for the manifest.  The version ID is a monotonically increasing value, preventing rollback to earlier manifest versions. |
 | `16`            | `signature_length` | Length of the signature appended to the end of the manifest data. |
 | `PublicKeyType` | `public_key_type`  | The type of public key used to generate the manifest signature. |
-| `KeyStrength`   | `key_strength`     | Key strength used to generate the manifest signature. |
-| `HashType`      | `hash_type`        | Hash algorithm used to generate the manifest signature. |
-| `0x00`          | `_`                | Reserved.                             |
+| `KeyStrength`   | `key_strength`     | Key strength used to generate the manifest signature.     |
+| `HashType`      | `hash_type`        | Hash algorithm used to generate the manifest signature.   |
+| `0x00`          | `_`                | Reserved.                                                 |
 
 `enum Manifest.PublicKeyType`
 | Value   | Name    | Description            |
@@ -423,26 +423,26 @@ All lengths are represented in bytes.
 ### Manifest Table of Contents
 
 `bitfield Manifest.TOC.Header`
-| Type        | Name           | Description                                   |
-|-------------|----------------|-----------------------------------------------|
-| `8`         | `entry_count`  | The number of entries in the table.           |
+| Type        | Name           | Description                                                       |
+|-------------|----------------|-------------------------------------------------------------------|
+| `8`         | `entry_count`  | The number of entries in the table.                               |
 | `8`         | `hash_count`   | The number of entries in the table that have an associated hash.  It is not required that all entries have a hash. |
-| `00000b`    | `_`            | Padding for the unused HashType bits.  This must be 0. |
+| `00000b`    | `_`            | Padding for the unused HashType bits.  This must be 0.            |
 | `HashType`  | `hash_type`    | Specifies the type of hash added for table validation.  This is also the type of hash used to generate individual element hashes. |
-| `0x00`      | `_`            | Reserved.                                     |
+| `0x00`      | `_`            | Reserved.                                                         |
 
 Each element within the manifest must have an entry in the Table of Contents.
 The entries must be in order based on position within the manifest.
 
 `bitfield Manifest.TOC.Entry`
-| Type   | Name       | Description                                            |
-|--------|------------|--------------------------------------------------------|
-| `8`    | `type_id`  | An identifier indicating the element type.             |
+| Type   | Name       | Description                                                                |
+|--------|------------|----------------------------------------------------------------------------|
+| `8`    | `type_id`  | An identifier indicating the element type.                                 |
 | `8`    | `parent`   | A Type ID representing the parent for this element.  The first element preceding this element with the matching Type ID is the parent element.  If the element has no parent, this will be set to `0xff`. |
 | `8`    | `format`   | Format version of the data contained in the element.  New format versions must be backwards compatible with older versions.  Fields cannot be moved or reordered. |
 | `8`    | `hash_id`  | Identifier specifying the index in the hash table for this element.  An element hash is optional.  A hash ID equal to or greater than the total number of hashes in the table indicates there is no hash for the element.  It is recommended that a hash ID of `0xff` should be used for this purpose. |
 | `16`   | `offset`   | The offset from the start of the manifest where the element data is located. |
-| `16`   | `length`   | Length of the element data.                            |
+| `16`   | `length`   | Length of the element data.                                                |
 
 After the element entries, there is a hash table for element validation.  This
 table is an array of equal sized hashes, whose length is determined by the hash
@@ -492,8 +492,8 @@ are limited to 255 bytes and do not have any terminator stored in the manifest.
 There are a base set of elements defined that are common across all manifest
 types.  Specific manifests can define additional types.
 
-| Type ID        | Element Type        | Format | Top-Level | Singleton | Description |
-|----------------|---------------------|--------|-----------|-----------|-------------|
+| Type ID        | Element Type        | Format | Top-Level | Singleton | Description              |
+|----------------|---------------------|--------|-----------|-----------|--------------------------|
 | `0x00`         | `Platform ID`       |   1    |     X     |     X     | An identifier for the platform that uses this manifest. |
 | `0x01 - 0x0f`  | `Reserved`          |        |           |           | Reserved for future use. |
 | `0xe0 - 0xfe`  | `Vendor Extensions` |        |           |           | Reserved for vendor-specific element types. |
@@ -515,12 +515,12 @@ element, manifest parsers will likely reject a manifest as not valid if it
 doesn't contain a platform ID element.
 
 `bitfield Manifest.PlatformID`
-| Type                | Name              | Description                        |
-|---------------------|-------------------|------------------------------------|
-| `8`                 | `plat_id_length`  | Length of the platform ID string.  |
-| `0x000000`          | `_`               | Reserved.                          |
+| Type                | Name              | Description                                            |
+|---------------------|-------------------|--------------------------------------------------------|
+| `8`                 | `plat_id_length`  | Length of the platform ID string.                      |
+| `0x000000`          | `_`               | Reserved.                                              |
 | `plat_id_length`    | `plat_id_string`  | Platform ID string.  This is an ASCII string that is not null terminated. |
-| `ALIGN (32)`        | `_`               | Zero padding.                      |
+| `ALIGN (32)`        | `_`               | Zero padding.                                          |
 
 ## Platform Firmware Manifest
 
@@ -540,8 +540,8 @@ the processor.  All of these scenarios can be described in a PFM.
 A PFM will report a `manifest_type` of `0x706d` in the manifest header.  The PFM
 defines the following additional manifest element types.
 
-| Type ID  | Element Type       | Format | Top-Level | Singleton | Description |
-|----------|--------------------|--------|-----------|-----------|-------------|
+| Type ID  | Element Type       | Format | Top-Level | Singleton | Description                     |
+|----------|--------------------|--------|-----------|-----------|---------------------------------|
 | `0x10`   | `Flash Device`     |   0    |     X     |     X     | Defines global information relevant to the entire flash device. |
 | `0x11`   | `Firmware`         |   1    |     X     |           | Defines a single piece of firmware that is present on the flash.  This will only be valid if there is a Flash Device element in the manifest. |
 | `0x12`   | `Firmware Version` |   1    |           |           | Description for single version of firmware.  This will only be used as a child to a Firmware element. |
@@ -558,11 +558,11 @@ is managing access to one flash or the other at any point in time.  The layout
 and validation of either device should be the same.
 
 `bitfield PFM.FlashDevice`
-| Type     | Name         | Description                                        |
-|----------|--------------|----------------------------------------------------|
+| Type     | Name         | Description                                                            |
+|----------|--------------|------------------------------------------------------------------------|
 | `8`      | `blank_byte` | The value that represents an unused byte of flash.  During validation, all unused regions of flash will be checked against this value to ensure no unexpected data is stored. |
-| `8`      | `fw_count`   | The number of firmware components stored in the flash. |
-| `0x0000` | `_`          | Reserved.                                          |
+| `8`      | `fw_count`   | The number of firmware components stored in the flash.                 |
+| `0x0000` | `_`          | Reserved.                                                              |
 
 ### Firmware Element
 
@@ -574,20 +574,20 @@ this case, it is possible to partition the flash so each component is validated
 individually.
 
 `bitfield PFM.Firmware`
-| Type            | Name              | Description                            |
-|-----------------|-------------------|----------------------------------------|
+| Type            | Name              | Description                                                |
+|-----------------|-------------------|------------------------------------------------------------|
 | `8`             | `version_count`   | The number of allowed versions for this firmware component. |
-| `8`             | `fw_id_length`    | Length of the firmware component identifier. |
-| `0000000b`      | `_`               | Reserved.                              |
+| `8`             | `fw_id_length`    | Length of the firmware component identifier.               |
+| `0000000b`      | `_`               | Reserved.                                                  |
 | `UpdateApplied` | `run_time_update` | Flag to indicate if updates can be applied without a reboot. |
-| `0x00`          | `_`               | Reserved.                              |
+| `0x00`          | `_`               | Reserved.                                                  |
 | `fw_id_length`  | `fw_id_string`    | ASCII string identifier for the firmware component.  This is not null terminated. |
-| `ALIGN(32)`     | `_`               | Zero padding.                          |
+| `ALIGN(32)`     | `_`               | Zero padding.                                              |
 
 `enum PFM.Firmware.UpdateApplied`
-| Value  | Name       | Description                                            |
-|--------|------------|--------------------------------------------------------|
-| `0b`   | `reboot`   | Updates are applied only on reboot of the processor.   |
+| Value  | Name       | Description                                                   |
+|--------|------------|---------------------------------------------------------------|
+| `0b`   | `reboot`   | Updates are applied only on reboot of the processor.          |
 | `1b`   | `run_time` | Updates can be applied without notifying the RoT of a reboot. |
 
 ### Firmware Version Element
@@ -599,37 +599,37 @@ information contained in a Firmware Version element, it is considered to be
 untrusted.
 
 `bitfield PFM.FirmwareVersion`
-| Type                     | Name             | Description                    |
-|--------------------------|------------------|--------------------------------|
+| Type                     | Name             | Description                                        |
+|--------------------------|------------------|----------------------------------------------------|
 | `8`                      | `img_count`      | The number of signed images contained in this version. |
 | `8`                      | `rw_count`       | The number of R/W data regions used by this version. |
-| `8`                      | `version_length` | Length of the version identifier string. |
-| `0x00`                   | `_`              | Reserved.                      |
+| `8`                      | `version_length` | Length of the version identifier string.           |
+| `0x00`                   | `_`              | Reserved.                                          |
 | `32`                     | `version_addr`   | Address on flash where the version string is stored.  This must be within a signed image that is validated every time. |
 | `version_length`         | `version_string` | ASCII string identifier for the version.  This is not null terminated. |
-| `ALIGN(32)`              | `_`              | Zero padding.                  |
+| `ALIGN(32)`              | `_`              | Zero padding.                                      |
 | `RWRegion(rw_count)`     | `rw_regions`     | List of flash regions that contain R/W data and therefore cannot be statically authenticated. |
 | `SignedImage(img_count)` | `images`         | List of hashes that must be used to authenticate the contents of flash. |
 
 `bitfield PFM.FirmwareVersion.RWRegion`
-| Type          | Name           | Description                                 |
-|---------------|----------------|---------------------------------------------|
-| `000000b`     | `_`            | Reserved.                                   |
+| Type          | Name           | Description                                                     |
+|---------------|----------------|-----------------------------------------------------------------|
+| `000000b`     | `_`            | Reserved.                                                       |
 | `RWOperation` | `auth_fail_op` | The operation that the RoT should take on this R/W region when an update fails authentication. |
-| `24`          | `_`            | Reserved.                                   |
-| `Region`      | `region`       | The flash region that contains R/W data.    |
+| `24`          | `_`            | Reserved.                                                       |
+| `Region`      | `region`       | The flash region that contains R/W data.                        |
 
 `bitfield PFM.FirmwareVersion.SignedImage`
-| Type                   | Name           | Description                        |
-|------------------------|----------------|------------------------------------|
+| Type                   | Name           | Description                                            |
+|------------------------|----------------|--------------------------------------------------------|
 | `00000b`               | `_`            | Padding for the unused HashType bits.  This must be 0. |
 | `Manifest.HashType`    | `hash_type`    | Specifies the type of hash used for image authentication. |
-| `8`                    | `region_count` | The number of flash regions to hash for this image. |
-| `0000000b`             | `_`            | Reserved.                          |
+| `8`                    | `region_count` | The number of flash regions to hash for this image.    |
+| `0000000b`             | `_`            | Reserved.                                              |
 | `MustValidate`         | `validate`     | A flag to indicate if an image should be validated on each boot or not. |
-| `0x00`                 | `_`            | Reserved.                          |
-| `hash_type`            | `img_hash`     | Expected hash for the image data.  |
-| `Region(region_count)` | `_`            | The list of flash regions that should be hashed. |
+| `0x00`                 | `_`            | Reserved.                                              |
+| `hash_type`            | `img_hash`     | Expected hash for the image data.                      |
+| `Region(region_count)` | `_`            | The list of flash regions that should be hashed.       |
 
 `bitfield PFM.FirmwareVersion.Region`
 | Type  | Name         | Description                                    |
@@ -638,10 +638,10 @@ untrusted.
 | `32`  | `end_addr`   | Last valid address within the defined region.  |
 
 `enum PFM.FirmwareVersion.MustValidate`
-| Value  | Name        | Description                                           |
-|--------|-------------|-------------------------------------------------------|
+| Value  | Name        | Description                                                               |
+|--------|-------------|---------------------------------------------------------------------------|
 | `0b`   | `updates`   | The firmware image is chain loaded from an image validated on boot, so only validate it when there is an update. |
-| `1b`   | `each_boot` | Validate the firmware image on every system boot.     |
+| `1b`   | `each_boot` | Validate the firmware image on every system boot.                         |
 
 `enum PFM.FirmwareVersion.RWOperation`
 | Value  | Name       | Description                                            |
@@ -707,22 +707,22 @@ metadata that can be consumed by generation scripts to create the binary format.
 </Firmware>
 ```
 
-| Field                | Description                                           |
-|----------------------|-------------------------------------------------------|
-| `type`               | Firmware component string identifier.                 |
-| `version`            | Firmware version string identifier.                   |
-| `platform`           | Platform string identifier.                           |
-| `VersionAddr`        | Address on flash of the version string identifier.    |
-| `UnusedByte`         | Byte to check for in unused flash regions.            |
-| `RuntimeUpdate`      | Flag to indicate if the firmware can update at run-time. |
-| `ReadWrite`          | Defines a single R/W data region.                     |
-| `Region`             | Defines a region of contiguous flash.                 |
-| `StartAddr`          | First valid address within the region.                |
-| `EndAddr`            | Last valid address within the region.                 |
+| Field                | Description                                                              |
+|----------------------|--------------------------------------------------------------------------|
+| `type`               | Firmware component string identifier.                                    |
+| `version`            | Firmware version string identifier.                                      |
+| `platform`           | Platform string identifier.                                              |
+| `VersionAddr`        | Address on flash of the version string identifier.                       |
+| `UnusedByte`         | Byte to check for in unused flash regions.                               |
+| `RuntimeUpdate`      | Flag to indicate if the firmware can update at run-time.                 |
+| `ReadWrite`          | Defines a single R/W data region.                                        |
+| `Region`             | Defines a region of contiguous flash.                                    |
+| `StartAddr`          | First valid address within the region.                                   |
+| `EndAddr`            | Last valid address within the region.                                    |
 | `OperationOnFailure` | Operation to perform on a R/W data region after authentication failures. |
-| `SignedImage`        | Defines a single image that needs authentication.     |
-| `Hash`               | The expected hash for the image.                      |
-| `HashType`           | The type of hash used.                                |
+| `SignedImage`        | Defines a single image that needs authentication.                        |
+| `Hash`               | The expected hash for the image.                                         |
+| `HashType`           | The type of hash used.                                                   |
 
 #### Allowed Values for XML Enums
 
@@ -765,17 +765,17 @@ firmware it directly protects.  The RoT communicates to the BMC and other
 devices over I2C.
 
 `bitfield PCD.RoT`
-| Type       | Name                                     | Description          |
-|------------|------------------------------------------|----------------------|
-| `0000000b` | `_`                                      | Reserved.            |
+| Type       | Name                                     | Description                              |
+|------------|------------------------------------------|------------------------------------------|
+| `0000000b` | `_`                                      | Reserved.                                |
 | `RoTType`  | `rot_type`                               | Indicates the type of RoT in the attestation hierarchy. |
 | `8`        | `port_count`                             | The number of external processors directly protected by an external RoT. |
 | `8`        | `components_count`                       | The number of remote components the RoT must attest. |
 | `8`        | `rot_address`                            | The physical bus address for the RoT device. |
 | `8`        | `rot_default_eid`                        | The default MCTP EID the RoT should use.  An external MCTP bridge can assign a different EID at run-time. |
 | `8`        | `bridge_address`                         | Physical bus address for a connected MCTP bridge. |
-| `8`        | `bridge_eid`                             | EID for the MCTP bridge. |
-| `0x00`     | `_`                                      | Reserved.            |
+| `8`        | `bridge_eid`                             | EID for the MCTP bridge.                 |
+| `0x00`     | `_`                                      | Reserved.                                |
 | `32`       | `attestation_success_retry`              | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
 | `32`       | `attestation_fail_retry`                 | Duration in milliseconds after device fails attestation to wait before reattesting. |
 | `32`       | `discovery_fail_retry`                   | Duration in milliseconds after device fails a discovery step to wait before retrying. |
@@ -784,7 +784,7 @@ devices over I2C.
 | `32`       | `mctp_bridge_additional_timeout`         | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
 | `32`       | `attestation_rsp_not_ready_max_duration` | Whan an SPDM device responds with a ResponseNotReady error, this is the maximum duration in milliseconds the RoT is permitted to wait before retrying the request. |
 | `8`        | `attestation_rsp_not_ready_max_retry`    | The maximum number of SPDM ResponseNotReady retries allowed per request.  If this is exceeded, the RoT will fail attestation for the device. |
-| `0x000000` | `_`                                      | Reserved.            |
+| `0x000000` | `_`                                      | Reserved.                                |
 
 `enum PCD.RoT.RoTType`
 | Value | Name     | Description                        |
@@ -799,23 +799,23 @@ The SPI flash port element represents a single external processor directly
 protected by the RoT.  The firmware for this processor is stored on SPI flash.
 
 `bitfield PCD.SPIFlashPort`
-| Type                  | Name                   | Description                 |
-|-----------------------|------------------------|-----------------------------|
+| Type                  | Name                   | Description                                     |
+|-----------------------|------------------------|-------------------------------------------------|
 | `8`                   | `port_id`              | Port identifier.  This maps to Port ID arguments in protocol messages. |
-| `0b`                  | `_`                    | Reserved.                   |
-| `HostResetAction`     | `host_reset_action`    | Action taken by the RoT on a host reset. |
+| `0b`                  | `_`                    | Reserved.                                       |
+| `HostResetAction`     | `host_reset_action`    | Action taken by the RoT on a host reset.        |
 | `WatchdogMonitoring`  | `watchdog_monitoring`  | Indication if the port supports watchdog monitoring to trigger recovery flows. |
 | `RuntimeVerification` | `runtime_verification` | Indication if the port supports run-time verification of firmware updates. |
 | `FlashMode`           | `flash_mode`           | Configuration of the flash device(s) containing firmware. |
 | `ResetControl`        | `reset_control`        | The reset control behavior that should be used with the external processor. |
-| `0000000b`            | `_`                    | Reserved.                   |
+| `0000000b`            | `_`                    | Reserved.                                       |
 | `Policy`              | `policy`               | Action that should be taken on authentication failures. |
 | `8`                   | `pulse_interval`       | Pulse width of the reset signal if the port used a pulsed reset control.  This value is in multiples of 10 ms. |
 | `32`                  | `spi_frequency_hz`     | SPI clock frequency to use for flash communication.  This value is represented in Hz. |
 
 `enum PCD.SPIFlashPort.HostResetAction`
-| Value | Name           | Description                        |
-|-------|----------------|------------------------------------|
+| Value | Name           | Description                                                             |
+|-------|----------------|-------------------------------------------------------------------------|
 | `0b`  | `none`         | On host reset, no additional actions will be taken by the RoT.  Normal reset handling will still be executed. |
 | `1b`  | `reset_flash`  | On host reset, always reset host flash.  This is in addition to any normal reset handling and means the RoT will be involved in every host reset. |
 
@@ -832,26 +832,26 @@ protected by the RoT.  The firmware for this processor is stored on SPI flash.
 | `1b`  | `enabled`  | Run-time verification supported.     |
 
 `enum PCD.SPIFlashPort.FlashMode`
-| Value | Name                     | Description                               |
-|-------|--------------------------|-------------------------------------------|
+| Value | Name                     | Description                                                   |
+|-------|--------------------------|---------------------------------------------------------------|
 | `00b` | `dual`                   | The SPI bus is connected to two flash devices for storing firmware. |
-| `01b` | `single`                 | There is a single flash device for processor firmware. |
+| `01b` | `single`                 | There is a single flash device for processor firmware.        |
 | `10b` | `dual_filtered_bypass`   | Dual flash chips for firmware.  In this mode, RoT protection can never be fully disabled.  Even in bypass mode, the interposed RoT will block some set of unwanted commands. |
 | `11b` | `single_filtered_bypass` | Same as `dual_filtered_bypass` but with only a single flash device for firmware. |
 
 `enum PCD.SPIFlashPort.ResetControl`
-| Value | Name       | Description                                             |
-|-------|------------|---------------------------------------------------------|
+| Value | Name       | Description                                                                 |
+|-------|------------|-----------------------------------------------------------------------------|
 | `00b` | `notify`   | The reset control signal does not directly cause reset of the processor.  Instead, it notifies the processor of pending firmware authentication that will take place on the next reset.  During host reset, the reset control signal is released to indicate when authentication has completed. |
 | `01b` | `reset`    | The reset control signal directly causes reset of the processor.  The processor is held in reset during validation. |
 | `10b` | `pulse`    | The reset control signal directly causes reset of the processor.  The processor is left running without flash access during validation, and reset is pulsed after validation. |
-| `11b` | `_`        | Reserved.                                               |
+| `11b` | `_`        | Reserved.                                                                   |
 
 `enum PCD.Policy`
-| Value    | Name      | Description                                           |
-|----------|-----------|-------------------------------------------------------|
+| Value    | Name      | Description                                                               |
+|----------|-----------|---------------------------------------------------------------------------|
 | `0b`     | `passive` | Indicate an attestation failure in RoT measurements but allow the failing device to continue to boot. |
-| `1b`     | `active`  | Prevent a device that fails attestation from booting. |
+| `1b`     | `active`  | Prevent a device that fails attestation from booting.                     |
 
 ### I2C Power Management Controller Element
 
@@ -866,20 +866,20 @@ management device.  If communication with Power Management Controller does not
 utilize MCTP, the EID field can be set to `0x00`.
 
 `bitfield PCD.I2CPowerManagementController`
-| Type                 | Name          | Description                           |
-|----------------------|---------------|---------------------------------------|
+| Type                 | Name          | Description                                               |
+|----------------------|---------------|-----------------------------------------------------------|
 | `I2CDevice`          | `device`      | Communication information for the Power Management Controller. |
 
 `bitfield PCD.I2CDevice`
-| Type                | Name        | Description                              |
-|---------------------|-------------|------------------------------------------|
-| `4`                 | `mux_count` | Number of muxes in the I2C path between the RoT and device. |
-| `000b`              | `_`         | Reserved.                                |
+| Type                | Name        | Description                                                  |
+|---------------------|-------------|--------------------------------------------------------------|
+| `4`                 | `mux_count` | Number of muxes in the I2C path between the RoT and device.  |
+| `000b`              | `_`         | Reserved.                                                    |
 | `I2CMode`           | `i2c_mode`  | I2C operational mode of the device.  Muxes are always Master-Slave. |
-| `8`                 | `bus`       | Identifier for the I2C bus connected to the device. |
-| `8`                 | `address`   | I2C address of the target device.        |
+| `8`                 | `bus`       | Identifier for the I2C bus connected to the device.          |
+| `8`                 | `address`   | I2C address of the target device.                            |
 | `8`                 | `eid`       | Device MCTP EID.  If the device doesn't use MCTP, set this to `0x00`. |
-| `I2CMux(mux_count)` | `mux`       | List of I2C muxes.                       |
+| `I2CMux(mux_count)` | `mux`       | List of I2C muxes.                                           |
 
 `bitfield PCD.I2CMux`
 | Type        | Name          | Description                                  |
@@ -903,12 +903,12 @@ methods an attestor will use to communicate with the AC-RoT.  The Component type
 identifier will match a type specified in the CFM.
 
 `bitfield PCD.Component`
-| Type     | Name              | Description                                   |
-|----------|-------------------|-----------------------------------------------|
+| Type     | Name              | Description                                                       |
+|----------|-------------------|-------------------------------------------------------------------|
 | `Policy` | `policy`          | Action that should be taken on authentication failures.  Active policies are only possible if there is power controller present. |
 | `8`      | `power_ctrl_reg`  | Register address in the power controller that manages this component. |
 | `8`      | `power_ctrl_mask` | A bitmask indicating the bit(s) used to control power to this component. |
-| `0x00`   | `_`               | Reserved.                                     |
+| `0x00`   | `_`               | Reserved.                                                         |
 | `32`     | `component_id`    | Identifier for the component type.  This ID will be used to match against an attestation policy in the CFM.  If there are multiple components in the PCD with the same component ID, they will all use the same policy in the CFM. |
 
 #### Component with Direct I2C Connection Element
@@ -938,16 +938,16 @@ from the bridging device, a single element entry can be used to identify
 multiple devices for attestation.
 
 `bitfield PCD.ComponentWithMCTPBridgeConnection`
-| Type         | Name                  | Description                           |
-|--------------|-----------------------|---------------------------------------|
-| `Component`  | `component`           | AC-RoT attestation configuration.     |
+| Type         | Name                  | Description                                               |
+|--------------|-----------------------|-----------------------------------------------------------|
+| `Component`  | `component`           | AC-RoT attestation configuration.                         |
 | `16`         | `device_id`           | Device identifier used to identify this device during the discovery phase of attestation. |
 | `16`         | `vendor_id`           | Vendor identifier used to identify this device during the discovery phase of attestation. |
 | `16`         | `subsystem_device_id` | Subsystem device identifier used to identify this device during the discovery phase of attestation. |
 | `16`         | `subsystem_vendor_id` | Subsystem vendor identifier used to identify this device during the discovery phase of attestation. |
-| `8`          | `components_count`    | Number of identical components this element describes. |
+| `8`          | `components_count`    | Number of identical components this element describes.    |
 | `8`          | `eid`                 | Default EID to use if the EID is not dynamically discoverable from the MCTP bridge. |
-| `0x0000`     | `_`                   | Reserved.                             |
+| `0x0000`     | `_`                   | Reserved.                                                 |
 
 ### XML Representation for PCD Generation
 
@@ -1049,53 +1049,53 @@ generation scripts to create the binary format.
 </PCD>
 ```
 
-| Field                                    | Description                       |
-|------------------------------------------|-----------------------------------|
+| Field                                    | Description                                           |
+|------------------------------------------|-------------------------------------------------------|
 | `sku`                                    | String identifier for this platform configuration.  This becomes the platform ID. |
-| `version`                                | Version of the PCD.  This becomes the manifest ID. |
-| `RoT`                                    | Container for the RoT configuration. |
-| `type`                                   | RoT type identifier.              |
+| `version`                                | Version of the PCD.  This becomes the manifest ID.    |
+| `RoT`                                    | Container for the RoT configuration.                  |
+| `type`                                   | RoT type identifier.                                  |
 | `mctp_ctrl_timeout`                      | MCTP control protocol response timeout period in milliseconds. |
 | `mctp_bridge_get_table_wait`             | Duration in milliseconds to wait after RoT boots before sending a MCTP Get Routing Table Request to MCTP bridge, if MCTP bridge does not support dynamic EID assignments. If set to 0, RoT will only wait for EID assignment. |
-| `Ports`                                  | Collection of ports an external RoT protects. |
-| `Port`                                   | A single protected port.          |
-| `id`                                     | Integer identifier for the port.  |
-| `SPIFreq`                                | SPI flash frequency in Hz.        |
-| `ResetCtrl`                              | Reset control setting when validation. |
-| `FlashMode`                              | Flash configuration for the protected device. |
-| `Policy`                                 | Attestation policy.               |
-| `PulseInterval`                          | Reset pulse width if the port uses a pulsed reset. |
-| `RuntimeVerification`                    | Port run-time verification setting. |
-| `WatchdogMonitoring`                     | Port watchdog monitoring setting. |
-| `Interface`                              | Communication interface to the RoT. |
+| `Ports`                                  | Collection of ports an external RoT protects.         |
+| `Port`                                   | A single protected port.                              |
+| `id`                                     | Integer identifier for the port.                      |
+| `SPIFreq`                                | SPI flash frequency in Hz.                            |
+| `ResetCtrl`                              | Reset control setting when validation.                |
+| `FlashMode`                              | Flash configuration for the protected device.         |
+| `Policy`                                 | Attestation policy.                                   |
+| `PulseInterval`                          | Reset pulse width if the port uses a pulsed reset.    |
+| `RuntimeVerification`                    | Port run-time verification setting.                   |
+| `WatchdogMonitoring`                     | Port watchdog monitoring setting.                     |
+| `Interface`                              | Communication interface to the RoT.                   |
 | `type`                                   | Communication interface type or component type identifier string. |
-| `Address`                                | 7-bit I2C address.                |
-| `RoTEID`                                 | Default MCTP EID of the root of trust. |
-| `BridgeEID`                              | MCTP bridge EID.                  |
-| `BridgeAddress`                          | MCTP bridge 7-bit I2C address.    |
-| `Bus`                                    | Identifier for the I2C bus the device is on. |
-| `EID`                                    | Device MCTP EID.                  |
-| `I2CMode`                                | I2C communication mode.           |
-| `Muxes`                                  | A series of I2C muxes connected to a device. |
-| `Mux`                                    | A single I2C mux.                 |
+| `Address`                                | 7-bit I2C address.                                    |
+| `RoTEID`                                 | Default MCTP EID of the root of trust.                |
+| `BridgeEID`                              | MCTP bridge EID.                                      |
+| `BridgeAddress`                          | MCTP bridge 7-bit I2C address.                        |
+| `Bus`                                    | Identifier for the I2C bus the device is on.          |
+| `EID`                                    | Device MCTP EID.                                      |
+| `I2CMode`                                | I2C communication mode.                               |
+| `Muxes`                                  | A series of I2C muxes connected to a device.          |
+| `Mux`                                    | A single I2C mux.                                     |
 | `level`                                  | The mux level in the I2C path.  0 if the first mux, 1 is second, etc. |
-| `Address`                                | 7-bit I2C address of the mux.     |
-| `Channel`                                | Channel to activate on mux.       |
-| `Components`                             | Collection of components to attest. |
-| `Component`                              | A single component's attestation information. |
-| `connection`                             | Component connection type.        |
+| `Address`                                | 7-bit I2C address of the mux.                         |
+| `Channel`                                | Channel to activate on mux.                           |
+| `Components`                             | Collection of components to attest.                   |
+| `Component`                              | A single component's attestation information.         |
+| `connection`                             | Component connection type.                            |
 | `attestation_success_retry`              | Duration in milliseconds after device succeeds attestation to wait before reattesting. |
 | `attestation_fail_retry`                 | Duration in milliseconds after device fails attestation to wait before reattesting. |
 | `attestation_rsp_not_ready_max_retry`    | Maximum number of SPDM ResponseNotReady retries permitted for the device. |
 | `attestation_rsp_not_ready_max_duration` | Maximum wait time between retries after receiving an SPDM ResponseNotReady error. |
-| `PwrCtrl`                                | Component power control information. |
-| `Register`                               | Power control register address.   |
-| `Mask`                                   | Power control bitmask.            |
+| `PwrCtrl`                                | Component power control information.                  |
+| `Register`                               | Power control register address.                       |
+| `Mask`                                   | Power control bitmask.                                |
 | `count`                                  | Number of identical components this element describes. |
 | `discovery_fail_retry`                   | Duration in milliseconds after device fails a discovery step to wait before retrying. |
 | `mctp_bridge_additional_timeout`         | Time in milliseconds to wait in addition to device timeout period due to MCTP bridge. |
-| `DeviceID`                               | Device ID.  See the device discovery description. |
-| `VendorID`                               | Vendor ID.  See the device discovery description. |
+| `DeviceID`                               | Device ID.  See the device discovery description.     |
+| `VendorID`                               | Vendor ID.  See the device discovery description.     |
 | `SubsystemDeviceID`                      | Subsystem device ID.  See the device discovery description. |
 | `SubsystemVendorID`                      | Subsystem vendor ID.  See the device discovery description. |
 
@@ -1156,8 +1156,8 @@ a single component in the CFM.
 A CFM will report a `manifest_type` of `0xa592` in the manifest header.  The CFM
 defines the following additional manifest element types.
 
-| Type ID | Element Type       | Format | Top-Level | Singleton | Description  |
-|---------|--------------------|--------|-----------|-----------|--------------|
+| Type ID | Element Type       | Format | Top-Level | Singleton | Description                      |
+|---------|--------------------|--------|-----------|-----------|----------------------------------|
 | `0x70`  | `Component Device` |   0    |     X     |           | Defines a single type of AC-RoT to attest. |
 | `0x71`  | `PMR`              |   0    |           |           | Provides information necessary when regenerating PMR. This is a child of a Component Device element. |
 | `0x72`  | `PMR Digest`       |   0    |           |           | A list of allowable values for a single PMR.  This is a child of a Component Device element. |
@@ -1181,14 +1181,14 @@ AC-RoT described in the PCD is matched with a Component Device element using the
 child element.
 
 `bitfield CFM.ComponentDevice`
-| Type                  | Name                     | Description               |
-|-----------------------|--------------------------|---------------------------|
+| Type                  | Name                     | Description                                   |
+|-----------------------|--------------------------|-----------------------------------------------|
 | `8`                   | `cert_slot`              | Slot number of the certificate chain to use for attestation challenges. |
 | `AttestationProtocol` | `attestation_protocol`   | Protocol to use for attestation requests to the component. |
 | `Manifest.HashType`   | `transcript_hash_type`   | The type of hash used for SPDM transcript hashing. |
 | `Manifest.HashType`   | `measurement_hash_type`  | The type of hash used to generate measurement, PMR, and root CA digests. |
 | `00b`                 | `_`                      | Padding for the unused HashType bits.  This must be 0. |
-| `0x00`                | `_`                      | Reserved.                 |
+| `0x00`                | `_`                      | Reserved.                                     |
 | `32`                  | `component_id`           | Identifier for the component type that will be attested.  This must be a unique identifier within the CFM. |
 
 `enum CFM.AttestationProtocol`
@@ -1198,20 +1198,20 @@ child element.
 | `0x01` | `dmtf_spdm`         | The DMTF SPDM protocol.          |
 
 `bitfield CFM.ComponentDevice.Check`
-| Type             | Name               | Description                          |
-|------------------|--------------------|--------------------------------------|
-| `CheckType`      | `check`            | The type of comparison to execute.   |
-| `0000b`          | `_`                | Unused bits.  This must be 0.        |
+| Type             | Name               | Description                                              |
+|------------------|--------------------|----------------------------------------------------------|
+| `CheckType`      | `check`            | The type of comparison to execute.                       |
+| `0000b`          | `_`                | Unused bits.  This must be 0.                            |
 | `1`              | `endianness`       | Endianness of multi-byte data values.  This will be 0 if the data is presented in little endian or 1 if the data is big endian.  If the data is only a single byte, this value does not matter. |
 
 `enum CFM.ComponentDevice.CheckType`
-| Value  | Name               | Description                                    |
-|--------|--------------------|------------------------------------------------|
-| `000b` | `equal`            | Ensure the reported data is equal to the specified value. |
-| `001b` | `not_equal`        | Ensure the reported data is not equal to the specified value. |
-| `010b` | `less_than`        | Ensure the reported data is less than the specified value. |
+| Value  | Name               | Description                                                        |
+|--------|--------------------|--------------------------------------------------------------------|
+| `000b` | `equal`            | Ensure the reported data is equal to the specified value.          |
+| `001b` | `not_equal`        | Ensure the reported data is not equal to the specified value.      |
+| `010b` | `less_than`        | Ensure the reported data is less than the specified value.         |
 | `011b` | `less_or_equal`    | Ensure the reported data is less than or equal to the specified value. |
-| `100b` | `greater_than`     | Ensure the reported data is greater than the specified value. |
+| `100b` | `greater_than`     | Ensure the reported data is greater than the specified value.      |
 | `101b` | `greater_or_equal` | Ensure the reported data is greater than or equal to the specified value. |
 
 ### PMR Element
@@ -1221,8 +1221,8 @@ this element in not present for a PMR ID, the initial value of zeroes is used
 for any flows that are required to calculate the PMR.
 
 `bitfield CFM.ComponentDevice.PMR`
-| Type                    | Name            | Description                      |
-|-------------------------|-----------------|----------------------------------|
+| Type                    | Name            | Description                               |
+|-------------------------|-----------------|-------------------------------------------|
 | `measurement_hash_type` | `initial_value` | Initial value to use when generating PMR. |
 
 ### PMR Digest Element
@@ -1232,12 +1232,12 @@ PMR.  These digests represent the final measurement reported by the PMR, as
 would be reported by `Challenge` or `Get PMR` requests.
 
 `bitfield CFM.ComponentDevice.PMRDigest`
-| Type                                  | Name           | Description         |
-|---------------------------------------|----------------|---------------------|
+| Type                                  | Name           | Description                             |
+|---------------------------------------|----------------|-----------------------------------------|
 | `8`                                   | `pmr_id`       | Identifier for the PMR to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. |
 | `8`                                   | `digest_count` | Number of allowable digests for this PMR. |
-| `0x0000`                              | `_`            | Reserved.           |
-| `measurement_hash_type(digest_count)` | `pmr_digest`   | List of allowed digests for the PMR. |
+| `0x0000`                              | `_`            | Reserved.                               |
+| `measurement_hash_type(digest_count)` | `pmr_digest`   | List of allowed digests for the PMR.    |
 
 ### Measurement Element
 
@@ -1249,20 +1249,20 @@ aggregated with all other measurement blocks when reported by `SPDM Challenge`
 requests or reported separately by the `SPDM Get Measurement` request.
 
 `bitfield CFM.ComponentDevice.Measurement`
-| Type                                      | Name                     | Description |
-|-------------------------------------------|--------------------------|-------------|
+| Type                                      | Name                     | Description               |
+|-------------------------------------------|--------------------------|---------------------------|
 | `8`                                       | `pmr_id`                 | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices using SPDM, since SPDM does not provide an equivalent to PMRs. |
 | `8`                                       | `measurement_id`         | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM, this is the measurement block index. |
 | `8`                                       | `allowable_digest_count` | Number of allowable digests for this measurement. |
-| `0x00`                                    | `_`                      | Reserved.   |
+| `0x00`                                    | `_`                      | Reserved.                 |
 | `AllowableDigest(allowable_digest_count)` | `digests_list`           | List of allowable digests across all versions of expected firmware. |
 
 `bitfield CFM.ComponentDevice.Measurement.AllowableDigest`
-| Type                                  | Name           | Description         |
-|---------------------------------------|----------------|---------------------|
+| Type                                  | Name           | Description                             |
+|---------------------------------------|----------------|-----------------------------------------|
 | `16`                                  | `version_set`  | Identifier for a set of measurements associated with the same version of firmware on the device.  This will be 0 if the same set of measurements applies to all versions of firmware. |
 | `8`                                   | `digest_count` | The number of allowable digests for this version set. |
-| `0x00`                                | `_`            | Reserved.           |
+| `0x00`                                | `_`            | Reserved.                               |
 | `measurement_hash_type(digest_count)` | `digest`       | List of expected measurements digests for this version set. |
 
 When attesting individual measurements, it is necessary to ensure that the
@@ -1295,11 +1295,11 @@ Measurement Data elements.  This means that all Measurement and Measurement Data
 checks must attest within same `version_set` for attestation to pass.
 
 `bitfield CFM.ComponentDevice.MeasurementData`
-| Type                        | Name             | Description                 |
-|-----------------------------|------------------|-----------------------------|
+| Type                        | Name             | Description                                     |
+|-----------------------------|------------------|-------------------------------------------------|
 | `8`                         | `pmr_id`         | Identifier for the PMR that contains the entry to attest.  The Cerberus Challenge Protocol allows this to be between 0 and 4. This will be zero for devices supporting SPDM. |
 | `8`                         | `measurement_id` | Index of the specific entry within the PMR to attest if utilizing Cerberus Challenge Protocol.  If using SPDM, this is the measurement block index. |
-| `0x0000`                    | `_`              | Reserved.                   |
+| `0x0000`                    | `_`              | Reserved.                                       |
 
 ### Allowable Data Element
 
@@ -1314,22 +1314,22 @@ To combine multiple measurement data checks (e.g. `not equal` and
 check.
 
 `bitfield CFM.ComponentDevice.MeasurementData.AllowableData`
-| Type              | Name               | Description                         |
-|-------------------|--------------------|-------------------------------------|
-| `Check`           | `check`            | The type of comparison to execute on the data.   |
-| `8`               | `num_data`         | The total number of values that will be checked. |
+| Type              | Name               | Description                                             |
+|-------------------|--------------------|---------------------------------------------------------|
+| `Check`           | `check`            | The type of comparison to execute on the data.          |
+| `8`               | `num_data`         | The total number of values that will be checked.        |
 | `16`              | `bitmask_length`   | Length of the bitmask to apply to the measurement data before applying any checks.  If this is 0, no bitmask will be applied and the raw data will be checked. |
-| `bitmask_lengtnh` | `data_bitmask`     | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary.  This bitmask must be created accounting for the endianness of the data.  The same bitmask applies to all data entries.  If the bitmask is longer than the measurement data, unused mask bits are ignored. |
-| `ALIGN(32)`       | `_`                | Zero padding.                       |
-| `Data(num_data)`  | `data_list`        | List of supported data.             |
+| `bitmask_length`  | `data_bitmask`     | A bitmask to apply to the received data.  This allows the comparison to ignore certain bits or bytes when necessary.  This bitmask must be created accounting for the endianness of the data.  The same bitmask applies to all data entries.  If the bitmask is longer than the measurement data, unused mask bits are ignored. |
+| `ALIGN(32)`       | `_`                | Zero padding.                                           |
+| `Data(num_data)`  | `data_list`        | List of supported data.                                 |
 
 `bitfield CFM.ComponentDevice.MeasurementData.AllowableData.Data`
-| Type                     | Name          | Description                       |
-|--------------------------|---------------|-----------------------------------|
-| `16`                     | `version_set` | Identifier for a set of measurements associated with the same version of firmware on the device.  This will be 0 if the same measurement data check applies to all versions of firmware. |
-| `16`                     | `data_length` | Length of the data to use for comparison. |
-| `data_length (num_data)` | `data`        | Data to use for comparison.  This must be stored in the format indicated by the `Check.endianness` flag. |
-| `ALIGN(32)`              | `_`           | Zero padding.                     |
+| Type          | Name          | Description                                                      |
+|---------------|---------------|------------------------------------------------------------------|
+| `16`          | `version_set` | Identifier for a set of measurements associated with the same version of firmware on the device.  This will be 0 if the same measurement data check applies to all versions of firmware. |
+| `16`          | `data_length` | Length of the data to use for comparison.                        |
+| `data_length` | `data`        | Data to use for comparison.  This must be stored in the format indicated by the `Check.endianness` flag. |
+| `ALIGN(32)`   | `_`           | Zero padding.                                                    |
 
 In order to group a set of data into a single Allowable Data element, each data
 check must use the same bitmask.  Each unique bitmask must be a separate
@@ -1360,17 +1360,17 @@ the `Get Configuration Ids` request.  Child Allowable ID elements will provide
 the checks to run against the PFM ID.
 
 `bitfield CFM.ComponentDevice.AllowablePFM`
-| Type                | Name      | Description                                |
-|---------------------|-----------|--------------------------------------------|
+| Type                | Name      | Description                                                    |
+|---------------------|-----------|----------------------------------------------------------------|
 | `8`                 | `port_id` | Index in the list of returned PFM IDs that should be checked.  This is the same as the port ID. |
-| `AllowableManifest` | `allowed` | Attestation to perform for the PFM IDs.    |
+| `AllowableManifest` | `allowed` | Attestation to perform for the PFM IDs.                        |
 
 `bitfield CFM.ComponentDevice.AllowableManifest`
-| Type                | Name             | Description                         |
-|---------------------|------------------|-------------------------------------|
-| `8`                 | `plat_id_length` | Length of the expected platform ID. |
+| Type                | Name             | Description                                             |
+|---------------------|------------------|---------------------------------------------------------|
+| `8`                 | `plat_id_length` | Length of the expected platform ID.                     |
 | `plat_id_length`    | `plat_id_string` | Platform ID string.  This is an ASCII string that is not null terminated. |
-| `ALIGN(32)`         | `_`              | Zero padding.                       |
+| `ALIGN(32)`         | `_`              | Zero padding.                                           |
 
 ### Allowable ID Element
 
@@ -1401,10 +1401,10 @@ single CFM.  The data that is compared would be reported by the
 checks to run against the PFM ID.
 
 `bitfield CFM.ComponentDevice.AllowableCFM`
-| Type                | Name        | Description                              |
-|---------------------|-------------|------------------------------------------|
+| Type                | Name        | Description                                                  |
+|---------------------|-------------|--------------------------------------------------------------|
 | `8`                 | `cfm_index` | Index in the list of returned CFM IDs that should be checked. |
-| `AllowableManifest` | `allowed`   | Attestation to perform for the CFM IDs.  |
+| `AllowableManifest` | `allowed`   | Attestation to perform for the CFM IDs.                      |
 
 ### Allowable PCDs Element
 
@@ -1427,10 +1427,10 @@ component does not contain a Root CAs element, the certificate chain of the
 AC-RoT must share a root CA with the requestor.
 
 `bitfield CFM.ComponentDevice.RootCAs`
-| Type                              | Name       | Description                 |
-|-----------------------------------|------------|-----------------------------|
-| `8`                               | `ca_count` | Number of allowable root CA digests. |
-| `0x000000`                        | `_`        | Reserved.                   |
+| Type                              | Name       | Description                                     |
+|-----------------------------------|------------|-------------------------------------------------|
+| `8`                               | `ca_count` | Number of allowable root CA digests.            |
+| `0x000000`                        | `_`        | Reserved.                                       |
 | `measurement_hash_type(ca_count)` | `root_ca`  | List of hashes for trusted root certificates.  This represents the hash over the entire certificate, including the signature. |
 
 ### XML Representation for CFM Generation
@@ -1557,38 +1557,38 @@ scripts to create the binary format.
 </CFMComponent>
 ```
 
-| Field                  | Description                                         |
-|------------------------|-----------------------------------------------------|
+| Field                  | Description                                                             |
+|------------------------|-------------------------------------------------------------------------|
 | `sku`                  | String identifier for the platform configuration. This becomes the platform ID. |
 | `Component`            | Defines a single component device to include in CFM. ID of component is used here. |
-| `CFMComponent`         | Defines a single component device.                  |
-| `type`                 | Component type string identifier.                   |
-| `attestation_protocol` | The protocol used by the AC-RoT for attestation.    |
-| `slot_num`             | Certificate chain slot number to be used for component attestation. |
-| `transcript_hash_type` | Hashing algorithm used for transcript hashing.      |
+| `CFMComponent`         | Defines a single component device.                                      |
+| `type`                 | Component type string identifier.                                       |
+| `attestation_protocol` | The protocol used by the AC-RoT for attestation.                        |
+| `slot_num`             | Certificate chain slot number to be used for component attestation.     |
+| `transcript_hash_type` | Hashing algorithm used for transcript hashing.                          |
 | `measurement_hash_type`| Hashing algorithm used to compute PMR, measurement, and root CA digests. |
 | `RootCADigest`         | Defines trusted root CAs to be used for certificate chain validation.  This is an optional tag. |
-| `Digest`               | The expected digest.                                |
+| `Digest`               | The expected digest.                                                    |
 | `PMR`                  | Defines information needed to regenerate a PMR.  This is an optional tag. |
-| `SingleEntry`          | Boolean indicating if PMR has a single entry measurement. |
-| `InitialValue`         | Initial value to utilize when generating a PMR.     |
-| `PMRDigest`            | Defines allowable digests for a single PMR.         |
-| `pmr_id`               | Identifier for the PMR.                             |
-| `Measurement`          | Defines group of allowable measurements.            |
-| `measurement_id`       | Measurement ID.                                     |
-| `MeasurementData`      | Defines group of allowable measurement data.        |
-| `AllowableData`        | Defines allowable values for single measurement data check. |
-| `Endianness`           | Multi-byte format of data.                          |
-| `Check`                | Type of comparison to perform on data.              |
-| `Data`                 | The expected data for the measurement data entry.   |
-| `Bitmask`              | The bitmask to apply to the data during comparison. |
+| `SingleEntry`          | Boolean indicating if PMR has a single entry measurement.               |
+| `InitialValue`         | Initial value to utilize when generating a PMR.                         |
+| `PMRDigest`            | Defines allowable digests for a single PMR.                             |
+| `pmr_id`               | Identifier for the PMR.                                                 |
+| `Measurement`          | Defines group of allowable measurements.                                |
+| `measurement_id`       | Measurement ID.                                                         |
+| `MeasurementData`      | Defines group of allowable measurement data.                            |
+| `AllowableData`        | Defines allowable values for single measurement data check.             |
+| `Endianness`           | Multi-byte format of data.                                              |
+| `Check`                | Type of comparison to perform on data.                                  |
+| `Data`                 | The expected data for the measurement data entry.                       |
+| `Bitmask`              | The bitmask to apply to the data during comparison.                     |
 | `AllowablePFM`         | Defines attestation to be performed on PFM IDs.  This tag is not supported for attesting SPDM devices. |
-| `port`                 | Port PFM is applied to.                             |
-| `platform`             | The expected manifest platform ID.                  |
-| `ManifestID`           | A single manifest ID comparison.                    |
-| `ID`                   | A manifest ID to compare.                           |
+| `port`                 | Port PFM is applied to.                                                 |
+| `platform`             | The expected manifest platform ID.                                      |
+| `ManifestID`           | A single manifest ID comparison.                                        |
+| `ID`                   | A manifest ID to compare.                                               |
 | `AllowableCFM`         | Defines attestation to be performed on CFM IDs.  This tag is not supported for attesting SPDM devices. |
-| `index`                | Index of the target CFM.                            |
+| `index`                | Index of the target CFM.                                                |
 | `AllowablePCD`         | Defines attestation to be performed on PCD IDs.  This tag is not supported for attesting SPDM devices. |
 
 #### Allowed Values for XML Enums
@@ -1745,18 +1745,18 @@ measurement block.  The format of this measurement block is based on the
 [DMTF DSP0267 1.1.0, PLDM for Firmware Update](https://www.dmtf.org/sites/default/files/standards/documents/DSP0267_1.1.0.pdf).
 
 `bitfield DeviceIds`
-| Type                           | Name                | Description           |
-|--------------------------------|---------------------|-----------------------|
-| `8`                            | `completion_code`   | PLDM_BASE_CODES completion code. |
+| Type                           | Name                | Description                               |
+|--------------------------------|---------------------|-------------------------------------------|
+| `8`                            | `completion_code`   | PLDM_BASE_CODES completion code.          |
 | `32`                           | `descriptor_length` | Total length of all descriptors provided. |
-| `8`                            | `descriptor_count`  | Total number of descriptors. |
-| `Descriptor(descriptor_count)` | `descriptors`       | List of device descriptors. |
+| `8`                            | `descriptor_count`  | Total number of descriptors.              |
+| `Descriptor(descriptor_count)` | `descriptors`       | List of device descriptors.               |
 
 `bitfield Descriptor`
-| Type        | Name       | Description                                       |
-|-------------|------------|---------------------------------------------------|
-| `16`        | `type`     | Type identifier for the descriptor.               |
-| `16`        | `length`   | Length of the descriptor data.                    |
+| Type        | Name       | Description                                                           |
+|-------------|------------|-----------------------------------------------------------------------|
+| `16`        | `type`     | Type identifier for the descriptor.                                   |
+| `16`        | `length`   | Length of the descriptor data.                                        |
 | `length`    | `data`     | The raw descriptor data.  What this represents will depend on the type of descriptor. |
 
 While the descriptors included in the response may include more than the PCI
