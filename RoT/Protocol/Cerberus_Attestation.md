@@ -1305,9 +1305,11 @@ checks must attest within same `version_set` for attestation to pass.
 
 The Allowable Data element contains a list of allowable values for a single
 measurement data check.  For `equal` and `not equal` checks, there can be as
-many data entries in a single Allowable Data element as required to cover all
-allowed or disallowed values.  For any other type of check, there should be only
-a single data entry in the Allowable Data element.
+many data entries with the same `version_set` identifier in a single Allowable
+Data element as required to cover all allowed or disallowed values.  For any
+other type of check, there should be only a single data entry in the Allowable
+Data element per `version_set` identifier.  In all cases, any number of data
+entries with different `version_set` identifiers are allowed.
 
 To combine multiple measurement data checks (e.g. `not equal` and
 `greater than`), multiple Allowable Data elements must be used, one for each
