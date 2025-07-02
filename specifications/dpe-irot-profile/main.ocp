@@ -26,10 +26,7 @@ bibliography: bibliography.yaml
 
 Contributions to this Specification are made under the terms and conditions set forth in **Modified Open Web Foundation Agreement 0.9 (OWFa 0.9)**. (As of October 16, 2024)  (“Contribution License”) by:
 
-- Google
-- Microsoft
-- AMD
-- NVIDIA
+- TODO
 
 Usage of this Specification is governed by the terms and conditions set forth in **Modified OWFa 0.9 Final Specification Agreement (FSA)** (As of October 16, 2024) **(“Specification License”)**.
 
@@ -145,7 +142,7 @@ of these inputs SHALL result in a different derived asymmetric key.
 If `RECURSIVE` is not supported, an implementation MAY omit the "Cumulative" measurement
 when computing CDIs.
 
-See tcg.derive.kdf-cdi-* sections for additional details on how these fields are
+See ocp.derive.kdf-cdi-* sections for additional details on how these fields are
 used in CDI derivation.
 
 ### Context TCB
@@ -163,13 +160,13 @@ The maximum number of active contexts is defined by the implementation and
 reported via GetProfile. This document will refer to this value as
 `MAX_CONTEXTS`.
 
-`MAX_CONTEXTS` MUST be at least 8.
+`MAX_CONTEXTS` SHALL be at least 8.
 
 For profiles which support them, Simulation Contexts contribute to DeriveContext limits.
 
 ### Default Context
 
-A DPE conforming to this profile MUST support a “Default Context” for
+A DPE conforming to this profile SHALL support a “Default Context” for
 each supported Locality. The default context has a handle of all null bytes.
 
 ### Hardware Localities
@@ -233,7 +230,7 @@ specification which are omitted by this profile:
     context SHALL both be all zeros.
 *   If InitializeContext has already been called on this DPE reset cycle,
     and `SIMULATION` is NOT set, this command SHALL fail with status
-    `DPE_STATUS_ARGUMENT_NOT_SUPPORTED`. This includes context initialization
+    `DPE_STATUS_ALREADY_INITIALIZED`. This includes context initialization
     invoked via automatic initialization.
 *   If the `USE_DEFAULT` flag is set, the returned `NEW_CONTEXT_HANDLE.HANDLE`
     must be all null bytes.
@@ -267,7 +264,7 @@ specification which are omitted by this profile:
     of these fields SHALL contribute to CDI derivation.
     *   `INPUT_TYPE`: A caller-supplied measurement type. This SHALL populate the
         "type" field in the DiceTcbInfo extension for this measurement.
-    *   `INPUT_ALLOW_X509`: If set, context MAY request CertifyKey certificates
+    *   `INPUT_ALLOW_X509`: If set, callers referencing this context MAY request CertifyKey certificates
         with `ADD_FORMAT` set to `CERT_FORMAT_X509`. If `INPUT_ALLOW_X509` is set
         and `INPUT_ALLOW_X509` was not set on `CONTEXT_HANDLE`, this command SHALL
         fail. If `SUPPORTS_X509` is false, this command SHALL fail.
@@ -297,14 +294,14 @@ specification which are omitted by this profile:
         SHALL be created in the caller's locality.
 *   `RECURSIVE`
     *   If `RECURSIVE` is set, the context data for this context SHALL be
-        modified as described in tcg.recursive-derivation.extend-tci.
+        modified as described in ocp.recursive-derivation.extend-tci.
     *   If `INPUT_TYPE` is different from the current type for this context,
         this command SHALL fail.
     *   `INPUT_ALLOW_CA`, `INPUT_ALLOW_X509`, `INTERNAL_INPUT_INFO`, and
         `INTERNAL_INPUT_DICE` SHALL be ignored. The resulting context
         will have the same values for these flags as the input
         `CONTEXT_HANDLE`.
-*   If `CREATE_CERTIFICATE` is set, `EXPORT_CDI` MUST also be set. Else, this
+*   If `CREATE_CERTIFICATE` is set, `EXPORT_CDI` SHALL also be set. Else, this
     command SHALL fail.
 *   If `CREATE_CERTIFICATE` is set, `RETURN_CERTIFICATE` SHALL also be
     considered set.
@@ -324,7 +321,7 @@ specification which are omitted by this profile:
 
 #### Behavior
 
-*   The label input argument is formatted as a tcg.format.digest. This is a
+*   The label input argument is formatted as a ocp.format.digest. This is a
     client-supplied public value used in key derivation. It will be present in
     the output certificate.
 *   CertifyKey SHALL use "dice-derivation" to derive a CDI
@@ -336,12 +333,12 @@ specification which are omitted by this profile:
 *   The additional-input parameter is specified in the following ABI parameters
     *   `ADD_FORMAT`: The format for the output certificate.
         *   If `CERT_FORMAT_X509`, certificate SHALL be an X.509 certificate
-            (one of tcg.certificate.irot.\*). If `INPUT_ALLOW_X509` was not set
+            (one of ocp.certificate.irot.\*). If `INPUT_ALLOW_X509` was not set
             during creation of `CONTEXT_HANDLE` or `SUPPORTS_X509` is false,
             this command SHALL fail. For contexts created by InitializeContext,
             `INPUT_ALLOW_X509` is true.
         *   If `CERT_FORMAT_CSR`, certificate SHALL be a PKCS#10 CSR (one of
-            tcg.csr.irot.\*). If `SUPPORTS_CSR` is false, this command SHALL
+            ocp.csr.irot.\*). If `SUPPORTS_CSR` is false, this command SHALL
             fail.
         *   An implementation SHALL support at least one format.
 
@@ -359,7 +356,7 @@ specification which are omitted by this profile:
 
 #### Behavior
 
-*   The label input argument is formatted as a tcg.format.digest. The this is a
+*   The label input argument is formatted as a ocp.format.digest. The this is a
     client-supplied public value used in key derivation. It will be present in
     the output certificate.
 *   Sign SHALL use "dice-derivation" to derive a CDI
@@ -462,9 +459,9 @@ Attributes.
     contexts in the Current Context's "Context TCB".
 *   `CDI`: The base CDI used to initialize the context
 
-### tcg.derive.kdf-cdi-256
+### ocp.derive.kdf-cdi-256
 
-The CDI derivation scheme “tcg.derive.kdf-cdi-256” is defined as follows:
+The CDI derivation scheme “ocp.derive.kdf-cdi-256” is defined as follows:
 
 *   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
 *   Inputs
@@ -474,9 +471,9 @@ The CDI derivation scheme “tcg.derive.kdf-cdi-256” is defined as follows:
 *   Outputs
     *   32-byte key
 
-### tcg.derive.kdf-cdi-384
+### ocp.derive.kdf-cdi-384
 
-The CDI derivation scheme “tcg.derive.kdf-cdi-384” is defined as follows:
+The CDI derivation scheme “ocp.derive.kdf-cdi-384” is defined as follows:
 
 *   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
 *   Inputs
@@ -488,15 +485,15 @@ The CDI derivation scheme “tcg.derive.kdf-cdi-384” is defined as follows:
 
 ## CDI Export
 
-### tcg.export-cdi.raw-256
+### ocp.export-cdi.raw-256
 
-The CDI export scheme "tcg.export-cdi.raw" is a raw 256-bit secret
+The CDI export scheme "ocp.export-cdi.raw" is a raw 256-bit secret
 
 To derive the exported keypair, use asymmetric-derivation for the relevant profile.
 
-### tcg.export-cdi.raw-384
+### ocp.export-cdi.raw-384
 
-The CDI export scheme "tcg.export-cdi.raw" is a raw 384-bit secret
+The CDI export scheme "ocp.export-cdi.raw" is a raw 384-bit secret
 
 To generate exported keypair, use asymmetric-derivation for the relevant profile.
 
@@ -505,9 +502,9 @@ To generate exported keypair, use asymmetric-derivation for the relevant profile
 *   `LABEL`: LABEL parameter passed to Sign and CertifyKey
 *   `CDI`: A CDI derived with `dice-derivation` scheme using current TCIs
 
-### tcg.derive.kdf-asymmetric-p256
+### ocp.derive.kdf-asymmetric-p256
 
-The asymmetric key derivation scheme “tcg.derive.kdf-asymmetric-p256” is defined as
+The asymmetric key derivation scheme “ocp.derive.kdf-asymmetric-p256” is defined as
 follows:
 
 *   The asymmetric key type is ECC NIST P-256
@@ -520,9 +517,9 @@ follows:
 *   Outputs
     *   32-byte key
 
-### tcg.derive.kdf-asymmetric-p384
+### ocp.derive.kdf-asymmetric-p384
 
-The asymmetric key derivation scheme “tcg.derive.kdf-asymmetric-p384” is defined as
+The asymmetric key derivation scheme “ocp.derive.kdf-asymmetric-p384” is defined as
 follows:
 
 *   The asymmetric key type is ECC NIST P-384
@@ -535,13 +532,13 @@ follows:
 *   Outputs
     *   48-byte key
 
-### tcg.key-format.p256.raw
+### ocp.key-format.p256.raw
 
 The concatenation of the 32-byte X value and 32-byte Y value of the ECDSA public key.
 
 Both the X and Y value SHALL be big-endian and left-padded with zeros.
 
-### tcg.key-format.p384.raw
+### ocp.key-format.p384.raw
 
 The concatenation of the 48-byte X value and 48-byte Y value of the ECDSA public key.
 
@@ -549,29 +546,29 @@ Both the X and Y value SHALL be big-endian and left-padded with zeros.
 
 ## Sign Format
 
-### tcg.tbs-format.digest-sha256
+### ocp.tbs-format.digest-sha256
 
-The format “tcg.tbs-format.digest-sha256” is defined as
+The format “ocp.tbs-format.digest-sha256” is defined as
 
 *   A digest which will be signed directly using the signing scheme with no
-    additional processing. The size of the value MUST be a SHA2-256 digest of
+    additional processing. The size of the value SHALL be a SHA2-256 digest of
     size 32 bytes.
 
-### tcg.tbs-format.digest-sha384
+### ocp.tbs-format.digest-sha384
 
-The format “tcg.tbs-format.digest-sha384” is defined as
+The format “ocp.tbs-format.digest-sha384” is defined as
 
 *   A digest which will be signed directly using the signing scheme with no
-    additional processing. The size of the value MUST be a SHA2-384 digest of
+    additional processing. The size of the value SHALL be a SHA2-384 digest of
     size 48 bytes.
 
-### tcg.signature-format.p256.raw
+### ocp.signature-format.p256.raw
 
 The concatenation of the 32-byte R value and 32-byte S value of the ECDSA signature.
 
 Both the R and S value SHALL be big-endian and left-padded with zeros.
 
-### tcg.signature-format.p384.raw
+### ocp.signature-format.p384.raw
 
 The concatenation of the 48-byte R value and 48-byte S value of the ECDSA signature.
 
@@ -579,7 +576,7 @@ Both the R and S value SHALL be big-endian and left-padded with zeros.
 
 ## Recursive Derivation
 
-### tcg.recursive-derivation.extend-tci
+### ocp.recursive-derivation.extend-tci
 
 *    CONTEXT_HANDLE's "Latest INPUT_DATA" SHALL be set to the `INPUT_DATA` parameter to DeriveContext.
 *    CONTEXT_HANDLE's "Cumulative INPUT_DATA" SHALL be set to `HASH(Cumulative INPUT_DATA || INPUT_DATA)`.
@@ -594,11 +591,11 @@ meet the following requirements:
 *   A DER-encoded X.509 certificate meeting the requirements for an Embedded CA
     as defined by the DICE Certificate Profile [@{tcg-dice-certificate-profiles}].
 
-### Populating tcg-dice-MultiTcbInfo
+### Populating ocp-dice-MultiTcbInfo
 
 For all CertifyKey formats, MultiTcbInfo extensions SHALL be populated as follows:
 
-*   There SHALL be one tcg-dice-TcbInfo field in the MultiTcbInfo populated for each
+*   There SHALL be one ocp-dice-TcbInfo field in the MultiTcbInfo populated for each
     accumulated TCI Node in the Current Node's "Context TCB".
 *   "Current Node" refers to the handle passed to CertifyKey which led to this
     certificate creation.
@@ -640,7 +637,7 @@ For all CertifyKey formats, MultiTcbInfo extensions SHALL be populated as follow
 
 An implementation MAY choose to include up to `MAX_CONTEXTS` TcbInfos, even if
 there are not that many TCI Nodes in the "Context TCB". In that case, uninitialized
-tcg-dice-TcbInfo entries MUST be populated with default values:
+ocp-dice-TcbInfo entries SHALL be populated with default values:
 
 *   “Vendor”: [Optional and vendor-defined]
 *   “Model”: [Optional and vendor-defined]
@@ -664,52 +661,52 @@ tcg-dice-TcbInfo entries MUST be populated with default values:
             *   Digest: N null bytes, where N is the digest size of hashAlg
 
 
-### Requirements of ECA Certificates
+### Requirements for ECA Certificates {#sec:eca-cert-requirements}
 
-Any leaf certificate with the prefix tcg.certificate.irot SHALL adhere to
+Any leaf certificate whose format name is defined in this profile SHALL adhere to
 the following requirements:
 
-*   A DER-encoded X.509 certificate meeting the requirements of DICE Certificate
+*   The certificate SHALL be a DER-encoded X.509 certificate meeting the requirements of DICE Certificate
     Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument.
 *   The certificate SHOULD contain the extendedKeyUsage extension with the
     following DICE policy OIDs. The extension SHOULD be marked as critical.
-    *   The extension SHOULD contain tcg-dice-kp-eca
-*   The KeyUsage extension MUST contain only keyCertSign
-*   The BasicConstraints extension MUST be included
-    *   IsCA MUST be set to true.
-*   The Issuer Name of this certificate MUST match the Subject Name of the ECA
+    *   The extension SHOULD contain ocp-dice-kp-eca
+*   The KeyUsage extension SHALL contain only keyCertSign
+*   The BasicConstraints extension SHALL be included
+    *   IsCA SHALL be set to true.
+*   The Issuer Name of this certificate SHALL match the Subject Name of the ECA
     which signs it.
-*   A tcg-dice-Ueid extension MUST be added
+*   A ocp-dice-Ueid extension SHALL be added
     *   This SHALL be populated by the LABEL input parameter to CertifyKey
     *   The extension SHOULD be marked as critical
-*   A tcg-dice-MultiTcbInfo extension SHALL be added. This extension SHOULD be marked as critical.
-    It SHALL be populated following the guidance for "Populating tcg-dice-MultiTcbInfo"
+*   A ocp-dice-MultiTcbInfo extension SHALL be added. This extension SHOULD be marked as critical.
+    It SHALL be populated following the guidance for "Populating ocp-dice-MultiTcbInfo"
 
-### Requirements of Leaf Certificates
+### Requirements for Leaf Certificates {#sec:leaf-cert-requirements}
 
-Any leaf certificate with the prefix tcg.certificate.irot SHALL adhere to
+Any leaf certificate whose format name is defined in this profile SHALL adhere to
 the following requirements:
 
-*   A DER-encoded X.509 certificate meeting the requirements of DICE Certificate
+*  the certificate SHALL be a DER-encoded X.509 certificate meeting the requirements of DICE Certificate
     Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument
 *   The certificate SHOULD contain the extendedKeyUsage extension with the
     following DICE policy OIDs. The extension SHOULD be marked as critical.
-    *   The extension SHOULD contain tcg-dice-kp-attestLoc
-*   The KeyUsage extension MUST contain only digitalSignature
-*   The BasicConstraints extension MUST be included
-    *   IsCA MUST be set to false.
-*   The tcg-dice-kp-eca policy MUST NOT be included
-*   The Issuer Name of this certificate MUST match the Subject Name of the ECA
+    *   The extension SHOULD contain ocp-dice-kp-attestLoc
+*   The KeyUsage extension SHALL contain only digitalSignature
+*   The BasicConstraints extension SHALL be included
+    *   IsCA SHALL be set to false.
+*   The ocp-dice-kp-eca policy SHALL NOT be included
+*   The Issuer Name of this certificate SHALL match the Subject Name of the ECA
     which signs it.
-*   A tcg-dice-Ueid extension MUST be added
+*   A ocp-dice-Ueid extension SHALL be added
     *   This SHALL be populated by the LABEL input parameter to CertifyKey
     *   The extension SHOULD be marked as critical
-*   A tcg-dice-MultiTcbInfo extension SHALL be added. This extension SHOULD be marked as critical.
-    It SHALL be populated following the guidance for "Populating tcg-dice-MultiTcbInfo"
+*   A ocp-dice-MultiTcbInfo extension SHALL be added. This extension SHOULD be marked as critical.
+    It SHALL be populated following the guidance for "Populating ocp-dice-MultiTcbInfo"
 
-### Requirements for CSRs
+### Requirements for CSRs {#sec:csr-requirements}
 
-Any CSR with the prefix tcg.csr.irot SHALL adhere to the following
+Any CSR whose format name is defined in this profile SHALL adhere to the following
 requirements:
 
 The CSR SHALL be in a signed Cryptographic Message Syntax (CMS) message defined as follows:
@@ -746,108 +743,107 @@ following requirements:
         * version: The version of the CSR specification - the version SHALL be 0
         * subject: The subject name of the CSR
         * subjectPKInfo: This field SHALL contain the subject public key and the
-          OID for the EC public key algorithm used by the DPE profile.
-        * attributes: As described below
+          OID for the EC public key algorithm used by the DPE profile
+        * attributes: An "Extension Request" attribute as defined in RFC 2985
+          [@{ietf-rfc2985}] SHALL adhere to the following requirements
+            *   The BasicConstraints extension SHALL be included
+                *   IsCA SHALL be set to false.
+            *   The KeyUsage extension SHALL contain only digitalSignature
+            *   A ocp-dice-Ueid extension SHALL be added
+                *   This SHALL be populated by the LABEL input parameter to CertifyKey
+                *   The extension SHOULD be marked as critical
+            *   A ocp-dice-MultiTcbInfo extension. This extension SHOULD be marked as critical.
+                It SHALL be populated following the guidance for "Populating ocp-dice-MultiTcbInfo"
+            *   The ExtensionRequest attribute SHOULD contain the extendedKeyUsage
+                extension with the following DICE policy OIDs. The extension SHOULD be
+                marked as critical.
+                *   The extension SHOULD contain ocp-dice-kp-attestLoc
     * signatureAlgorithm: The OID of the signature algorithm used by the DPE profile
     * signature: Self-signed signature
-*   An "Extension Request" attribute as defined in RFC 2985 [@{ietf-rfc2985}] SHALL adhere to the
-    following requirements.
-    *   The BasicConstraints extension MUST be included
-        *   IsCA MUST be set to false.
-    *   The KeyUsage extension SHALL contain only digitalSignature
-    *   A tcg-dice-Ueid extension MUST be added
-        *   This SHALL be populated by the LABEL input parameter to CertifyKey
-        *   The extension SHOULD be marked as critical
-    *   A tcg-dice-MultiTcbInfo extension. This extension SHOULD be marked as critical.
-        It SHALL be populated following the guidance for "Populating tcg-dice-MultiTcbInfo"
-    *   The ExtensionRequest attribute SHOULD contain the extendedKeyUsage
-        extension with the following DICE policy OIDs. The extension SHOULD be
-        marked as critical.
-        *   The extension SHOULD contain tcg-dice-kp-attestLoc
 *   The CertificationRequest SHALL be signed by the Subject private key
 
-### tcg.certificate.irot-eca.p256
+### ocp.certificate.irot-eca.p256
 
-The format “tcg.certificate.irot-eca.p256” is defined as follows:
+The format “ocp.certificate.irot-eca.p256” is defined as follows:
 
-*   SHALL follow all "Requirements for ECA Certificates"
+*   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
     SHA2-256 OID.
-*   The SubjectPublicKeyInfo SHALL use the EcPublicKey OID with NIST
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
     curve P-256.
-*   The Signature SHALL use the ECDSA-with-SHA256 OID with NIST curve
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA256 OID with NIST curve
     P-256.
 
-### tcg.certificate.irot-eca.p384
+### ocp.certificate.irot-eca.p384
 
-The format “tcg.certificate.irot-eca.p384” is defined as follows:
+The format “ocp.certificate.irot-eca.p384” is defined as follows:
 
-*   SHALL follow all "Requirements for ECA Certificates"
+*   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
     SHA2-384 OID.
-*   The SubjectPublicKeyInfo SHALL use the EcPublicKey OID with NIST
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
     curve P-384.
-*   The Signature SHALL use the ECDSA-with-SHA384 OID with NIST curve
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA384 OID with NIST curve
     P-384.
 
-### tcg.certificate.irot-leaf.p256
+### ocp.certificate.irot-leaf.p256
 
-The format “tcg.certificate.irot-leaf.p256” is defined as follows:
+The format ocp.certificate.irot-leaf.p256” is defined as follows:
 
-*   SHALL follow all "Requirements for Leaf Certificates"
+*   SHALL follow all "Requirements for Leaf Certificates" in @sec:leaf-cert-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
     SHA2-256 OID.
-*   The SubjectPublicKeyInfo SHALL use the EcPublicKey OID with NIST
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
     curve P-256.
-*   The Signature SHALL use the ECDSA-with-SHA256 OID with NIST curve
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA256 OID with NIST curve
     P-256.
 
-### tcg.certificate.irot-leaf.p384
+### ocp.certificate.irot-leaf.p384
 
-The format “tcg.certificate.irot.p384” is defined as follows:
+The format “ocp.certificate.irot.p384” is defined as follows:
 
-*   SHALL follow all "Requirements for Leaf Certificates"
+*   SHALL follow all "Requirements for Leaf Certificates" in @sec:leaf-cert-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
     SHA2-384 OID.
-*   The SubjectPublicKeyInfo SHALL use the EcPublicKey OID with NIST
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
     curve P-384.
-*   The Signature SHALL use the ECDSA-with-SHA384 OID with NIST curve
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA384 OID with NIST curve
     P-384.
 
-### tcg.csr.irot-leaf.p256
+### ocp.csr.irot-leaf.p256
 
-The format “tcg.csr.irot-leaf.p256” is defined as follows:
+The format “ocp.csr.irot-leaf.p256” is defined as follows:
 
-*   SHALL follow all "Requirements for CSRs"
+*   SHALL follow all "Requirements for CSRs" in @sec:csr-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
     SHA2-256 OID.
-*   The SubjectPublicKeyInfo SHALL use the EcPublicKey OID with NIST
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
     curve P-256.
-*   The Signature of both the CMS message and the CertificationRequest SHALL
+*   For the Signature of both the CMS message and the CertificationRequest, DPE SHALL
     use the ECDSA-with-SHA256 OID with NIST curve P-256.
 
-### tcg.csr.irot-leaf.p384
+### ocp.csr.irot-leaf.p384
 
-The format “tcg.csr.irot-leaf.p384” is defined as follows:
+The format “ocp.csr.irot-leaf.p384” is defined as follows:
 
-*   SHALL follow all "Requirements for CSRs"
+*   SHALL follow all "Requirements for CSRs" in @sec:csr-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
     SHA2-384 OID.
-*   The SubjectPublicKeyInfo SHALL use the EcPublicKey OID with NIST
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
     curve P-384.
-*   The Signature of both the CMS message and the CertificationRequest SHALL
+*   For the Signature of both the CMS message and the CertificationRequest, DPE SHALL
     use the ECDSA-with-SHA384 OID with NIST curve P-384.
 
 ## Profile Attributes
 
-### tcg.profile.irot.p256
+### ocp.profile.irot.p256
 
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
 | =========================================== General ============================================ |
 +-------------------------------+------------------------------------------------------------------+
-| name                          | tcg.profile.irot.p256                                            |
+| name                          | ocp.profile.irot.p256                                            |
 +-------------------------------+------------------------------------------------------------------+
 | inherits                      | Empty                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -934,9 +930,9 @@ The format “tcg.csr.irot-leaf.p384” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | ========================================= Derivation =========================================== |
 +-------------------------------+------------------------------------------------------------------+
-| dice-derivation               | tcg.derive.kdf-cdi-256                                           |
+| dice-derivation               | ocp.derive.kdf-cdi-256                                           |
 +-------------------------------+------------------------------------------------------------------+
-| asymmetric-derivation         | tcg.derive.kdf-asymmetric-p256                                   |
+| asymmetric-derivation         | ocp.derive.kdf-asymmetric-p256                                   |
 +-------------------------------+------------------------------------------------------------------+
 | symmetric-derivation          | Empty                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -946,11 +942,11 @@ The format “tcg.csr.irot-leaf.p384” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | initial-derivation            | Implementation-supplied CDI                                      |
 +-------------------------------+------------------------------------------------------------------+
-| recursive-derivation          | tcg.recursive-derivation.extend-tci                              |
+| recursive-derivation          | ocp.recursive-derivation.extend-tci                              |
 +-------------------------------+------------------------------------------------------------------+
 | =========================================== Input ============================================== |
 +-------------------------------+------------------------------------------------------------------+
-| input-format                  | tcg.format.digest-sha256                                         |
+| input-format                  | ocp.format.digest-sha256                                         |
 +-------------------------------+------------------------------------------------------------------+
 | supports-internal-inputs      | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
@@ -1003,19 +999,19 @@ The format “tcg.csr.irot-leaf.p384” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-eca-certificates     | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
-| eca-certificate-format        | tcg.certificate.irot-eca.p256                                    |
+| eca-certificate-format        | ocp.certificate.irot-eca.p256                                    |
 +-------------------------------+------------------------------------------------------------------+
-| leaf-certificate-format       | tcg.certificate.irot-leaf.p256                                   |
+| leaf-certificate-format       | ocp.certificate.irot-leaf.p256                                   |
 +-------------------------------+------------------------------------------------------------------+
 | ========================================= Signatures =========================================== |
 +-------------------------------+------------------------------------------------------------------+
-| public-key-format             | tcg.key-format.p256.raw                                          |
+| public-key-format             | ocp.key-format.p256.raw                                          |
 +-------------------------------+------------------------------------------------------------------+
 | supports-external-key         | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| to-be-signed-format           | tcg.tbs-format.digest-sha256                                     |
+| to-be-signed-format           | ocp.tbs-format.digest-sha256                                     |
 +-------------------------------+------------------------------------------------------------------+
-| signature-format              | tcg.signature-format.p256.raw                                    |
+| signature-format              | ocp.signature-format.p256.raw                                    |
 +-------------------------------+------------------------------------------------------------------+
 | supports-symmetric-sign       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1031,67 +1027,67 @@ The format “tcg.csr.irot-leaf.p384” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-multiple-localities  | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
-| locality-id-format            | tcg.locality-id-format.uint32                                    |
+| locality-id-format            | ocp.locality-id-format.uint32                                    |
 +-------------------------------+------------------------------------------------------------------+
 | =========================================== Export ============================================= |
 +-------------------------------+------------------------------------------------------------------+
-| export-cdi-format             | tcg.export-cdi.raw-256                                           |
+| export-cdi-format             | ocp.export-cdi.raw-256                                           |
 +-------------------------------+------------------------------------------------------------------+
 
-### tcg.profile.irot.p384
+### ocp.profile.irot.p384
 
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
 | =========================================== General ============================================ |
 +-------------------------------+------------------------------------------------------------------+
-| name                          | tcg.profile.irot.p384                                            |
+| name                          | ocp.profile.irot.p384                                            |
 +-------------------------------+------------------------------------------------------------------+
-| inherits                      | tcg.profile.irot.p256                                            |
+| inherits                      | ocp.profile.irot.p256                                            |
 +-------------------------------+------------------------------------------------------------------+
 | ============================================ Input ============================================= |
 +-------------------------------+------------------------------------------------------------------+
-| input-format                  | tcg.format.digest-sha384                                         |
+| input-format                  | ocp.format.digest-sha384                                         |
 +-------------------------------+------------------------------------------------------------------+
 | ========================================= Derivation =========================================== |
 +-------------------------------+------------------------------------------------------------------+
-| dice-derivation               | tcg.derive.kdf-cdi-384                                           |
+| dice-derivation               | ocp.derive.kdf-cdi-384                                           |
 +-------------------------------+------------------------------------------------------------------+
-| asymmetric-derivation         | tcg.derive.kdf-asymmetric-p384                                   |
+| asymmetric-derivation         | ocp.derive.kdf-asymmetric-p384                                   |
 +-------------------------------+------------------------------------------------------------------+
 | symmetric-derivation          | Empty                                                            |
 +-------------------------------+------------------------------------------------------------------+
 | ======================================== Certificates ========================================== |
 +-------------------------------+------------------------------------------------------------------+
-| leaf-certificate-format       | tcg.certificate.irot-leaf.p384                                   |
+| leaf-certificate-format       | ocp.certificate.irot-leaf.p384                                   |
 +-------------------------------+------------------------------------------------------------------+
-| eca-certificate-format        | tcg.certificate.irot-eca.p384                                    |
+| eca-certificate-format        | ocp.certificate.irot-eca.p384                                    |
 +-------------------------------+------------------------------------------------------------------+
 | ========================================= Signatures =========================================== |
 +-------------------------------+------------------------------------------------------------------+
-| to-be-signed-format           | tcg.tbs-format.digest-sha384                                     |
+| to-be-signed-format           | ocp.tbs-format.digest-sha384                                     |
 +-------------------------------+------------------------------------------------------------------+
-| public-key-format             | tcg.key-format.p384.raw                                          |
+| public-key-format             | ocp.key-format.p384.raw                                          |
 +-------------------------------+------------------------------------------------------------------+
 | supports-external-key         | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| signature-format              | tcg.signature-format.p384.raw                                    |
+| signature-format              | ocp.signature-format.p384.raw                                    |
 +-------------------------------+------------------------------------------------------------------+
 | =========================================== Export ============================================= |
 +-------------------------------+------------------------------------------------------------------+
-| export-cdi-format             | tcg.export-cdi.raw-384                                           |
+| export-cdi-format             | ocp.export-cdi.raw-384                                           |
 +-------------------------------+------------------------------------------------------------------+
 
-### tcg.profile.irot-min.p256
+### ocp.profile.irot-min.p256
 
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
 | =========================================== General ============================================ |
 +-------------------------------+------------------------------------------------------------------+
-| name                          | tcg.profile.irot-min.p256                                        |
+| name                          | ocp.profile.irot-min.p256                                        |
 +-------------------------------+------------------------------------------------------------------+
-| inherits                      | tcg.profile.irot.p256                                            |
+| inherits                      | ocp.profile.irot.p256                                            |
 +-------------------------------+------------------------------------------------------------------+
 | ========================================== Contexts ============================================ |
 +-------------------------------+------------------------------------------------------------------+
@@ -1132,16 +1128,16 @@ The format “tcg.csr.irot-leaf.p384” is defined as follows:
 | supports-symmetric-sign       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
 
-### tcg.profile.irot-min.p384
+### ocp.profile.irot-min.p384
 
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
 | =========================================== General ============================================ |
 +-------------------------------+------------------------------------------------------------------+
-| name                          | tcg.profile.irot-min.p384                                        |
+| name                          | ocp.profile.irot-min.p384                                        |
 +-------------------------------+------------------------------------------------------------------+
-| inherits                      | tcg.profile.irot.p384                                            |
+| inherits                      | ocp.profile.irot.p384                                            |
 +-------------------------------+------------------------------------------------------------------+
 | ========================================== Contexts ============================================ |
 +-------------------------------+------------------------------------------------------------------+
@@ -1206,7 +1202,7 @@ Table: Command IDs
 `DPE_COMMAND_ROTATE_CONTEXT_HANDLE`                     | 0xE
 `DPE_COMMAND_DESTROY_CONTEXT`                           | 0xF
 `DPE_COMMAND_GET_CERTIFICATE_CHAIN`                     | 0x10
-`Reserved Range for Vendor Commands`                    | 0x80000000 - 0x8000FFFF
+Reserved Range for Vendor Commands                      | 0x80000000 - 0x8000FFFF
 
 Table: Status Codes
 
@@ -1224,6 +1220,7 @@ Table: Status Codes
 `DPE_STATUS_INVALID_LOCALITY`                | 0x81        | Hardware Locality does not exist.
 `DPE_STATUS_HANDLE_DEFINED`                  | 0x82        | Passed handle is already defined.
 `DPE_STATUS_ARGUMENT_NOT_SUPPORTED`          | 0x83        | Argument is not supported by this profile, implementation, or integration.
+`DPE_STATUS_ALREADY_INITIALIZED`             | 0x84        | InitializeContext has already been called on this DPE reset cycle
 
 Table: Magic Constants
 
@@ -1258,7 +1255,7 @@ Table: Numeric Constants
 
 **Name**                         | **Value**
 -------------------------------- | ----------------------------
-`MAX_CONTEXTS`                   | Implementation-defined. MUST be greater than or equal to 8.
+`MAX_CONTEXTS`                   | Implementation-defined. SHALL be greater than or equal to 8.
 `CURRENT_PROFILE_MAJOR_VERSION`  | 0
 `CURRENT_PROFILE_MINOR_VERSION`  | 13
 
@@ -1306,13 +1303,14 @@ Table: ABI Types
 
 **Name**        | **Size**   | **Description**
 --------------- | ---------- |--------------------------------------------------------------------------------
-`U16`           | 2          | 2-byte little-endian unsigned integer
-`U32`           | 4          | 4-byte little-endian unsigned integer
-`BITFIELD`      | 4          | 4-byte bitfield. Bit 31 SHALL refer to the most significant bit and bit 0 SHALL refer to the least significant bit
-`HASH`          | H          | A hash. Size depends on H value for the profile
-`PUBKEY`        | P          | A public key. Size depends on the P value for the profile. Encoding defined by public-key-format
-`SIGNATURE`     | S          | A signature. Size depends on the S value for the profile. Encoding defined by signature-format
-`CERTIFICATE`   | C          | A certificate. Size depends on the C value for the profile. Encoding defined by max-certificate-size
+`U16`           | 2          | 2-byte little-endian unsigned integer.
+`U32`           | 4          | 4-byte little-endian unsigned integer.
+`BITFIELD`      | 4          | 4-byte bitfield. Bit 31 SHALL refer to the most significant bit and bit 0 SHALL refer to the least significant bit.
+`HASH`          | H          | A hash. Size depends on H value for the profile.
+`PUBKEY`        | P          | A public key. Size depends on the P value for the profile. Encoding defined by public-key-format.
+`SIGNATURE`     | S          | A signature. Size depends on the S value for the profile. Encoding defined by signature-format.
+`CERTIFICATE`   | C          | A certificate. Size depends on the C value for the profile. Encoding defined by max-certificate-size.
+`EXPORTED_CDI`  | 32         | An exported CDI.
 `BYTES`         | Variable   | An arbitrary sequence of bytes.
 
 ### Command/Response Structures
@@ -1400,8 +1398,8 @@ Table: `DERIVE_CONTEXT_INPUT_ARGS` struct
 |                 |                | 29        | `RETAIN_PARENT_CONTEXT`          | If set, `CONTEXT_HANDLE` SHALL be retained.
 |                 |                | 28        | `MAKE_DEFAULT`                   | Whether `NEW_CONTEXT_HANDLE` will be the default context.
 |                 |                | 27        | `CHANGE_LOCALITY`                | Whether `NEW_CONTEXT_HANDLE` is created in a different locality than the caller's locality.
-|                 |                | 26        | `ALLOW_NEW_CONTEXT_TO_EXPORT`    | Whether the new context can export CDI.
-|                 |                | 25        | `INPUT_ALLOW_X509`               | Whether the new context can request an X.509 cert. If false, the context can only request a CSR.
+|                 |                | 26        | `ALLOW_NEW_CONTEXT_TO_EXPORT`    | Whether callers referencing the new context can export the CDI.
+|                 |                | 25        | `INPUT_ALLOW_X509`               | Whether callers referencing the new context can request an X.509 cert. If false, the context can only request a CSR.
 |                 |                | 24        | `RECURSIVE`                      | If set, do a recursive derivation on `CONTEXT_HANDLE`.
 |                 |                | 23        | `EXPORT_CDI`                     | Whether CDI should be exported for this context.
 |                 |                | 22        | `CREATE_CERTIFICATE`             | Whether a certificate is generated for the derived context.
@@ -1422,16 +1420,16 @@ Table: `DERIVE_CONTEXT_OUTPUT_ARGS` struct if `EXPORT_CDI` is **not** set
 
 Table: `DERIVE_CONTEXT_OUTPUT_ARGS` struct if `EXPORT_CDI` is set
 
-| **Byte Offset** | **Type**      | **Bits** | **Name**                      | **Description**
-| ---------       | ----------    | -------  | ----------------------------- | --------------------------------------------------
-| 0x00            | `U32`         | 31:0     | `MAGIC`                       | Magic number `DPE_RESPONSE_MAGIC`.
-| 0x04            | `U32`         | 31:0     | `STATUS`                      | One of `DPE_STATUS_*`.
-| 0x08            | `U32`         | 31:0     | `PROFILE`                     | One of `DPE_PROFILE_*`.
-| 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`          | The handle for the created child context, or rotated context in case RECURSIVE is set.
-| 0x1C            | `BYTES`       | 127:0    | `PARENT_CONTEXT_HANDLE`       | The handle for the parent context if `RETAIN_PARENT_CONTEXT` is set.
-| 0x2C            | `BYTES`       | 255:0    | `EXPORTED_CDI`                | If EXPORT_CDI is true, holds exported CDI. Else, value is ignored.
-| 0x4C            | `U32`         | 31:0     | `CERTIFICATE_SIZE`            | Number of bytes used in `NEW_CERTIFICATE`.
-| 0x50            | `BYTES`       |          | `NEW_CERTIFICATE`             | If CREATE_CERTIFICATE is set, holds the new ECA certificate. Else, value is ignored.
+| **Byte Offset** | **Type**       | **Bits** | **Name**                      | **Description**
+| ---------       | ----------     | -------  | ----------------------------- | --------------------------------------------------
+| 0x00            | `U32`          | 31:0     | `MAGIC`                       | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`          | 31:0     | `STATUS`                      | One of `DPE_STATUS_*`.
+| 0x08            | `U32`          | 31:0     | `PROFILE`                     | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`        | 127:0    | `NEW_CONTEXT_HANDLE`          | The handle for the created child context, or rotated context in case RECURSIVE is set.
+| 0x1C            | `BYTES`        | 127:0    | `PARENT_CONTEXT_HANDLE`       | The handle for the parent context if `RETAIN_PARENT_CONTEXT` is set.
+| 0x2C            | `EXPORTED_CDI` | 255:0    | `EXPORTED_CDI`                | If EXPORT_CDI is true, holds exported CDI. Else, value is ignored.
+| 0x4C            | `U32`          | 31:0     | `CERTIFICATE_SIZE`            | Number of bytes used in `NEW_CERTIFICATE`.
+| 0x50            | `BYTES`        |          | `NEW_CERTIFICATE`             | If CREATE_CERTIFICATE is set, holds the new ECA certificate. Else, value is ignored.
 
 #### CertifyKey ABI
 
