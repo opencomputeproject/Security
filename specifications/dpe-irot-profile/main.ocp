@@ -93,7 +93,7 @@ with the following properties to allow for implementation on a wide range of
 resource-constrained hardware:
 
 *   **Fixed-length command/response messages:** To avoid complex message-parsing in
-    minimalistic firmware environments, all command and response are fixed-size.
+    minimalistic firmware environments, all commands and responses are fixed-size.
 *   **DPE instance running in the same SoC package as the client:** Some features
     such as encrypted sessions are not supported because the client and DPE
     implementation are assumed to reside within the same SoC.
@@ -130,7 +130,7 @@ See "DeriveContext ABI" for additional details of format and semantics.
 This profile also supports localities. Each locality has a single plaintext
 session. This profile does not support encrypted sessions.
 
-The DPE SHALL use the following inputs when deriving CDIs. Any changes to any
+DPE SHALL use the following inputs when deriving CDIs. Any changes to any
 of these inputs SHALL result in a different derived asymmetric key.
 
 *   Latest INPUT_DATA: The `INPUT_DATA` field from the most recent DeriveContext call
@@ -170,7 +170,7 @@ For profiles which support them, Simulation Contexts contribute to DeriveContext
 ### Default Context
 
 A DPE conforming to this profile MUST support a “Default Context” for
-each supported Locality. The default context has handle of all null bytes.
+each supported Locality. The default context has a handle of all null bytes.
 
 ### Hardware Localities
 
@@ -259,7 +259,7 @@ specification which are omitted by this profile:
 
 *   Each call to DeriveContext SHALL create a new TCI node containing `INPUT_DATA`.
     *   The context's "Latest INPUT_DATA" SHALL be `INPUT_DATA`
-    *   The contexts "Cumulative INPUT_DATA" SHALL be `HASH(DEFAULT_TCI_VALUE || INPUT_DATA)`
+    *   The context's "Cumulative INPUT_DATA" SHALL be `HASH(DEFAULT_TCI_VALUE || INPUT_DATA)`
         where `DEFAULT_TCI_VALUE` is a Hash-sized buffer of all zeros.
 *   The input-data format for this profile contains the following fields. All
     of these fields SHALL contribute to CDI derivation.
@@ -377,7 +377,7 @@ This profile MAY implement the RotateContextHandle command.
 
 *   If `TARGET_IS_DEFAULT` is set, `NEW_CONTEXT_HANDLE` SHALL be made the
     default in the caller's locality. If the default context handle is already
-    defined in the caller's locality, this command SHALL fail.
+    defined in the caller's locality and `TARGET_IS_DEFAULT` is set, this command SHALL fail.
 
 ### DestroyContext
 
@@ -426,8 +426,8 @@ certificates. This API does not return any DPE leaf certificates.
 
 #### Omitted Arguments
 
-This profile shall have the following behavior for arguments from the main DPE
-specification which are omitted by this profile:
+This profile shall have the following behavior for the following common arguments from the main DPE
+specification which are not relevant for this command:
 
 *Input*
 
@@ -495,7 +495,7 @@ The CDI derivation scheme “tcg.derive.kdf-cdi-384” is defined as follows:
 
 The CDI export scheme "tcg.export-cdi.raw" is a raw 256-bit secret
 
-To generate exported keypair, use asymmetric-derivation for the relevant profile.
+To derive the exported keypair, use asymmetric-derivation for the relevant profile.
 
 ### tcg.export-cdi.raw-384
 
@@ -610,7 +610,7 @@ For all CertifyKey formats, MultiTcbInfo extensions SHALL be populated as follow
         algorithm is specified by the profile-specific certificate
         or CSR format.
     *   For measurements provided during auto-initialization, the
-        hash algorithm is implementation-defined
+        hash algorithm is implementation-defined.
 *   Each TcbInfo structure SHALL be populated as follows:
     *   “Vendor”: [Optional and vendor-defined]
     *   “Model”: [Optional and vendor-defined]
@@ -673,7 +673,7 @@ Any leaf certificate with the prefix tcg.certificate.irot SHALL adhere to
 the following requirements:
 
 *   A DER-encoded X.509 certificate meeting the requirements of DICE Certificate
-    Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument
+    Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument.
 *   The certificate SHOULD contain the extendedKeyUsage extension with the
     following DICE policy OIDs. The extension SHOULD be marked as critical.
     *   The extension SHOULD contain tcg-dice-kp-eca
@@ -766,7 +766,7 @@ following requirements:
     *   The ExtensionRequest attribute SHOULD contain the extendedKeyUsage
         extension with the following DICE policy OIDs. The extension SHOULD be
         marked as critical.
-        *   the extension SHOULD contain tcg-dice-kp-attestLoc
+        *   The extension SHOULD contain tcg-dice-kp-attestLoc
 *   The CertificationRequest SHALL be signed by the Subject private key
 
 ### tcg.certificate.irot-eca.p256
@@ -987,7 +987,7 @@ The format “tcg.csr.irot-leaf.p384” is defined as follows:
 | supports-certificate-policies | False. Policies included in generated certificates are           |
 |                               | defined by this specification. No additional policies are        |
 |                               | accepted via CertifyKey. Policies included in                    |
-|                               | higher level DICE certificates not generated by DPE are          |
+|                               | higher level DICE certificates not generated by DPE and are      |
 |                               | implementation-defined.                                          |
 +-------------------------------+------------------------------------------------------------------+
 | supports-policy-identity-init | N/A                                                              |
@@ -1215,7 +1215,7 @@ Table: Status Codes
 
 **Name**                                     | **Value**   | **Description**
 -------------------------------------------- | ----------- | -----------------------------------------------
-`DPE_STATUS_NO_ERROR`                        | 0x0         | See main dpe specification
+`DPE_STATUS_NO_ERROR`                        | 0x0         | See main DPE specification
 `DPE_STATUS_INTERNAL_ERROR`                  | 0x1         | See main dpe specification
 `DPE_STATUS_INVALID_COMMAND`                 | 0x2         | See main dpe specification
 `DPE_STATUS_INVALID_ARGUMENT`                | 0x3         | See main dpe specification
@@ -1403,8 +1403,8 @@ Table: `DERIVE_CONTEXT_INPUT_ARGS` struct
 |                 |                | 29        | `RETAIN_PARENT_CONTEXT`          | If set, `CONTEXT_HANDLE` SHALL be retained.
 |                 |                | 28        | `MAKE_DEFAULT`                   | Whether `NEW_CONTEXT_HANDLE` will be the default context.
 |                 |                | 27        | `CHANGE_LOCALITY`                | Whether `NEW_CONTEXT_HANDLE` is created in a different locality than the caller's locality.
-|                 |                | 26        | `ALLOW_NEW_CONTEXT_TO_EXPORT`    | Whether new context can export CDI.
-|                 |                | 25        | `INPUT_ALLOW_X509`               | Whether new context can request an X.509 cert. If false, context can only request a CSR.
+|                 |                | 26        | `ALLOW_NEW_CONTEXT_TO_EXPORT`    | Whether the new context can export CDI.
+|                 |                | 25        | `INPUT_ALLOW_X509`               | Whether the new context can request an X.509 cert. If false, the context can only request a CSR.
 |                 |                | 24        | `RECURSIVE`                      | If set, do a recursive derivation on `CONTEXT_HANDLE`.
 |                 |                | 23        | `EXPORT_CDI`                     | Whether CDI should be exported for this context.
 |                 |                | 22        | `CREATE_CERTIFICATE`             | Whether a certificate is generated for the derived context.
@@ -1434,7 +1434,7 @@ Table: `DERIVE_CONTEXT_OUTPUT_ARGS` struct if `EXPORT_CDI` is set
 | 0x1C            | `BYTES`       | 127:0    | `PARENT_CONTEXT_HANDLE`       | The handle for the parent context if `RETAIN_PARENT_CONTEXT` is set.
 | 0x2C            | `BYTES`       | 255:0    | `EXPORTED_CDI`                | If EXPORT_CDI is true, holds exported CDI. Else, value is ignored.
 | 0x4C            | `U32`         | 31:0     | `CERTIFICATE_SIZE`            | Number of bytes used in `NEW_CERTIFICATE`.
-| 0x50            | `BYTES`       |          | `NEW_CERTIFICATE`             | If CREATE_CERTIFICATE is set, holds new ECA certificate. Else, value is ignored.
+| 0x50            | `BYTES`       |          | `NEW_CERTIFICATE`             | If CREATE_CERTIFICATE is set, holds the new ECA certificate. Else, value is ignored.
 
 #### CertifyKey ABI
 
@@ -1473,7 +1473,7 @@ Table: `SIGN_INPUT_ARGS` struct
 | 0x08            | `U32`         | 31:0     | `PROFILE`            | One of `DPE_PROFILE_IROT_SHA256_P256`.
 | 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`     | A numeric handle referring to a DPE context.
 | 0x1C            | `HASH`        |          | `LABEL`              | Digest measurement label used in key derivation.
-| 0x1C + H        | `BITFIELD`    | 31:0     | `RESERVED`         | Reserved
+| 0x1C + H        | `BITFIELD`    | 31:0     | `RESERVED`           | Reserved
 | 0x20 + H        | `HASH`        |          | `TO_BE_SIGNED`       | Hash to be signed.
 
 Table: `SIGN_OUTPUT_ARGS` struct
@@ -1496,7 +1496,7 @@ Table: `ROTATE_CONTEXT_HANDLE_INPUT_ARGS` struct
 | 0x04            | `U32`         | 31:0     | `COMMAND_ID`                | `DPE_COMMAND_ROTATE_CONTEXT_HANDLE`.
 | 0x08            | `U32`         | 31:0     | `PROFILE`                   | One of `DPE_PROFILE_*`.
 | 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`            | A numeric handle referring to a DPE context.
-| 0x1C            | `BITFIELD`    | 31       | `TARGET_IS_DEFAULT`         | If set, change change this handle to the default context for the caller's locality
+| 0x1C            | `BITFIELD`    | 31       | `TARGET_IS_DEFAULT`         | If set, change this handle to the default context for the caller's locality
 |                 |               | 30:0     | `RESERVED`                  | Reserved.
 
 Table: `ROTATE_CONTEXT_HANDLE_OUTPUT_ARGS` struct
