@@ -1,0 +1,30 @@
+references:
+  - id: "ietf-rfc2986"
+    title: "PKCS #10: Certification Request Syntax Specification"
+    publisher: "IETF"
+    issued:
+      year: 2020
+      month: 11
+    url: "https://datatracker.ietf.org/doc/html/rfc2986"
+  - id: "ietf-rfc2985"
+    title: "PKCS #9: Selected Object Classes and Attribute Types"
+    publisher: "IETF"
+    issued:
+      year: 2000
+      month: 11
+    url: "https://datatracker.ietf.org/doc/html/rfc2985"
+  - id: "ietf-rfc5652"
+    title: "Cryptographic Message Syntax (CMS)"
+    publisher: "IETF"
+    issued:
+      year: 2009
+      month: 9
+    url: "https://datatracker.ietf.org/doc/html/rfc5652"
+  - id: "tcg-dpe"
+    title: "TCG DICE Protection Environment"
+    publisher: "Trusted Computing Group"
+    url: "https://trustedcomputinggroup.org/resource/dice-protection-environment/"
+  - id: "tcg-dice-certificate-profiles"
+    title: "DICE Certificate Profiles"
+    publisher: "Trusted Computing Group"
+    url: "https://trustedcomputinggroup.org/resource/dice-certificate-profiles/"

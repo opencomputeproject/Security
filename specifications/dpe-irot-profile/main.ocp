@@ -1,112 +1,94 @@
 ---
 title: "Server iRoT Profile for DPE"
 type: SPECIFICATION
+version: 0.13.0
+authors: [(See Acknowledgements section)]
+bibliography: bibliography.yaml
 ...
 
 ---
 
-# Disclaimers, Notices, and License Terms
-
-THIS SPECIFICATION IS PROVIDED "AS IS" WITH NO WARRANTIES WHATSOEVER, INCLUDING
-ANY WARRANTY OF MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR ANY PARTICULAR
-PURPOSE, OR ANY WARRANTY OTHERWISE ARISING OUT OF ANY PROPOSAL, SPECIFICATION OR
-SAMPLE.
-
-Without limitation, TCG disclaims all liability, including liability for
-infringement of any proprietary rights, relating to use of information in this
-specification and to the implementation of this specification, and TCG disclaims
-all liability for cost of procurement of substitute goods or services, lost
-profits, loss of use, loss of data or any incidental, consequential, direct,
-indirect, or special damages, whether under contract, tort, warranty or
-otherwise, arising in any way out of use or reliance upon this specification or
-any information herein.
-
-This document is copyrighted by Trusted Computing Group (TCG), and no license,
-express or implied, is granted herein other than as follows: You may not copy or
-reproduce the document or distribute it to others without written permission
-from TCG, except that you may freely do so for the purposes of (a) examining or
-implementing TCG specifications or (b) developing, testing, or promoting
-information technology standards and best practices, so long as you distribute
-the document with these disclaimers, notices, and license terms.
-
-Contact the Trusted Computing Group at www.trustedcomputinggroup.org for
-information on specification licensing through membership agreements.
-
-Any marks and brands contained herein are the property of their respective
-owners.
-
----
-
-# Change History
-
-| **Revision** | **Date**   | **Description**
-| ------------ | ---------- | -------------------------------------------
-| 0.1/1        | 2022/09/17 | Initial draft
-| 0.1/2        | 2022/09/17 | Several clarifications and cleanups, mostly related to ABI and algorithm definitions.
-| 0.1/3        | 2023/02/08 | Add hardware localities
-| 0.1/4        | 2023/03/17 | Clean up formatting, wording, and remove extraneous concepts
-| 0.1/5        | 2023/03/22 | Add CertifyCsr command
-| 0.1/6        | 2023/03/22 | Add major/minor versioning and vendor IDs to GetProfile
-| 0.1/7        | 2023/04/06 | Explicitly declare encoding for some types
-| 0.8/1        | 2023/04/06 | Cut 0.8 revision as "feature complete"
-| 0.8/2        | 2023/05/17 | Collapse CertifyCsr into CertifyKey, add DeriveChild CA flag
-| 0.9/1        | 2024/01/12 | Update CSR/CMS requirements, Remove TagTCI, Remove TCI\_NODE\_DATA flags
-| 0.9/2        | 2024/01/19 | Align command names and parameters with latest DPE spec
-| 0.9/3        | 2024/01/22 | Replace ExtendTCI with DeriveContext(recursive)
-| 0.10/1       | 2024/01/23 | Change DeriveContext RECURSIVE flag to a bitfield
-| 0.10/2       | 2024/04/08 | Address latest WG comments
-| 0.11/1       | 2024/08/08 | Create additional profile variants and remove optional configurations.
-| 0.12/1       | 2024/09/06 | Support export-cdi. Remove support for symmetric sign and IS_CA flag
-
----
-
-# Document Style
-
-**Key Words**
-
-The key words "MUST," "MUST NOT," "REQUIRED," "SHALL," "SHALL NOT," "SHOULD,"
-"SHOULD NOT," "RECOMMENDED," "MAY," and "OPTIONAL" in this document's normative
-statements are to be interpreted as described in
-[RFC 2119: Key words for use in RFCs to Indicate Requirement Levels](https://www.ietf.org/rfc/rfc2119.txt).
-
-**Statement Type**
-
-Please note an important distinction between different sections of text
-throughout this document. There are two distinctive kinds of text: *informative
-comments* and *normative statements*. Because most of the text in this
-specification will be of the kind *normative statements*, the authors have
-informally defined it as the default and, as such, have specifically called out
-text of the kind *informative comment*. They have done this by flagging the
-beginning and end of each informative comment and highlighting its text in gray.
-This means that unless text is specifically marked as of the kind *informative
-comment*, it can be considered a *normative statement*.
-
-EXAMPLE:
-
-::: Informative ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-This is the first paragraph of 1–n paragraphs containing text of the kind
-informative comment ...
-
-This is the second paragraph of text of the kind informative comment ...
-
-This is the nth paragraph of text of the kind informative comment ...
-
-To understand the TCG specification, the user must read the specification.
-(This use of MUST does not require any action).
-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+\currenttemplateversion
 
 ---
 
 \tableofcontents
 
+\listoffigures
+
 \listoftables
 
 ---
 
-# Introduction
+# License
+
+## Open Web Foundation (OWF) CLA
+
+Contributions to this Specification are made under the terms and conditions set forth in **Modified Open Web Foundation Agreement 0.9 (OWFa 0.9)**. (As of October 16, 2024)  (“Contribution License”) by:
+
+- Google
+- Microsoft
+- AMD
+- NVIDIA
+
+Usage of this Specification is governed by the terms and conditions set forth in **Modified OWFa 0.9 Final Specification Agreement (FSA)** (As of October 16, 2024) **(“Specification License”)**.
+
+You can review the applicable Specification License(s) referenced above by the contributors to this Specification on the OCP website at <https://www.opencompute.org/contributions/templates-agreements>.
+
+For actual executed copies of either agreement, please contact OCP directly.
+
+NOTWITHSTANDING THE FOREGOING LICENSES, THIS SPECIFICATION IS PROVIDED BY OCP "AS IS" AND OCP EXPRESSLY DISCLAIMS ANY WARRANTIES (EXPRESS, IMPLIED, OR OTHERWISE), INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, OR TITLE, RELATED TO THE SPECIFICATION. NOTICE IS HEREBY GIVEN, THAT OTHER RIGHTS NOT GRANTED AS SET FORTH ABOVE, INCLUDING WITHOUT LIMITATION, RIGHTS OF THIRD PARTIES WHO DID NOT EXECUTE THE ABOVE LICENSES, MAY BE IMPLICATED BY THE IMPLEMENTATION OF OR COMPLIANCE WITH THIS SPECIFICATION. OCP IS NOT RESPONSIBLE FOR IDENTIFYING RIGHTS FOR WHICH A LICENSE MAY BE REQUIRED IN ORDER TO IMPLEMENT THIS SPECIFICATION.  THE ENTIRE RISK AS TO IMPLEMENTING OR OTHERWISE USING THE SPECIFICATION IS ASSUMED BY YOU. IN NO EVENT WILL OCP BE LIABLE TO YOU FOR ANY MONETARY DAMAGES WITH RESPECT TO ANY CLAIMS RELATED TO, OR ARISING OUT OF YOUR USE OF THIS SPECIFICATION, INCLUDING BUT NOT LIMITED TO ANY LIABILITY FOR LOST PROFITS OR ANY CONSEQUENTIAL, INCIDENTAL, INDIRECT, SPECIAL OR PUNITIVE DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS SPECIFICATION, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND EVEN IF OCP HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+<!---
+THE UPDATED DEFAULT CONTRIBUTOR LICENSE AGREEMENT (CLA) IS [OWFa 0.9](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/ed0befaf86bee2568ad720ff4a9a554d1f4260f7.pdf).
+PLEASE VERIFY THE CORRECT CLA/FSA IS USED AND EXECUTED FOR THIS CONTRIBUTION.
+-->
+
+# Acknowledgements
+
+The Contributors of this Specification would like to acknowledge the following:
+
+- Jordan Hand (Google)
+- Sree Revoori (Google)
+- Carl Lundin (Google)
+- Zach Halvorsen (Google)
+- Chris Fenner (Google)
+- Fabrizio Damato (AMD)
+- Ehsan Koohestani (AMD)
+
+# Compliance with OCP Tenets
+
+<!---
+Please describe how this Specification complies with the OCP tenets.
+A full explanation of the OCP core tenets can be seen [here](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/bf648bb75091907147e76846cad590f402660d2e.pdf).
+-->
+
+## Openness
+
+This profile has a [reference implementation](https://github.com/chipsalliance/caliptra-dpe) which is open-sourced and licensed using the Apache 2.0 license.
+
+## Efficiency
+
+This profile gives a clear Application Binary Interface (ABI) definition which makes implementation and host integration straight forward and efficient.
+
+## Impact
+
+This profile standardizes a common interface for actuating the DICE Protection Environment on internal roots of trust, enabling consistent and verifiable device identity and attestation across the industry. This foundational security primitive allows for building more secure systems by establishing trust in the earliest boot components.
+
+## Scale
+
+This profile provides a common attestation interface that can be implemented on a wide range of hardware, enabling interoperability and simplifying security management across large-scale, multi-vendor deployments.
+
+## Sustainability
+
+This profile facilitates component reuse and integration into different systems, promoting a circular economy and reducing e-waste.
+
+# Base Specification
+
+## Introduction
 
 This document describes a profile for implementation of DICE Protection
-Environment (DPE) on Integrated Roots of Trust (iRoTs). This profile is designed
+Environment (DPE) [@{tcg-dpe}] on Integrated Roots of Trust (iRoTs). This profile is designed
 with the following properties to allow for implementation on a wide range of
 resource-constrained hardware:
 
@@ -117,25 +99,6 @@ resource-constrained hardware:
     implementation are assumed to reside within the same SoC.
 *   **Attestation-only:** This profile is only intended to provide the ability for
     the DPE to provide attestation/signing functionality.
-
-# References
-
-1. Trusted Computing Group, "DICE Protection Environment," 2023. [Online].
-   Available: <https://trustedcomputinggroup.org>.
-
-2. Trusted Computing Group, "DICE Certificate Profiles," 2020. [Online].
-   Available: <https://trustedcomputinggroup.org>.
-
-3. Internet Engineering Task Force, "Cryptographic Message Syntax (CMS)," 2009.
-   [Online]. Available: <https://www.ietf.org/rfc/rfc5652.txt>.
-
-4. Internet Engineering Task Force,
-   "PKCS #10: Certification Request Syntax Specification Version 1.7," 2000.
-   [Online]. Available: <https://www.ietf.org/rfc/rfc2986.txt>.
-
----
-
-# Profile
 
 This document defines multiple variants of the DPE iRoT profile:
 
@@ -710,7 +673,7 @@ Any leaf certificate with the prefix tcg.certificate.irot SHALL adhere to
 the following requirements:
 
 *   A DER-encoded X.509 certificate meeting the requirements of DICE Certificate
-    Profiles according to the CertifyKey policies argument
+    Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument
 *   The certificate SHOULD contain the extendedKeyUsage extension with the
     following DICE policy OIDs. The extension SHOULD be marked as critical.
     *   The extension SHOULD contain tcg-dice-kp-eca
@@ -731,7 +694,7 @@ Any leaf certificate with the prefix tcg.certificate.irot SHALL adhere to
 the following requirements:
 
 *   A DER-encoded X.509 certificate meeting the requirements of DICE Certificate
-    Profiles according to the CertifyKey policies argument
+    Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument
 *   The certificate SHOULD contain the extendedKeyUsage extension with the
     following DICE policy OIDs. The extension SHOULD be marked as critical.
     *   The extension SHOULD contain tcg-dice-kp-attestLoc
@@ -754,7 +717,7 @@ requirements:
 
 The CSR shall be in a signed Cryptographic Message Syntax (CMS) message defined as follows:
 
-*   A DER-encoded CMS ContentInfo message as defined by RFC 5652 with the
+*   A DER-encoded CMS ContentInfo message as defined by RFC 5652 [@{ietf-rfc5652}] with the
     following field values:
     * ContentType: id-signedData OID
     * Content: a SignedData with the following fields
@@ -764,7 +727,7 @@ The CSR shall be in a signed Cryptographic Message Syntax (CMS) message defined 
           To allow for fixed-size CMS messages, the eContent octet string MAY include
           any number of null padding bytes following the CSR context.
             * eContentType: id-data OID
-            * eContent: A DER-encoded PKCS #10 CSR as defined in RFC 2986
+            * eContent: A DER-encoded PKCS #10 CSR as defined in RFC 2986 [@{ietf-rfc2986}]
         * certificates: This optional field SHALL be omitted
         * crls: This optional field SHALL be omitted
         * signerInfos: SignerInfo with the following fields
@@ -780,7 +743,7 @@ The CSR shall be in a signed Cryptographic Message Syntax (CMS) message defined 
 The PKCS #10 CSR included in the above CMS message SHALL adhere to the
 following requirements:
 
-*   A DER-encoded CertificationRequest as defined in RFC 2986.
+*   A DER-encoded CertificationRequest as defined in RFC 2986 [@{ietf-rfc2986}].
 *   The CSR SHALL contain the following fields
     * certificationRequestInfo: CertificationRequestInfo with the following fields
         * version: The version of the CSR specification - the version SHALL be 0
@@ -790,7 +753,7 @@ following requirements:
         * attributes: As described below
     * signatureAlgorithm: The OID of the signature algorithm used by the DPE profile
     * signature: Self-signed signature
-*   An "Extension Request" attribute as defined in RFC 2985 SHALL adhere to the
+*   An "Extension Request" attribute as defined in RFC 2985 [@{ietf-rfc2985}] SHALL adhere to the
     following requirements.
     *   The BasicConstraints extension MUST be included
         *   IsCA MUST be set to false.
