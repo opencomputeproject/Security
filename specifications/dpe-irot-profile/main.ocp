@@ -1,0 +1,1546 @@
+---
+title: "Server iRoT Profile for DPE"
+type: SPECIFICATION
+version: 0.13.0
+authors: [(See Acknowledgements section)]
+bibliography: bibliography.yaml
+...
+
+---
+
+\currenttemplateversion
+
+---
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+---
+
+# License
+
+## Open Web Foundation (OWF) CLA
+
+Contributions to this Specification are made under the terms and conditions set forth in **Modified Open Web Foundation Agreement 0.9 (OWFa 0.9)**. (As of October 16, 2024)  (“Contribution License”) by:
+
+- TODO
+
+Usage of this Specification is governed by the terms and conditions set forth in **Modified OWFa 0.9 Final Specification Agreement (FSA)** (As of October 16, 2024) **(“Specification License”)**.
+
+You can review the applicable Specification License(s) referenced above by the contributors to this Specification on the OCP website at <https://www.opencompute.org/contributions/templates-agreements>.
+
+For actual executed copies of either agreement, please contact OCP directly.
+
+NOTWITHSTANDING THE FOREGOING LICENSES, THIS SPECIFICATION IS PROVIDED BY OCP "AS IS" AND OCP EXPRESSLY DISCLAIMS ANY WARRANTIES (EXPRESS, IMPLIED, OR OTHERWISE), INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, OR TITLE, RELATED TO THE SPECIFICATION. NOTICE IS HEREBY GIVEN, THAT OTHER RIGHTS NOT GRANTED AS SET FORTH ABOVE, INCLUDING WITHOUT LIMITATION, RIGHTS OF THIRD PARTIES WHO DID NOT EXECUTE THE ABOVE LICENSES, MAY BE IMPLICATED BY THE IMPLEMENTATION OF OR COMPLIANCE WITH THIS SPECIFICATION. OCP IS NOT RESPONSIBLE FOR IDENTIFYING RIGHTS FOR WHICH A LICENSE MAY BE REQUIRED IN ORDER TO IMPLEMENT THIS SPECIFICATION.  THE ENTIRE RISK AS TO IMPLEMENTING OR OTHERWISE USING THE SPECIFICATION IS ASSUMED BY YOU. IN NO EVENT WILL OCP BE LIABLE TO YOU FOR ANY MONETARY DAMAGES WITH RESPECT TO ANY CLAIMS RELATED TO, OR ARISING OUT OF YOUR USE OF THIS SPECIFICATION, INCLUDING BUT NOT LIMITED TO ANY LIABILITY FOR LOST PROFITS OR ANY CONSEQUENTIAL, INCIDENTAL, INDIRECT, SPECIAL OR PUNITIVE DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS SPECIFICATION, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND EVEN IF OCP HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+<!---
+THE UPDATED DEFAULT CONTRIBUTOR LICENSE AGREEMENT (CLA) IS [OWFa 0.9](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/ed0befaf86bee2568ad720ff4a9a554d1f4260f7.pdf).
+PLEASE VERIFY THE CORRECT CLA/FSA IS USED AND EXECUTED FOR THIS CONTRIBUTION.
+-->
+
+# Acknowledgements
+
+The Contributors of this Specification would like to acknowledge the following:
+
+- Carl Lundin (Google)
+- Chris Fenner (Google)
+- Zach Halvorsen (Google)
+- Jordan Hand (Google)
+- Sree Revoori (Google)
+- Ehsan Koohestani (AMD)
+- Fabrizio Damato (AMD)
+
+# Compliance with OCP Tenets
+
+<!---
+Please describe how this Specification complies with the OCP tenets.
+A full explanation of the OCP core tenets can be seen [here](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/bf648bb75091907147e76846cad590f402660d2e.pdf).
+-->
+
+## Openness
+
+This profile has a [reference implementation](https://github.com/chipsalliance/caliptra-dpe) which is open-sourced and licensed using the Apache 2.0 license.
+
+## Efficiency
+
+This profile gives a clear Application Binary Interface (ABI) definition which makes implementation and host integration straight forward and efficient.
+
+## Impact
+
+This profile standardizes a common interface for actuating the DICE Protection Environment on internal roots of trust, enabling consistent and verifiable device identity and attestation across the industry. This foundational security primitive allows for building more secure systems by establishing trust in the earliest boot components.
+
+## Scale
+
+This profile provides a common attestation interface that can be implemented on a wide range of hardware, enabling interoperability and simplifying security management across large-scale, multi-vendor deployments.
+
+## Sustainability
+
+This profile facilitates component reuse and integration into different systems, promoting a circular economy and reducing e-waste.
+
+# Base Specification
+
+## Introduction
+
+This document describes a profile for implementation of DICE Protection
+Environment (DPE) [@{tcg-dpe}] on Integrated Roots of Trust (iRoTs). This profile is designed
+with the following properties to allow for implementation on a wide range of
+resource-constrained hardware:
+
+*   **Fixed-length command/response messages:** To avoid complex message-parsing in
+    minimalistic firmware environments, all commands and responses are fixed-size.
+*   **DPE instance running in the same SoC package as the client:** Some features
+    such as encrypted sessions are not supported because the client and DPE
+    implementation are assumed to reside within the same SoC.
+*   **Attestation-only:** This profile is only intended to provide the ability for
+    the DPE to provide attestation/signing functionality.
+
+This document defines multiple variants of the DPE iRoT profile:
+
+* `DPE_PROFILE_IROT_P256_SHA256`
+* `DPE_PROFILE_IROT_P384_SHA384`
+* `DPE_PROFILE_IROT_MIN_P256_SHA256`
+* `DPE_PROFILE_IROT_MIN_P384_SHA384`
+
+The profile name will be embedded as ASCII within the version field of the TCBInfo(s), enabling a verifier to confirm that the evidence originates from this profile.
+
+## Contexts
+
+### Handles and metadata
+
+Each call to DeriveContext creates a Context which is maintained internally to
+the DPE. Each context has a 16 byte handle which is used to reference the context
+externally.
+
+In this profile, all calls to DeriveContext include the following Input Data.
+See "DeriveContext ABI" for additional details of format and semantics.
+
+*   `INPUT_TYPE`: Type of the TCB component
+*   `INPUT_ALLOW_CA`: Whether contexts derived from this context allow
+    CertifyKey to create CA certificates
+*   `INPUT_ALLOW_X509`: Whether contexts derived from this context support
+    CertifyKey to create X.509-formatted certificates
+*   `INPUT_DATA`: Measurement of the TCB component
+
+This profile also supports localities. Each locality has a single plaintext
+session. This profile does not support encrypted sessions.
+
+DPE SHALL use the following inputs when deriving CDIs. Any changes to any
+of these inputs SHALL result in a different derived asymmetric key.
+
+*   Latest INPUT_DATA: The `INPUT_DATA` field from the most recent DeriveContext call
+    to involve this context.
+*   Cumulative INPUT_DATA: A combination of `INPUT_DATA` from all DeriveContext calls
+    involving this context.
+*   Type: The `INPUT_TYPE` field from the DeriveContext call which created this context
+*   Allow X509: Whether `INPUT_ALLOW_X509` was set when creating this context
+*   Allow CA: Whether `INPUT_ALLOW_CA` was set when creating this context
+*   Locality: The `LOCALITY` field from the DeriveContext call which created this context
+
+If `RECURSIVE` is not supported, an implementation MAY omit the "Cumulative" measurement
+when computing CDIs.
+
+See ocp.derive.kdf-cdi-* sections for additional details on how these fields are
+used in CDI derivation.
+
+### Context TCB
+
+The relationship between contexts creates a tree structure. The
+"Context TCB" of a context node A includes all nodes starting with A and following
+parent links until the Root Node is reached. It includes both A and the Root.
+
+### DeriveContext Limits
+
+This profile places a limit on the total number of contexts. Destroyed contexts do not
+count against this limit.
+
+The maximum number of active contexts is defined by the implementation and
+reported via GetProfile. This document will refer to this value as
+`MAX_CONTEXTS`.
+
+`MAX_CONTEXTS` SHALL be at least 8.
+
+For profiles which support them, Simulation Contexts contribute to DeriveContext limits.
+
+### Default Context
+
+A DPE conforming to this profile SHALL support a “Default Context” for
+each supported Locality. The default context has a handle of all null bytes.
+
+### Hardware Localities
+
+In this profile, Hardware Localities are represented as 32-bit integers. SoC
+implementations may represent hardware contexts or privilege levels differently.
+In that case, the implementation must map these values to 32-bit integer values
+for use by the DPE.
+
+The locality 0xFFFFFFFF SHALL refer to the DPE implementation to be used during
+auto initialization. This locality SHALL NOT be usable by any other callers to
+the DPE.
+
+### Context Handles
+
+Default Context handles are represented by 16 null bytes. A Context Handle is invalid when every bit is set.
+
+All valid non-Default Context Handles SHALL be 16-byte random values.
+
+## iRoT Direct Interface
+
+This profile supports a “Direct” interface for calling DPE commands. This
+interface includes an Application Binary Interface (ABI) which defines binary
+formats for all commands and responses. Messages SHALL be encoded as is denoted
+in the command-specific "ABI" sections in @sec:abi-structure-definitions.
+
+Full structure definitions are provided at the end of this document.
+
+## Supported Commands
+
+This section describes commands supported by this profile.
+
+*   If any command fails, the header SHALL be populated and all other fields SHALL
+    NOT be interpreted by the caller.
+*   If a command header has an invalid `MAGIC` field, DPE SHALL return a
+    response header with status `DPE_STATUS_INVALID_COMMAND`.
+*   If a command header `COMMAND_ID` field is not a valid command, DPE SHALL
+    return a response header with status `DPE_STATUS_INVALID_COMMAND`.
+
+### GetProfile
+
+#### Behavior
+
+*   `PROFILE_MAJOR_VERSION` SHALL be set to `CURRENT_PROFILE_MAJOR_VERSION`.
+*   `PROFILE_MINOR_VERSION` SHALL be set to `CURRENT_PROFILE_MINOR_VERSION`.
+
+### InitializeContext
+
+#### Omitted Arguments
+
+*Input*
+
+This profile SHALL have the following behavior for arguments from the main DPE
+specification which are omitted by this profile:
+
+*   seed: N/A (External initialization types are not supported)
+
+#### Behavior
+
+*   The Context's "Latest INPUT_DATA" and "Cumulative INPUT_DATA" values for the created
+    context SHALL both be all zeros.
+*   If InitializeContext has already been called on this DPE reset cycle,
+    and `SIMULATION` is NOT set, this command SHALL fail with status
+    `DPE_STATUS_ALREADY_INITIALIZED`. This includes context initialization
+    invoked via automatic initialization.
+*   If the `USE_DEFAULT` flag is set, the returned `NEW_CONTEXT_HANDLE.HANDLE`
+    must be all null bytes.
+*   If the `USE_DEFAULT` flag is not set, the returned `NEW_CONTEXT_HANDLE.HANDLE`
+    `NEW_CONTEXT_HANDLE` SHALL be a cryptographically secure random value
+    generated by DPE.
+
+### DeriveContext
+
+#### Omitted Arguments
+
+*Input*
+
+This profile SHALL have the following behavior for arguments from the main DPE
+specification which are omitted by this profile:
+
+*   allow-new-context-to-derive: true
+*   new-session-initiator-handshake: N/A (No session support)
+
+*Output*
+
+*   new-session-responder-handshake: N/A (No session support)
+
+#### Behavior
+
+*   Each call to DeriveContext SHALL create a new TCI node containing `INPUT_DATA`.
+    *   The context's "Latest INPUT_DATA" SHALL be `INPUT_DATA`
+    *   The context's "Cumulative INPUT_DATA" SHALL be `HASH(DEFAULT_TCI_VALUE || INPUT_DATA)`
+        where `DEFAULT_TCI_VALUE` is a Hash-sized buffer of all zeros.
+*   The input-data format for this profile contains the following fields. All
+    of these fields SHALL contribute to CDI derivation.
+    *   `INPUT_TYPE`: A caller-supplied measurement type. This SHALL populate the
+        "type" field in the DiceTcbInfo extension for this measurement.
+    *   `INPUT_ALLOW_X509`: If set, callers referencing this context MAY request CertifyKey certificates
+        with `ADD_FORMAT` set to `CERT_FORMAT_X509`. If `INPUT_ALLOW_X509` is set
+        and `INPUT_ALLOW_X509` was not set on `CONTEXT_HANDLE`, this command SHALL
+        fail. If `SUPPORTS_X509` is false, this command SHALL fail.
+*   An implementation may choose not to support `INTERNAL_INPUT_INFO` or
+    `INTERNAL_INPUT_DICE`. If either is not supported and the bit is set, return
+    `DPE_STATUS_INVALID_ARGUMENT`.
+*   If the current number of active TCI nodes is equal to `MAX_CONTEXTS`, this
+    command SHALL fail with argument `DPE_STATUS_OUT_OF_MEMORY`.
+*   `RETAIN_PARENT_CONTEXT`:
+    *   If profile supports-context-handles is False, and RETAIN_PARENT_CONTEXT is set,
+        `DPE_STATUS_INVALID_ARGUMENT` SHALL be returned.
+    *   If `RETAIN_PARENT_CONTEXT` is set and `PARENT_CONTEXT_HANDLE` is the default
+        context in the caller's locality, and the caller's locality is equal to
+        `TARGET_LOCALITY`, `DPE_STATUS_INVALID_ARGUMENT` SHALL be returned.
+    *   `PARENT_CONTEXT_HANDLE` SHALL be created in the caller's locality.
+    *   If `RETAIN_PARENT_CONTEXT` is not set, `PARENT_CONTEXT_HANDLE` SHALL be ignored.
+*   `MAKE_DEFAULT`:
+    *   If `MAKE_DEFAULT` is set, `NEW_CONTEXT_HANDLE` SHALL be made the
+        default context in the target locality.
+        *   If `CONTEXT_HANDLE` is the default context in the target locality and
+            `RETAIN_PARENT_CONTEXT` is set, this command SHALL fail.
+        *   If the default context is already defined in the target locality and
+            `CONTEXT_HANDLE` does not refer to that context, this command SHALL fail.
+*   `CHANGE_LOCALITY`:
+    *   If set, `NEW_CONTEXT_HANDLE` SHALL be created in `TARGET_LOCALITY`.
+    *   If not set, `TARGET_LOCALITY` SHALL be ignored and `NEW_CONTEXT_HANDLE`
+        SHALL be created in the caller's locality.
+*   `RECURSIVE`
+    *   If `RECURSIVE` is set, the context data for this context SHALL be
+        modified as described in ocp.recursive-derivation.extend-tci.
+    *   If `INPUT_TYPE` is different from the current type for this context,
+        this command SHALL fail.
+    *   `INPUT_ALLOW_CA`, `INPUT_ALLOW_X509`, `INTERNAL_INPUT_INFO`, and
+        `INTERNAL_INPUT_DICE` SHALL be ignored. The resulting context
+        will have the same values for these flags as the input
+        `CONTEXT_HANDLE`.
+*   If `CREATE_CERTIFICATE` is set, `EXPORT_CDI` SHALL also be set. Else, this
+    command SHALL fail.
+*   If `CREATE_CERTIFICATE` is set, `RETURN_CERTIFICATE` SHALL also be
+    considered set.
+
+### CertifyKey
+
+#### Omitted Arguments
+
+This profile SHALL have the following behavior for arguments from the main DPE
+specification which are omitted by this profile:
+
+*Input*
+
+*   retain-context: true
+*   public-key: N/A (Certifying external keys is not supported)
+*   policies: N/A (policies are profile-defined, not caller-defined)
+
+#### Behavior
+
+*   The label input argument is formatted as a ocp.format.digest. This is a
+    client-supplied public value used in key derivation. It will be present in
+    the output certificate.
+*   CertifyKey SHALL use "dice-derivation" to derive a CDI
+*   CertifyKey SHALL use "asymmetric-derivation" to derive a key using this CDI
+*   The certificate-chain output argument contains only the most recently
+    derived certificate.
+*   If `CONTEXT_HANDLE` is the default context, the returned
+    `NEW_CONTEXT_HANDLE` SHALL be the same as `CONTEXT_HANDLE`.
+*   The additional-input parameter is specified in the following ABI parameters
+    *   `ADD_FORMAT`: The format for the output certificate.
+        *   If `CERT_FORMAT_X509`, certificate SHALL be an X.509 certificate
+            (one of ocp.certificate.irot.\*). If `INPUT_ALLOW_X509` was not set
+            during creation of `CONTEXT_HANDLE` or `SUPPORTS_X509` is false,
+            this command SHALL fail. For contexts created by InitializeContext,
+            `INPUT_ALLOW_X509` is true.
+        *   If `CERT_FORMAT_CSR`, certificate SHALL be a PKCS#10 CSR (one of
+            ocp.csr.irot.\*). If `SUPPORTS_CSR` is false, this command SHALL
+            fail.
+        *   An implementation SHALL support at least one format.
+
+### Sign
+
+#### Omitted Arguments
+
+This profile SHALL have the following behavior for arguments from the main DPE
+specification which are omitted by this profile:
+
+*Input*
+
+* retain-context: true
+* is-symmetric: false
+
+#### Behavior
+
+*   The label input argument is formatted as a ocp.format.digest. The this is a
+    client-supplied public value used in key derivation. It will be present in
+    the output certificate.
+*   Sign SHALL use "dice-derivation" to derive a CDI
+*   Sign SHALL use "asymmetric-derivation" to derive a key using this CDI
+*   If `CONTEXT_HANDLE` refers to a simulation context, this command SHALL fail
+    with status `DPE_STATUS_INVALID_ARGUMENT`.
+*   If `CONTEXT_HANDLE` is the default context, the returned
+    `NEW_CONTEXT_HANDLE` SHALL be the same as `CONTEXT_HANDLE`.
+
+### RotateContextHandle
+
+This profile MAY implement the RotateContextHandle command.
+
+#### Behavior
+
+*   If `TARGET_IS_DEFAULT` is set, `NEW_CONTEXT_HANDLE` SHALL be made the
+    default in the caller's locality. If the default context handle is already
+    defined in the caller's locality and `TARGET_IS_DEFAULT` is set, this command SHALL fail.
+
+### DestroyContext
+
+#### Omitted Arguments
+
+*Input*
+
+This profile SHALL have the following behavior for arguments from the main DPE
+specification which are omitted by this profile:
+
+* destroy-recursively: true
+
+#### Behavior
+
+*   If `CONTEXT_HANDLE` does not exist in the caller's Hardware Locality, this
+    command SHALL fail with status `DPE_STATUS_INVALID_HANDLE`.
+*   The command SHALL destroy this context and every context that is a
+    descendant of this one.
+
+### GetCertificateChain
+
+GetCertificateChain will retrieve parent certificates in the certificate chain
+formatted as one or more ASN.1 DER-encoded X.509 v3 certificates, starting with
+the root CA certificate and ending with the Alias Key which signs DPE leaf
+certificates. This API does not return any DPE leaf certificates.
+
+*   If OFFSET is larger than the full certificate chain, this API SHALL return
+    `DPE_STATUS_INVALID_ARGUMENT`.
+*   If SIZE is larger than 2048 bytes, this API SHALL return
+    `DPE_STATUS_INVALID_ARGUMENT`.
+*   If OFFSET + SIZE is larger than the full certificate chain, this API SHALL
+    return the remaining bytes in the chain.
+
+#### Omitted Arguments
+
+This profile SHALL have the following behavior for the following common arguments from the main DPE
+specification which are not relevant for this command:
+
+*Input*
+
+*   context-handle: N/A (Certificate Chain is global for all DPE contexts)
+*   retain-context: N/A (No context passed to this command)
+*   clear-from-context: false
+
+*Output*
+
+*   new-context-handle: N/A (No context passed to this command)
+
+#### Behavior
+
+*   Returns the certificate chain for the ECA which signs CertifyKey
+    certificates. This certificate chain is platform-defined and global
+    for all callers to the DPE.
+*   The certificate chain can be indexed by offset and size.
+*   If `SIZE` is greater than 2048, this command SHALL fail.
+*   If `OFFSET` is greater than the full size of the certificate chain, this
+    command SHALL fail.
+
+## Cryptographic Algorithms
+
+Profile `DPE_PROFILE_IROT_P256_SHA256` requires support for the following
+cryptographic algorithms:
+
+*   ECDSA P-256
+*   SHA2-256
+
+Profile `DPE_PROFILE_IROT_P384_SHA384` requires support for the following
+cryptographic algorithms:
+
+*   ECDSA P-384
+*   SHA2-384
+
+
+This profile defines the following derivation schemes for use in Profile
+Attributes.
+
+## CDI Derivation
+
+*   "Current Node" refers to the handle passed to Sign or CertifyKey which
+    led to this derivation.
+*   `MEASUREMENT_DATA`: Accumulated Context inputs from all the
+    contexts in the Current Context's "Context TCB".
+*   `CDI`: The base CDI used to initialize the context
+
+### ocp.derive.kdf-cdi-256
+
+The CDI derivation scheme “ocp.derive.kdf-cdi-256” is defined as follows:
+
+*   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
+*   Inputs
+    *   CDI
+    *   `MEASUREMENT_DATA`
+    *   ASCII Bytes "DPE"
+*   Outputs
+    *   32-byte key
+
+### ocp.derive.kdf-cdi-384
+
+The CDI derivation scheme “ocp.derive.kdf-cdi-384” is defined as follows:
+
+*   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
+*   Inputs
+    *   CDI
+    *   `MEASUREMENT_DATA`
+    *   ASCII Bytes "DPE"
+*   Outputs
+    *   48-byte key
+
+## CDI Export
+
+### ocp.export-cdi.raw-256
+
+The CDI export scheme "ocp.export-cdi.raw" is a raw 256-bit secret
+
+To derive the exported keypair, use asymmetric-derivation for the relevant profile.
+
+### ocp.export-cdi.raw-384
+
+The CDI export scheme "ocp.export-cdi.raw" is a raw 384-bit secret
+
+To generate exported keypair, use asymmetric-derivation for the relevant profile.
+
+## Key Derivation
+
+*   `LABEL`: LABEL parameter passed to Sign and CertifyKey
+*   `CDI`: A CDI derived with `dice-derivation` scheme using current TCIs
+
+### ocp.derive.kdf-asymmetric-p256
+
+The asymmetric key derivation scheme “ocp.derive.kdf-asymmetric-p256” is defined as
+follows:
+
+*   The asymmetric key type is ECC NIST P-256
+*   Signature scheme is ECDSA
+*   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
+*   Inputs
+    *   CDI
+    *   `LABEL`
+    *   ASCII Bytes "ECC"
+*   Outputs
+    *   32-byte key
+
+### ocp.derive.kdf-asymmetric-p384
+
+The asymmetric key derivation scheme “ocp.derive.kdf-asymmetric-p384” is defined as
+follows:
+
+*   The asymmetric key type is ECC NIST P-384
+*   Signature scheme is ECDSA
+*   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
+*   Inputs
+    *   CDI
+    *   `LABEL`
+    *   ASCII Bytes "ECC"
+*   Outputs
+    *   48-byte key
+
+### ocp.key-format.p256.raw
+
+The concatenation of the 32-byte X value and 32-byte Y value of the ECDSA public key.
+
+Both the X and Y value SHALL be big-endian and left-padded with zeros.
+
+### ocp.key-format.p384.raw
+
+The concatenation of the 48-byte X value and 48-byte Y value of the ECDSA public key.
+
+Both the X and Y value SHALL be big-endian and left-padded with zeros.
+
+## Sign Format
+
+### ocp.tbs-format.digest-sha256
+
+The format “ocp.tbs-format.digest-sha256” is defined as
+
+*   A digest which will be signed directly using the signing scheme with no
+    additional processing. The size of the value SHALL be a SHA2-256 digest of
+    size 32 bytes.
+
+### ocp.tbs-format.digest-sha384
+
+The format “ocp.tbs-format.digest-sha384” is defined as
+
+*   A digest which will be signed directly using the signing scheme with no
+    additional processing. The size of the value SHALL be a SHA2-384 digest of
+    size 48 bytes.
+
+### ocp.signature-format.p256.raw
+
+The concatenation of the 32-byte R value and 32-byte S value of the ECDSA signature.
+
+Both the R and S value SHALL be big-endian and left-padded with zeros.
+
+### ocp.signature-format.p384.raw
+
+The concatenation of the 48-byte R value and 48-byte S value of the ECDSA signature.
+
+Both the R and S value SHALL be big-endian and left-padded with zeros.
+
+## Recursive Derivation
+
+### ocp.recursive-derivation.extend-tci
+
+*    CONTEXT_HANDLE's "Latest INPUT_DATA" SHALL be set to the `INPUT_DATA` parameter to DeriveContext.
+*    CONTEXT_HANDLE's "Cumulative INPUT_DATA" SHALL be set to `HASH(Cumulative INPUT_DATA || INPUT_DATA)`.
+
+## Certificate Format
+
+### Requirements for Embedded CAs
+
+The Embedded CA which signs certificates and CSRs produced by CertifyKey must
+meet the following requirements:
+
+*   A DER-encoded X.509 certificate meeting the requirements for an Embedded CA
+    as defined by the DICE Certificate Profile [@{tcg-dice-certificate-profiles}].
+
+### Populating ocp-dice-MultiTcbInfo
+
+For all CertifyKey formats, MultiTcbInfo extensions SHALL be populated as follows:
+
+*   There SHALL be one ocp-dice-TcbInfo field in the MultiTcbInfo populated for each
+    accumulated TCI Node in the Current Node's "Context TCB".
+*   "Current Node" refers to the handle passed to CertifyKey which led to this
+    certificate creation.
+*   `HASH_ALG`:
+    *   For measurements provided via DeriveContext, the hash
+        algorithm is specified by the profile-specific certificate
+        or CSR format.
+    *   For measurements provided during auto-initialization, the
+        hash algorithm is implementation-defined.
+*   Each TcbInfo structure SHALL be populated as follows:
+    *   “Vendor”: [Optional and vendor-defined]
+    *   “Model”: [Optional and vendor-defined]
+    *   “Version”: ASCII representation of the 'profile' [variant](#profile)
+    *   “SVN”:
+        * The security version number associated with the Target Environment.
+        * A 4-byte integer provided by a client to DeriveContext.
+    *   “Layer”: [Omitted]
+    *   “Index”: [Omitted]
+    *   “Fwids”:
+        * FWID at index 0
+            *   hashAlg: `HASH_ALG`
+            *   Digest: This context's "Latest INPUT_DATA"
+    *   “Flags”: [omitted]
+    *   “VendorInfo”:
+        *   The `TARGET_LOCALITY` parameter used in the DeriveContext call that
+            created this context.
+        *   For measurements provided during auto-initialization, DPE SHALL
+            use the reserved locality 0xFFFFFFFF.
+    *   “Type”:
+        *   If input is provided by a component internal to the iRoT
+            implementation, 4-byte vendor-defined value
+        *   If input is provided by a client to DeriveContext, 4-byte `TYPE`
+            parameter
+    *   "IntegrityRegisters"
+        * If an implementation does not support recursive DeriveContext, the IntegrityRegisters field SHALL be omitted
+        * IntegrityRegisters at index 0
+            *   hashAlg: `HASH_ALG`
+            *   Digest: This context's "Cumulative INPUT_DATA"
+
+An implementation MAY choose to include up to `MAX_CONTEXTS` TcbInfos, even if
+there are not that many TCI Nodes in the "Context TCB". In that case, uninitialized
+ocp-dice-TcbInfo entries SHALL be populated with default values:
+
+*   “Vendor”: [Optional and vendor-defined]
+*   “Model”: [Optional and vendor-defined]
+*   “Version”: ASCII representation of the 'profile' [variant](#profile)
+*   “SVN”: A 4 byte integer set to "0"
+*   “Layer”: [Omitted]
+*   “Index”: [Omitted]
+*   “Fwids”:
+    *   If `ExtendTci` is not supported, FWID index 1 SHALL be omitted
+    *   hashAlg: The algorithm is specified by the profile-specific certificate
+                 or CSR format.
+    *   Digest:
+        * Index 0: N null bytes, where N is the digest size of hashAlg
+*   “Flags”: [Omitted]
+*   “VendorInfo”: 8-byte ASCII-encoded string “UNINUNIN”
+*   “Type”: 4-bytes ASCII-encoded string “UNIN”
+*   "IntegrityRegisters"
+    * If an implementation does not support recursive DeriveContext, the IntegrityRegisters field SHALL be omitted
+        * IntegrityRegisters at index 0
+            *   hashAlg: `HASH_ALG`
+            *   Digest: N null bytes, where N is the digest size of hashAlg
+
+
+### Requirements for ECA Certificates {#sec:eca-cert-requirements}
+
+Any leaf certificate whose format name is defined in this profile SHALL adhere to
+the following requirements:
+
+*   The certificate SHALL be a DER-encoded X.509 certificate meeting the requirements of DICE Certificate
+    Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument.
+*   The certificate SHOULD contain the extendedKeyUsage extension with the
+    following DICE policy OIDs. The extension SHOULD be marked as critical.
+    *   The extension SHOULD contain ocp-dice-kp-eca
+*   The KeyUsage extension SHALL contain only keyCertSign
+*   The BasicConstraints extension SHALL be included
+    *   IsCA SHALL be set to true.
+*   The Issuer Name of this certificate SHALL match the Subject Name of the ECA
+    which signs it.
+*   A ocp-dice-Ueid extension SHALL be added
+    *   This SHALL be populated by the LABEL input parameter to CertifyKey
+    *   The extension SHOULD be marked as critical
+*   A ocp-dice-MultiTcbInfo extension SHALL be added. This extension SHOULD be marked as critical.
+    It SHALL be populated following the guidance for "Populating ocp-dice-MultiTcbInfo"
+
+### Requirements for Leaf Certificates {#sec:leaf-cert-requirements}
+
+Any leaf certificate whose format name is defined in this profile SHALL adhere to
+the following requirements:
+
+*  the certificate SHALL be a DER-encoded X.509 certificate meeting the requirements of DICE Certificate
+    Profiles [@{tcg-dice-certificate-profiles}] according to the CertifyKey policies argument
+*   The certificate SHOULD contain the extendedKeyUsage extension with the
+    following DICE policy OIDs. The extension SHOULD be marked as critical.
+    *   The extension SHOULD contain ocp-dice-kp-attestLoc
+*   The KeyUsage extension SHALL contain only digitalSignature
+*   The BasicConstraints extension SHALL be included
+    *   IsCA SHALL be set to false.
+*   The ocp-dice-kp-eca policy SHALL NOT be included
+*   The Issuer Name of this certificate SHALL match the Subject Name of the ECA
+    which signs it.
+*   A ocp-dice-Ueid extension SHALL be added
+    *   This SHALL be populated by the LABEL input parameter to CertifyKey
+    *   The extension SHOULD be marked as critical
+*   A ocp-dice-MultiTcbInfo extension SHALL be added. This extension SHOULD be marked as critical.
+    It SHALL be populated following the guidance for "Populating ocp-dice-MultiTcbInfo"
+
+### Requirements for CSRs {#sec:csr-requirements}
+
+Any CSR whose format name is defined in this profile SHALL adhere to the following
+requirements:
+
+The CSR SHALL be in a signed Cryptographic Message Syntax (CMS) message defined as follows:
+
+*   A DER-encoded CMS ContentInfo message as defined by RFC 5652 [@{ietf-rfc5652}] with the
+    following field values:
+    * ContentType: id-signedData OID
+    * Content: a SignedData with the following fields
+        * version: The version of the CMS specification - the version SHALL be 1
+        * digestAlgorithms: The OID of the hashing algorithm used by the DPE profile
+        * encapContentInfo: EncapsulatedContentInfo with the following fields.
+          To allow for fixed-size CMS messages, the eContent octet string MAY include
+          any number of null padding bytes following the CSR context.
+            * eContentType: id-data OID
+            * eContent: A DER-encoded PKCS #10 CSR as defined in RFC 2986 [@{ietf-rfc2986}]
+        * certificates: This optional field SHALL be omitted
+        * crls: This optional field SHALL be omitted
+        * signerInfos: SignerInfo with the following fields
+            * version: The version of the CMS specification - the version SHALL be 1
+            * sid: IssuerAndSerialNumber. This SHALL be the issuer name and
+                   Serial Number field of the ECA which signs this CMS message.
+            * digestAlgorithm: The OID of the hashing algorithm used by the DPE profile
+            * signedAttrs: This optional field SHALL be omitted
+            * signatureAlgorithm: The OID of the signature algorithm used by the DPE profile
+            * signature: The message SHALL be signed by the implementation defined ECA
+            * unsignedAttrs: This optional field SHALL be omitted
+
+The PKCS #10 CSR included in the above CMS message SHALL adhere to the
+following requirements:
+
+*   The CSR SHALL be a DER-encoded CertificationRequest as defined in RFC 2986 [@{ietf-rfc2986}].
+*   The CSR SHALL contain the following fields
+    * certificationRequestInfo: CertificationRequestInfo with the following fields
+        * version: The version of the CSR specification - the version SHALL be 0
+        * subject: The subject name of the CSR
+        * subjectPKInfo: This field SHALL contain the subject public key and the
+          OID for the EC public key algorithm used by the DPE profile
+        * attributes: An "Extension Request" attribute as defined in RFC 2985
+          [@{ietf-rfc2985}] SHALL adhere to the following requirements
+            *   The BasicConstraints extension SHALL be included
+                *   IsCA SHALL be set to false.
+            *   The KeyUsage extension SHALL contain only digitalSignature
+            *   A ocp-dice-Ueid extension SHALL be added
+                *   This SHALL be populated by the LABEL input parameter to CertifyKey
+                *   The extension SHOULD be marked as critical
+            *   A ocp-dice-MultiTcbInfo extension. This extension SHOULD be marked as critical.
+                It SHALL be populated following the guidance for "Populating ocp-dice-MultiTcbInfo"
+            *   The ExtensionRequest attribute SHOULD contain the extendedKeyUsage
+                extension with the following DICE policy OIDs. The extension SHOULD be
+                marked as critical.
+                *   The extension SHOULD contain ocp-dice-kp-attestLoc
+    * signatureAlgorithm: The OID of the signature algorithm used by the DPE profile
+    * signature: Self-signed signature
+*   The CertificationRequest SHALL be signed by the Subject private key
+
+### ocp.certificate.irot-eca.p256
+
+The format “ocp.certificate.irot-eca.p256” is defined as follows:
+
+*   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-256 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
+    curve P-256.
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA256 OID with NIST curve
+    P-256.
+
+### ocp.certificate.irot-eca.p384
+
+The format “ocp.certificate.irot-eca.p384” is defined as follows:
+
+*   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-384 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
+    curve P-384.
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA384 OID with NIST curve
+    P-384.
+
+### ocp.certificate.irot-leaf.p256
+
+The format ocp.certificate.irot-leaf.p256” is defined as follows:
+
+*   SHALL follow all "Requirements for Leaf Certificates" in @sec:leaf-cert-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-256 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
+    curve P-256.
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA256 OID with NIST curve
+    P-256.
+
+### ocp.certificate.irot-leaf.p384
+
+The format “ocp.certificate.irot.p384” is defined as follows:
+
+*   SHALL follow all "Requirements for Leaf Certificates" in @sec:leaf-cert-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-384 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
+    curve P-384.
+*   For the Signature field, DPE SHALL use the ECDSA-with-SHA384 OID with NIST curve
+    P-384.
+
+### ocp.csr.irot-leaf.p256
+
+The format “ocp.csr.irot-leaf.p256” is defined as follows:
+
+*   SHALL follow all "Requirements for CSRs" in @sec:csr-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-256 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
+    curve P-256.
+*   For the Signature of both the CMS message and the CertificationRequest, DPE SHALL
+    use the ECDSA-with-SHA256 OID with NIST curve P-256.
+
+### ocp.csr.irot-leaf.p384
+
+The format “ocp.csr.irot-leaf.p384” is defined as follows:
+
+*   SHALL follow all "Requirements for CSRs" in @sec:csr-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-384 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the EcPublicKey OID with NIST
+    curve P-384.
+*   For the Signature of both the CMS message and the CertificationRequest, DPE SHALL
+    use the ECDSA-with-SHA384 OID with NIST curve P-384.
+
+## Profile Attributes
+
+### ocp.profile.irot.p256
+
++-------------------------------+------------------------------------------------------------------+
+| **Attribute**                 | **Value**                                                        |
++===============================+==================================================================+
+| =========================================== General ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| name                          | ocp.profile.irot.p256                                            |
++-------------------------------+------------------------------------------------------------------+
+| inherits                      | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| dpe-spec-version              | 0                                                                |
++-------------------------------+------------------------------------------------------------------+
+| max-message-size              | 6144                                                             |
++-------------------------------+------------------------------------------------------------------+
+| uses-multi-part-messages      | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-concurrent-operation | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Sessions ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-encrypted-sessions   | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-derived-sessions     | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| max-sessions                  | 1                                                                |
++-------------------------------+------------------------------------------------------------------+
+| session-protocol              | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-session-sync         | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| session-sync-policy           | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-session-migration    | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| session-migration-policy      | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Contexts ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-default-context      | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-context-handles      | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| max-contexts-per-session      | Implementation-defined. Referred to in the profile as            |
+|                               | `MAX_CONTEXTS`.                                                  |
++-------------------------------+------------------------------------------------------------------+
+| max-context-handle-size       | 16 bytes                                                         |
++-------------------------------+------------------------------------------------------------------+
+| supports-auto-init            | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-simulation           | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-cdi-export           | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-recursive-derivation | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Use Cases =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| supports-signing              | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-sealing              | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Commands ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-get-profile          | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-open-session         | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-close-session        | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-sync-session         | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-export-session       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-import-session       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-initialize-context   | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-get-certificate-chain| True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-certify-key          | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-sign                 | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-seal                 | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-unseal               | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-sealing-public       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-rotate-context       | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Derivation =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| dice-derivation               | ocp.derive.kdf-cdi-256                                           |
++-------------------------------+------------------------------------------------------------------+
+| asymmetric-derivation         | ocp.derive.kdf-asymmetric-p256                                   |
++-------------------------------+------------------------------------------------------------------+
+| symmetric-derivation          | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| support-any-label             | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supported-labels              | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| initial-derivation            | Implementation-supplied CDI                                      |
++-------------------------------+------------------------------------------------------------------+
+| recursive-derivation          | ocp.recursive-derivation.extend-tci                              |
++-------------------------------+------------------------------------------------------------------+
+| =========================================== Input ============================================== |
++-------------------------------+------------------------------------------------------------------+
+| input-format                  | ocp.format.digest-sha256                                         |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-inputs      | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-dpe-info    | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-dpe-dice    | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| internal-dpe-info-type        | Implementation-defined                                           |
++-------------------------------+------------------------------------------------------------------+
+| internal-dpe-dice-type        | Implementation-defined                                           |
++-------------------------------+------------------------------------------------------------------+
+| internal-inputs               | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ======================================== Certificates ========================================== |
++-------------------------------+------------------------------------------------------------------+
+| supports-certificates         | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| max-certificate-size          | 6144 bytes                                                       |
+|                               |                                                                  |
+|                               | A single certificate must fit in a single DPE message. Any       |
+|                               | overhead for messages which can return certificates must be      |
+|                               | subtracted from the certificate size.                            |
++-------------------------------+------------------------------------------------------------------+
+| max-certificate-chain-size    | 0x1000007FF bytes                                                |
+|                               |                                                                  |
+|                               | U32_MAX bytes as maximum value of OFFSET + 2048 bytes as maximum |
+|                               | size of CERTIFICATE_CHAIN                                        |
++-------------------------------+------------------------------------------------------------------+
+| appends-more-certificates     | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-certificate-policies | False. Policies included in generated certificates are           |
+|                               | defined by this specification. No additional policies are        |
+|                               | accepted via CertifyKey. Policies included in                    |
+|                               | higher level DICE certificates not generated by DPE and are      |
+|                               | implementation-defined.                                          |
++-------------------------------+------------------------------------------------------------------+
+| supports-policy-identity-init | N/A                                                              |
++-------------------------------+------------------------------------------------------------------+
+| supports-policy-identity-loc  | N/A                                                              |
++-------------------------------+------------------------------------------------------------------+
+| supports-policy-attest-init   | N/A                                                              |
++-------------------------------+------------------------------------------------------------------+
+| supports-policy-attest-loc    | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| supports-policy-assert-init   | N/A                                                              |
++-------------------------------+------------------------------------------------------------------+
+| supports-policy-assert-loc    | N/A                                                              |
++-------------------------------+------------------------------------------------------------------+
+| certificate-policies          | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-eca-certificates     | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| eca-certificate-format        | ocp.certificate.irot-eca.p256                                    |
++-------------------------------+------------------------------------------------------------------+
+| leaf-certificate-format       | ocp.certificate.irot-leaf.p256                                   |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Signatures =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| public-key-format             | ocp.key-format.p256.raw                                          |
++-------------------------------+------------------------------------------------------------------+
+| supports-external-key         | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| to-be-signed-format           | ocp.tbs-format.digest-sha256                                     |
++-------------------------------+------------------------------------------------------------------+
+| signature-format              | ocp.signature-format.p256.raw                                    |
++-------------------------------+------------------------------------------------------------------+
+| supports-symmetric-sign       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| =========================================== Sealing ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-asymmetric-unseal    | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-unseal-policy        | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| unseal-policy-format          | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Localities =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| supports-multiple-localities  | True                                                             |
++-------------------------------+------------------------------------------------------------------+
+| locality-id-format            | ocp.locality-id-format.uint32                                    |
++-------------------------------+------------------------------------------------------------------+
+| =========================================== Export ============================================= |
++-------------------------------+------------------------------------------------------------------+
+| export-cdi-format             | ocp.export-cdi.raw-256                                           |
++-------------------------------+------------------------------------------------------------------+
+
+### ocp.profile.irot.p384
+
++-------------------------------+------------------------------------------------------------------+
+| **Attribute**                 | **Value**                                                        |
++===============================+==================================================================+
+| =========================================== General ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| name                          | ocp.profile.irot.p384                                            |
++-------------------------------+------------------------------------------------------------------+
+| inherits                      | ocp.profile.irot.p256                                            |
++-------------------------------+------------------------------------------------------------------+
+| ============================================ Input ============================================= |
++-------------------------------+------------------------------------------------------------------+
+| input-format                  | ocp.format.digest-sha384                                         |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Derivation =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| dice-derivation               | ocp.derive.kdf-cdi-384                                           |
++-------------------------------+------------------------------------------------------------------+
+| asymmetric-derivation         | ocp.derive.kdf-asymmetric-p384                                   |
++-------------------------------+------------------------------------------------------------------+
+| symmetric-derivation          | Empty                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ======================================== Certificates ========================================== |
++-------------------------------+------------------------------------------------------------------+
+| leaf-certificate-format       | ocp.certificate.irot-leaf.p384                                   |
++-------------------------------+------------------------------------------------------------------+
+| eca-certificate-format        | ocp.certificate.irot-eca.p384                                    |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Signatures =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| to-be-signed-format           | ocp.tbs-format.digest-sha384                                     |
++-------------------------------+------------------------------------------------------------------+
+| public-key-format             | ocp.key-format.p384.raw                                          |
++-------------------------------+------------------------------------------------------------------+
+| supports-external-key         | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| signature-format              | ocp.signature-format.p384.raw                                    |
++-------------------------------+------------------------------------------------------------------+
+| =========================================== Export ============================================= |
++-------------------------------+------------------------------------------------------------------+
+| export-cdi-format             | ocp.export-cdi.raw-384                                           |
++-------------------------------+------------------------------------------------------------------+
+
+### ocp.profile.irot-min.p256
+
++-------------------------------+------------------------------------------------------------------+
+| **Attribute**                 | **Value**                                                        |
++===============================+==================================================================+
+| =========================================== General ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| name                          | ocp.profile.irot-min.p256                                        |
++-------------------------------+------------------------------------------------------------------+
+| inherits                      | ocp.profile.irot.p256                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Contexts ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-context-handles      | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-simulation           | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-cdi-export           | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-recursive-derivation | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Commands ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-initialize-context   | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-rotate-context       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| =========================================== Input ============================================== |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-inputs      | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-dpe-info    | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-dpe-dice    | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ======================================== Certificates ========================================== |
++-------------------------------+------------------------------------------------------------------+
+| max-certificate-size          | 2048 bytes                                                       |
+|                               |                                                                  |
+|                               | A single certificate must fit in a single DPE message. Any       |
+|                               | overhead for messages which can return certificates must be      |
+|                               | subtracted from the certificate size.                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-eca-certificates     | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Signatures =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| supports-symmetric-sign       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+
+### ocp.profile.irot-min.p384
+
++-------------------------------+------------------------------------------------------------------+
+| **Attribute**                 | **Value**                                                        |
++===============================+==================================================================+
+| =========================================== General ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| name                          | ocp.profile.irot-min.p384                                        |
++-------------------------------+------------------------------------------------------------------+
+| inherits                      | ocp.profile.irot.p384                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Contexts ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-context-handles      | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-simulation           | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-cdi-export           | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-recursive-derivation | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================== Commands ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| supports-initialize-context   | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-rotate-context       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| =========================================== Input ============================================== |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-inputs      | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-dpe-info    | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-internal-dpe-dice    | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ======================================== Certificates ========================================== |
++-------------------------------+------------------------------------------------------------------+
+| max-certificate-size          | 2048 bytes                                                       |
+|                               |                                                                  |
+|                               | A single certificate must fit in a single DPE message. Any       |
+|                               | overhead for messages which can return certificates must be      |
+|                               | subtracted from the certificate size.                            |
++-------------------------------+------------------------------------------------------------------+
+| supports-eca-certificates     | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Signatures =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| supports-symmetric-sign       | False                                                            |
++-------------------------------+------------------------------------------------------------------+
+
+## ABI Structure Definitions {#sec:abi-structure-definitions}
+
+All structures are fixed size for a given profile. In some cases, command/response structures differ
+based on the profile ID in the header. This is due to differing sizes for fields
+containing:
+
+* Hashes
+* Public keys
+* Signatures
+
+### Constants
+
+Table: Command IDs
+
+**Name**                                                | **Value**
+------------------------------------------------------- | ---------------------
+`DPE_COMMAND_GET_PROFILE`                               | 0x1
+`DPE_COMMAND_INITIALIZE_CONTEXT`                        | 0x7
+`DPE_COMMAND_DERIVE_CONTEXT`                            | 0x8
+`DPE_COMMAND_CERTIFY_KEY`                               | 0x9
+`DPE_COMMAND_SIGN`                                      | 0xA
+`DPE_COMMAND_ROTATE_CONTEXT_HANDLE`                     | 0xE
+`DPE_COMMAND_DESTROY_CONTEXT`                           | 0xF
+`DPE_COMMAND_GET_CERTIFICATE_CHAIN`                     | 0x10
+Reserved Range for Vendor Commands                      | 0x80000000 - 0x8000FFFF
+
+Table: Status Codes
+
+**Name**                                     | **Value**   | **Description**
+-------------------------------------------- | ----------- | -----------------------------------------------
+`DPE_STATUS_NO_ERROR`                        | 0x0         | See main DPE specification [@{tcg-dpe}]
+`DPE_STATUS_INTERNAL_ERROR`                  | 0x1         | See main dpe specification
+`DPE_STATUS_INVALID_COMMAND`                 | 0x2         | See main dpe specification
+`DPE_STATUS_INVALID_ARGUMENT`                | 0x3         | See main dpe specification
+`DPE_STATUS_SESSION_EXHAUSTED`               | 0x4         | See main dpe specification
+`DPE_STATUS_INITIALIZATION_SEED_LOCKED`      | 0x5         | See main dpe specification
+`DPE_STATUS_OUT_OF_MEMORY`                   | 0x6         | See main dpe specification
+`DPE_STATUS_CANCELLED_COMMAND`               | 0x7         | See main dpe specification
+`DPE_STATUS_INVALID_HANDLE`                  | 0x80        | ContextHandle does not exist.
+`DPE_STATUS_INVALID_LOCALITY`                | 0x81        | Hardware Locality does not exist.
+`DPE_STATUS_HANDLE_DEFINED`                  | 0x82        | Passed handle is already defined.
+`DPE_STATUS_ARGUMENT_NOT_SUPPORTED`          | 0x83        | Argument is not supported by this profile, implementation, or integration.
+`DPE_STATUS_ALREADY_INITIALIZED`             | 0x84        | InitializeContext has already been called on this DPE reset cycle
+
+Table: Magic Constants
+
+**Name**                                                | **Value**
+------------------------------------------------------- | ---------------------
+`DPE_COMMAND_MAGIC`                                     | 0x44504543
+`DPE_RESPONSE_MAGIC`                                    | 0x44504552
+
+Table: Profile Constants
+
+**Name**                                                | **Value**
+------------------------------------------------------- | ---------------------
+`DPE_PROFILE_IROT_MIN_P256_SHA256`                      | 0x1
+`DPE_PROFILE_IROT_MIN_P384_SHA384`                      | 0x2
+`DPE_PROFILE_IROT_P256_SHA256`                          | 0x3
+`DPE_PROFILE_IROT_P384_SHA384`                          | 0x4
+
+Table: Certificate Formats
+
+**Name**                                                | **Value**
+------------------------------------------------------- | ---------------------
+`CERT_FORMAT_X509`                                      | 0x0
+`CERT_FORMAT_CSR`                                       | 0x1
+
+Table: Context Handles
+
+**Name**                           | **Value**
+---------------------------------- | ---------------------------------------
+`DPE_HANDLE_DEFAULT_CONTEXT`       | 0x00000000000000000000000000000000
+
+Table: Numeric Constants
+
+**Name**                         | **Value**
+-------------------------------- | ----------------------------
+`MAX_CONTEXTS`                   | Implementation-defined. SHALL be greater than or equal to 8.
+`CURRENT_PROFILE_MAJOR_VERSION`  | 0
+`CURRENT_PROFILE_MINOR_VERSION`  | 13
+
+The following constants are used to compute field sizes:
+
+Table: Profile-dependant ABI constants for `DPE_PROFILE_IROT_MIN_P256_SHA256`
+
+**Name**     | **Description**       | **Value**
+------------ | --------------------- | --------
+`H`          | Hash Size             | 32
+`P`          | Public Key Size       | 64
+`S`          | Signature Size        | 64
+`C`          | Certificate Size      | 2048
+
+Table: Profile-dependant ABI constants for `DPE_PROFILE_IROT_P256_SHA256`
+
+**Name**     | **Description**       | **Value**
+------------ | --------------------- | --------
+`H`          | Hash Size             | 32
+`P`          | Public Key Size       | 64
+`S`          | Signature Size        | 64
+`C`          | Certificate Size      | 6144
+
+Table: Profile-dependant ABI constants for `DPE_PROFILE_IROT_MIN_P384_SHA384`
+
+**Name**     | **Description**       | **Value**
+------------ | --------------------- | --------
+`H`          | Hash Size             | 48
+`P`          | Public Key Size       | 96
+`S`          | Signature Size        | 96
+`C`          | Certificate Size      | 2048
+
+Table: Profile-dependant ABI constants for `DPE_PROFILE_IROT_P384_SHA384`
+
+**Name**     | **Description**       | **Value**
+------------ | --------------------- | --------
+`H`          | Hash Size             | 48
+`P`          | Public Key Size       | 96
+`S`          | Signature Size        | 96
+`C`          | Certificate Size      | 6144
+
+### Types
+
+Table: ABI Types
+
+**Name**        | **Size**   | **Description**
+--------------- | ---------- |--------------------------------------------------------------------------------
+`U16`           | 2          | 2-byte little-endian unsigned integer.
+`U32`           | 4          | 4-byte little-endian unsigned integer.
+`BITFIELD`      | 4          | 4-byte bitfield. Bit 31 SHALL refer to the most significant bit and bit 0 SHALL refer to the least significant bit.
+`HASH`          | H          | A hash. Size depends on H value for the profile.
+`PUBKEY`        | P          | A public key. Size depends on the P value for the profile. Encoding defined by public-key-format.
+`SIGNATURE`     | S          | A signature. Size depends on the S value for the profile. Encoding defined by signature-format.
+`CERTIFICATE`   | C          | A certificate. Size depends on the C value for the profile. Encoding defined by max-certificate-size.
+`EXPORTED_CDI`  | 32         | An exported CDI.
+`BYTES`         | Variable   | An arbitrary sequence of bytes.
+
+### Command/Response Structures
+
+This section defines the ABI for command and response structures for each
+command supported by this profile.
+
+All commands and responses have the following headers:
+
+Table: Command Header
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**         | **Description**
+|    ---------    | ----------    | -------  | ------------     | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`          | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`     | One of `DPE_COMMAND_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`        | One of `DPE_PROFILE_*`.
+
+Table: Response Header
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**     | **Description**
+| ---------       | ----------    | -------  | ------------ | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`      | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`     | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`    | One of `DPE_PROFILE_*`.
+
+#### GetProfile ABI
+
+Table: `GET_PROFILE_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**         | **Description**
+| ------          | ----------    | -------  | ------------     | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`          | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`     | One of `DPE_COMMAND_GET_PROFILE`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`        | Reserved as a placeholder for unified header definition. DPE SHALL ignore this value.
+
+Table: `GET_PROFILE_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**         | **Bits** | **Name**                                             | **Description**
+| --------        | ---------------- | -------  | ---------------------------------------------------- | ------------------------------------------------
+| 0x00            | `U32`            | 31:0     | `MAGIC`                                              | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`            | 31:0     | `STATUS`                                             | One of `DPE_STATUS_*`.
+| 0x08            | `U32`            | 31:0     | `PROFILE`                                            | One of `DPE_PROFILE_*`.
+| 0x0C            | `U16`            | 15:0     | `PROFILE_MAJOR_VERSION`                              | Major version of this profile.
+| 0x0E            | `U16`            | 15:0     | `PROFILE_MINOR_VERSION`                              | Minor version of this profile.
+| 0x10            | `U32`            | 31:0     | `VNDR`                                               | DPE Vendor ID
+| 0x14            | `U32`            | 31:0     | `VNDR_SKU`                                           | Vendor-defined SKU identifier
+| 0x18            | `U32`            | 31:0     | `MAX_CONTEXTS`                                       | The maximum number of concurrently active contexts supported by the implementation.
+| 0x1C            | `BITFIELD`       | 31:0     | `VENDOR_FLAGS`                                       | Vendor-defined flags
+
+#### InitializeContext ABI
+
+Table: `INITIALIZE_CONTEXT_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**             | **Description**
+| ---------       | ----------    | -------  | ---------------      | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`              | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`         | One of `DPE_COMMAND_GET_PROFILE`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`            | One of `DPE_PROFILE_*`.
+| 0x0C            | `BITFIELD`    | 31       | `SIMULATION`         | If set, create a simulation context.
+|                 |               | 30       | `USE_DEFAULT`        | If set, create a default context.
+|                 |               | 29:0     | `RESERVED`           |
+
+Table: `INITIALIZE_CONTEXT_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
+| ---------       | --------      | -------  | ----------------------- | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                 | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`                | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`               | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`    | The handle for a new context.
+
+#### DeriveContext ABI
+
+Table: `DERIVE_CONTEXT_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**       | **Bits**  | **Name**                         | **Description**
+| ---------       | -------------- | --------- | -------------------------------- | ---------------------------------------------------------
+| 0x00            | `U32`          | 31:0      | `MAGIC`                          | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`          | 31:0      | `COMMAND_ID`                     | `DPE_COMMAND_DERIVE_CONTEXT`.
+| 0x08            | `U32`          | 31:0      | `PROFILE`                        | `DPE_PROFILE_IROT_P256_SHA256`.
+| 0x0C            | `BYTES`        | 127:0     | `CONTEXT_HANDLE`                 | A numeric handle referring to a DPE context.
+| 0x1C            | `HASH`         |           | `INPUT_DATA`                     | Hash to measure.
+| 0x1C + H        | `BITFIELD`     | 31        | `INTERNAL_INPUT_INFO`            | Use dpe-info internal input if 1.
+|                 |                | 30        | `INTERNAL_INPUT_DICE`            | Use dpe-dice internal input if 1.
+|                 |                | 29        | `RETAIN_PARENT_CONTEXT`          | If set, `CONTEXT_HANDLE` SHALL be retained.
+|                 |                | 28        | `MAKE_DEFAULT`                   | Whether `NEW_CONTEXT_HANDLE` will be the default context.
+|                 |                | 27        | `CHANGE_LOCALITY`                | Whether `NEW_CONTEXT_HANDLE` is created in a different locality than the caller's locality.
+|                 |                | 26        | `ALLOW_NEW_CONTEXT_TO_EXPORT`    | Whether callers referencing the new context can export the CDI.
+|                 |                | 25        | `INPUT_ALLOW_X509`               | Whether callers referencing the new context can request an X.509 cert. If false, the context can only request a CSR.
+|                 |                | 24        | `RECURSIVE`                      | If set, do a recursive derivation on `CONTEXT_HANDLE`.
+|                 |                | 23        | `EXPORT_CDI`                     | Whether CDI should be exported for this context.
+|                 |                | 22        | `CREATE_CERTIFICATE`             | Whether a certificate is generated for the derived context.
+|                 |                | 21:0      | `RESERVED`                       | Reserved
+| 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte measurement type field
+| 0x24 + H        | `U32`          | 31:0      | `TARGET_LOCALITY`                | Locality in which `NEW_CONTEXT_HANDLE` will be created if `CHANGE_LOCALITY` is set.
+| 0x28 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | SVN added to TCI node. Callers SHOULD set this field to `0` when SVN is unused.
+
+Table: `DERIVE_CONTEXT_OUTPUT_ARGS` struct if `EXPORT_CDI` is **not** set
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                      | **Description**
+| ---------       | ----------    | -------  | ----------------------------- | --------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                       | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`                      | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`                     | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`          | The handle for the created child context, or rotated context in case RECURSIVE is set.
+| 0x1C            | `BYTES`       | 127:0    | `PARENT_CONTEXT_HANDLE`       | The handle for the parent context if `RETAIN_PARENT_CONTEXT` is set.
+
+Table: `DERIVE_CONTEXT_OUTPUT_ARGS` struct if `EXPORT_CDI` is set
+
+| **Byte Offset** | **Type**       | **Bits** | **Name**                      | **Description**
+| ---------       | ----------     | -------  | ----------------------------- | --------------------------------------------------
+| 0x00            | `U32`          | 31:0     | `MAGIC`                       | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`          | 31:0     | `STATUS`                      | One of `DPE_STATUS_*`.
+| 0x08            | `U32`          | 31:0     | `PROFILE`                     | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`        | 127:0    | `NEW_CONTEXT_HANDLE`          | The handle for the created child context, or rotated context in case RECURSIVE is set.
+| 0x1C            | `BYTES`        | 127:0    | `PARENT_CONTEXT_HANDLE`       | The handle for the parent context if `RETAIN_PARENT_CONTEXT` is set.
+| 0x2C            | `EXPORTED_CDI` | 255:0    | `EXPORTED_CDI`                | If EXPORT_CDI is true, holds exported CDI. Else, value is ignored.
+| 0x4C            | `U32`          | 31:0     | `CERTIFICATE_SIZE`            | Number of bytes used in `NEW_CERTIFICATE`.
+| 0x50            | `BYTES`        |          | `NEW_CERTIFICATE`             | If CREATE_CERTIFICATE is set, holds the new ECA certificate. Else, value is ignored.
+
+#### CertifyKey ABI
+
+Table: `CERTIFY_KEY_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**             | **Description**
+| ----------      | ------------- | -------  | -------------------- | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`              | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`         | `DPE_COMMAND_CERTIFY_KEY`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`            | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`     | A numeric handle referring to a DPE context.
+| 0x1C            | `BITFIELD`    | 31:0     | `RESERVED`           | Reserved
+| 0x20            | `U32`         | 31:0     | `ADD_FORMAT`         | Output format of `CERTIFICATE`
+| 0x24            | `HASH`        |          | `LABEL`              | Public digest used in key derivation.
+
+Table: `CERTIFY_KEY_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits**    | **Name**                       | **Description**
+| ---------       | ----------    | ----------- | ------------------------------ | --------------------------------------------------------------------
+| 0x00            | `U32`         | 31:0        | `MAGIC`                        | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0        | `STATUS`                       | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0        | `PROFILE`                      | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0       | `NEW_CONTEXT_HANDLE`           | Numeric handle referring to the updated context.
+| 0x1C            | `PUBKEY`      |             | `DERIVED_PUBLIC_KEY`           | Derived public key. This is the same public key as the Subject of the returned certificate.
+| 0x1C + P        | `U32`         | 31:0        | `CERTIFICATE_SIZE`             | Number of bytes used in `CERTIFICATE_CHAIN`.
+| 0x20 + P        | `CERTIFICATE` |             | `CERTIFICATE`                  | Returned leaf certificate.
+
+#### Sign ABI
+
+Table: `SIGN_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**             | **Description**
+| -------         | ------------- | -------  | -------------------- | -------------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`              | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`         | `DPE_COMMAND_SIGN`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`            | One of `DPE_PROFILE_IROT_SHA256_P256`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`     | A numeric handle referring to a DPE context.
+| 0x1C            | `HASH`        |          | `LABEL`              | Digest measurement label used in key derivation.
+| 0x1C + H        | `BITFIELD`    | 31:0     | `RESERVED`           | Reserved
+| 0x20 + H        | `HASH`        |          | `TO_BE_SIGNED`       | Hash to be signed.
+
+Table: `SIGN_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**               | **Description**
+| -------         | ----------    | -------  | ---------------------- | -------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`               | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`              | One of `DPE_PROFILE_IROT_SHA256_P256`.
+| 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`   | Numeric handle referring to the updated context.
+| 0x1C            | `SIGNATURE`   |          | `SIGNATURE`            | Signature over `TO_BE_SIGNED`
+
+#### RotateContextHandle ABI
+
+Table: `ROTATE_CONTEXT_HANDLE_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                    | **Description**
+| -------         | ------------- | -------  | ----------------------      | -----------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                     | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`                | `DPE_COMMAND_ROTATE_CONTEXT_HANDLE`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`                   | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`            | A numeric handle referring to a DPE context.
+| 0x1C            | `BITFIELD`    | 31       | `TARGET_IS_DEFAULT`         | If set, change this handle to the default context for the caller's locality
+|                 |               | 30:0     | `RESERVED`                  | Reserved.
+
+Table: `ROTATE_CONTEXT_HANDLE_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
+| -------         | ----------    | -------  | ----------------------- | ----------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                 | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`                | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`               | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`    | A new context handle.
+
+#### DestroyContext ABI
+
+Table: `DESTROY_CONTEXT_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
+| -------         | ------------- | -------  | ----------------------- | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                 | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`            | `DPE_COMMAND_DESTROY_CONTEXT`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`               | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`        | A numeric handle referring to a DPE context.
+| 0x1C            | `BITFIELD`    | 31:0     | `VENDOR_FLAGS`          | Vendor-defined flags
+
+Table: `DESTROY_CONTEXT_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**     | **Description**
+| -------         | ----------    | -------  | ------------ | -----------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`      | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`     | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`    | One of `DPE_PROFILE_*`.
+
+#### GetCertificateChain ABI
+
+Table: `GET_CERTIFICATE_CHAIN_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**         | **Description**
+| -------         | ----------    | -------  | ---------------- | -----------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`          | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`     | `DPE_COMMAND_GET_CERTIFICATE_CHAIN`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`        | One of `DPE_PROFILE_*`.
+| 0x0C            | `U32`         | 31:0     | `OFFSET`         | Offset of certificate chain to retrieve.
+| 0x10            | `U32`         | 31:0     | `SIZE`           | Max number of bytes to return, starting at `OFFSET`.
+
+Table: `GET_CERTIFICATE_CHAIN_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits**  | **Name**                 | **Description**
+| -------         | ----------    | --------- | ------------------------ | ---------------------------------------------------
+| 0x00            | `U32`         | 31:0      | `MAGIC`                  | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0      | `STATUS`                 | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0      | `PROFILE`                | One of `DPE_PROFILE_*`.
+| 0x0C            | `U32`         | 31:0      | `CERTIFICATE_SIZE`       | Number of bytes used in `CERTIFICATE_CHAIN`. Can be smaller than requested if no bytes are left to read.
+| 0x10            | `BYTES`       | 16383:0   | `CERTIFICATE_CHAIN`      | Returned certificate chain. This may be a partial certificate chain.
