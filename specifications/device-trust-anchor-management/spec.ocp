@@ -87,6 +87,12 @@ This specification does not impact sustainability.
 
 -->
 
+## Terminology
+
+- **Device owner**: An entity that relies on the authenticity of a given device. The term bears no relation to the concept of device ownership transfer.
+- **PKI anchor point**: The point at which a certificate issued by an external PKI connects to a device's internal identity key hierarchy.
+- **Trust anchor**: A root public key implicitly trusted by an attestation verifier. May belong to a vendor, data center operator, or a sophisticated tenant.
+
 ## Introduction
 
 In a data center environment, hardware roots of trust leverage device identity keys to attest to their current configuration. Verifiers ensure that the device emitting the attestation is authentic, before going on to evaluate the attested claims against a policy.
@@ -100,8 +106,6 @@ The security of this scheme relies on the ongoing security of the vendor's PKI. 
 ![Vendor PKI compromise](./diagrams/compromised_vendor_pki.drawio.svg){#fig:compromised-vendor-pki}
 
 To mitigate the risk of a vendor's PKI becoming compromised, a device owner can issue their own certificate for the device's identity upon receipt of the device. This owner certificate chains back to the owner's own PKI, rather than the vendor's. Verifiers can verify attestations against the owner's PKI, and thus be insulated from a compromise of the vendor's PKI.
-
-Note that in this document, a "device owner" refers to an entity that relies on the device's authenticity. The term bears no relation to the concept of device ownership transfer.
 
 @fig:operator-anchor-point illustrates the case of a data center operator acting as the device owner and issuing a certificate for the device's identity.
 
