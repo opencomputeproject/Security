@@ -36,7 +36,7 @@ jobs:
           fetch-tags: true
           repository: "opencomputeproject/ocp-spec-tools"
           # The underlying tex and templates assume this exists under the "extra" folder.
-          path: "doc/ocp_lock/extra"
+          path: "specifications/device-trust-anchor-management/extra"
 
       - name: Render Device Trust Anchor Management HTML
         run: |
