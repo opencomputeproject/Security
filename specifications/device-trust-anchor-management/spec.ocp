@@ -1,0 +1,152 @@
+---
+title: "Device Trust Anchor Management"
+version: 0.1
+type: BASE
+project: Security
+authors: [(See Acknowledgements section)]
+bibliography: bibliography.yaml
+...
+---
+
+\currenttemplateversion
+
+---
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+---
+
+<!-- Will bring this in when it's an actual contribution.
+
+# License
+
+## Open Web Foundation (OWF) CLA
+
+Contributions to this Specification are made under the terms and conditions set forth in **Modified Open Web Foundation Agreement 0.9 (OWFa 0.9)**. (As of October 16, 2024)  (“Contribution License”) by:
+
+- TODO: fill in
+
+Usage of this Specification is governed by the terms and conditions set forth in **Modified OWFa 0.9 Final Specification Agreement (FSA)** (As of October 16, 2024) **(“Specification License”)**.
+
+You can review the applicable Specification License(s) referenced above by the contributors to this Specification on the OCP website at <https://www.opencompute.org/contributions/templates-agreements>.
+
+For actual executed copies of either agreement, please contact OCP directly.
+
+NOTWITHSTANDING THE FOREGOING LICENSES, THIS SPECIFICATION IS PROVIDED BY OCP "AS IS" AND OCP EXPRESSLY DISCLAIMS ANY WARRANTIES (EXPRESS, IMPLIED, OR OTHERWISE), INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, OR TITLE, RELATED TO THE SPECIFICATION. NOTICE IS HEREBY GIVEN, THAT OTHER RIGHTS NOT GRANTED AS SET FORTH ABOVE, INCLUDING WITHOUT LIMITATION, RIGHTS OF THIRD PARTIES WHO DID NOT EXECUTE THE ABOVE LICENSES, MAY BE IMPLICATED BY THE IMPLEMENTATION OF OR COMPLIANCE WITH THIS SPECIFICATION. OCP IS NOT RESPONSIBLE FOR IDENTIFYING RIGHTS FOR WHICH A LICENSE MAY BE REQUIRED IN ORDER TO IMPLEMENT THIS SPECIFICATION.  THE ENTIRE RISK AS TO IMPLEMENTING OR OTHERWISE USING THE SPECIFICATION IS ASSUMED BY YOU. IN NO EVENT WILL OCP BE LIABLE TO YOU FOR ANY MONETARY DAMAGES WITH RESPECT TO ANY CLAIMS RELATED TO, OR ARISING OUT OF YOUR USE OF THIS SPECIFICATION, INCLUDING BUT NOT LIMITED TO ANY LIABILITY FOR LOST PROFITS OR ANY CONSEQUENTIAL, INCIDENTAL, INDIRECT, SPECIAL OR PUNITIVE DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS SPECIFICATION, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND EVEN IF OCP HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-->
+
+<!---
+THE UPDATED DEFAULT CONTRIBUTOR LICENSE AGREEMENT (CLA) IS [OWFa 0.9](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/ed0befaf86bee2568ad720ff4a9a554d1f4260f7.pdf).
+PLEASE VERIFY THE CORRECT CLA/FSA IS USED AND EXECUTED FOR THIS CONTRIBUTION.
+-->
+
+# Acknowledgements
+
+The Contributors of this Specification would like to acknowledge the following:
+
+- Fabrizio D Amato (AMD)
+- Steven Bellock (Nvidia)
+- Jeff Andersen (Google)
+- Brett Henning (Broadcom)
+
+<!---
+Please describe how this Specification complies with the OCP tenets.
+A full explanation of the OCP core tenets can be seen [here](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/bf648bb75091907147e76846cad590f402660d2e.pdf).
+-->
+
+<!-- Will bring this in when it's an actual contribution.
+
+# Compliance with OCP Tenets
+
+## Openness
+
+This specification is open-source.
+
+## Efficiency
+
+This specification allows device owners to efficiently configure attestation trust anchors.
+
+## Impact
+
+This specification unblocks key identity use-cases.
+
+## Scale
+
+This specification is applicable to a wide range of devices that support SPDM.
+
+## Sustainability
+
+This specification does not impact sustainability.
+
+# Base specification
+
+-->
+
+## Introduction
+
+In a data center environment, hardware roots of trust leverage device identity keys to attest to their current configuration. Verifiers ensure that the device emitting the attestation is authentic, before going on to evaluate the attested claims against a policy.
+
+In a simple case, such as the one illustrated in @fig:device-cert-hierarchy, a device ships with an identity keypair that is endorsed by the device vendor. Verifiers ensure that the key which signed a given attestation chains back to a known vendor trust anchor via the vendor's PKI.
+
+![Device certificate hierarchy](./diagrams/device_cert_hierarchy.drawio.svg){#fig:device-cert-hierarchy}
+
+The security of this scheme relies on the ongoing security of the vendor's PKI. @fig:compromised-vendor-pki illustrates the risk of a vendor PKI compromise.
+
+![Vendor PKI compromise](./diagrams/compromised_vendor_pki.drawio.svg){#fig:compromised-vendor-pki}
+
+To mitigate the risk of a vendor's PKI becoming compromised, a device owner can issue their own certificate for the device's identity upon receipt of the device. This owner certificate chains back to the owner's own PKI, rather than the vendor's. Verifiers can verify attestations against the owner's PKI, and thus be insulated from a compromise of the vendor's PKI.
+
+Note that in this document, a "device owner" refers to an entity that relies on the device's authenticity. The term bears no relation to the concept of device ownership transfer.
+
+@fig:operator-anchor-point illustrates the case of a data center operator acting as the device owner and issuing a certificate for the device's identity.
+
+![Operator PKI anchor point](./diagrams/operator_anchor_point.drawio.svg){#fig:operator-anchor-point}
+
+Devices often support a hierarchy of identity keys, derived from a number of inputs. @fig:identity-key-derivation illustrates how identity keys are derived in Caliptra. Other devices may have different identity layering schemes.
+
+![Identity key derivation](./diagrams/identity_key_derivation.drawio.svg){#fig:identity-key-derivation}
+
+Note: see the Caliptra [specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/caliptra_1x/Caliptra.md#ldevid-key) for commentary on the utility of LDevID and field entropy.
+
+The owner may select different keys in the identity hierarchy for which to issue a certificate. The choice of key will determine two useful aspects for the certificate:
+
+- Properties that are implicitly attested by way of the issued certificate
+- Mechanisms for performing implicit certificate disablement.
+
+In the example illustrated in @fig:identity-key-derivation, the owner has issued a certificate for the LDevID keypair. A device wielding an identity key endorsed by this certificate implicitly attests that its field entropy fuse bank contains the same entropy that was programmed when the owner's identity certificate was issued. The certificate will be implicitly disabled if this entropy changes, as the derived LDevID keypair will change.
+
+A separate owner may wish to have different attestation and disablement properties. Such an owner can issue their identity certificate, for example, over the FMC Alias certificate.
+
+Note that a device may have multiple simultaneous owners. Consider the case of a data center operator that deploys a device, and a tenant that leases the device. This arrangement is illustrated in @fig:tenant-anchor-point.
+
+![Tenant PKI anchor point](./diagrams/tenant_anchor_point.drawio.svg){#fig:tenant-anchor-point}
+
+In this example, a device wielding an identity key endorsed by the tenant's certificate implicitly attests that its owner configuration and FMC hash are the same as was present on the device when the owner's identity certificate was issued. The certificate will be implicitly disabled if either of these values change.
+
+Note: "certificate disablement" is not the same as certificate revocation or expiration. A certificate that was disabled by virtue of an identity key derivation input changing will become re-enabled if that input reverts to its prior value. Owners wishing to permanently revoke an identity certificate must therefore use a separate mechansim, such as a CRL.
+
+In the example illustrated in @fig:tenant-anchor-point, the identity hierarchy contains multiple PKI anchor points, each targeting a different location in the device's internal key hierarchy. The location of each PKI anchor point is based on each device owner's certificate issuance policy. As each owner may request an attestation from the device, an attestation destined for a given owner must chain back to that owner's preferred trust anchor.
+
+While each identity certificate issued by a given owner PKI could be distributed to that owner's attestation verifier through a number of means, the most tractable method in many cases is for the device to cache each of its owner's identity certificates locally, and serve a selected identity certificate along with each attestation statement. Each owner must be able to request a different PKI anchor point on a per-attestation-request basis.
+
+This specification describes the following aspects of device trust anchor management:
+
+- Discovering the set of identity keypairs supported by a device, along with each keypair's respective derivation inputs.
+- Obtaining a certificate signing request for a selected keypair from the device.
+- Issuing and provisioning an identity certificate to the device.
+- Requesting a given identity certificate when obtaining an attestation statement from the device.
+
+## Discovering device identity keypairs
+
+## Obtaining a certificate signing request
+
+## Issuing and provisioning an identity certificate
+
+## Requesting an identity certificate during attestation
+
+## Confidential compute considerations

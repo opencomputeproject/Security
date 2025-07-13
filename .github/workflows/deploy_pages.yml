@@ -1,0 +1,110 @@
+name: Deploy specifications to GitHub pages
+
+on:
+  push:
+    branches: ["main"]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+jobs:
+  # Upload Device Trust Anchor Management spec
+  device-trust-anchor-management-spec:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/trustedcomputinggroup/pandoc:latest
+    name: Render Device Trust Anchor Management HTML
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout Template dependencies
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          repository: "opencomputeproject/ocp-spec-tools"
+          # The underlying tex and templates assume this exists under the "extra" folder.
+          path: "doc/ocp_lock/extra"
+
+      - name: Render Device Trust Anchor Management HTML
+        run: |
+          # Need to trust directory in the docker container.
+          chown -R $(id -u):$(id -g) $PWD
+
+          # Publish pages for `main`
+          GIT_REFS=()
+          GIT_REFS+=("main")
+
+          for ref in "${GIT_REFS[@]}"; do
+            echo "Building git ref $ref"
+
+            git reset --hard $ref
+
+            pushd specifications/device-trust-anchor-management
+
+            if [[ "${ref}" == "main" ]]; then
+              # Label the current spec version.
+              commit_hash=$(git rev-parse --short HEAD)
+              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" lock_spec.ocp
+            fi
+
+            /usr/bin/build.sh \
+              --crossref=tcg \
+              --csl extra/ocp-pandoc-resources/ieee.csl \
+              --nogitversion \
+              --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
+              --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
+              --html_stylesheet extra/ocp-pandoc-resources/html/github-markdown.css \
+              --html spec.html spec.ocp
+
+            popd
+
+            trimmed_ref="HEAD"
+
+            mkdir -p "gh-pages/device-trust-anchor-management/${trimmed_ref}"
+            cp specifications/device-trust-anchor-management/spec.html "gh-pages/device-trust-anchor-management/${trimmed_ref}/index.html"
+            echo "Added webpage device-trust-anchor-management/${trimmed_ref}/index.html"
+          done
+
+      - name: Upload artifacts for device-trust-anchor-management spec
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-trust-anchor-management
+          path: gh-pages
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: [device-trust-anchor-management-spec]
+    steps:
+      - name: Download index artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: index
+          path: gh-pages
+      - name: Download device-trust-anchor-management artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: device-trust-anchor-management
+          path: gh-pages
+      - name: Upload static files as artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "gh-pages"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
