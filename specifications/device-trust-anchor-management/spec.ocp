@@ -111,7 +111,7 @@ To mitigate the risk of a vendor's PKI becoming compromised, a device owner can 
 
 ![Operator PKI anchor point](./diagrams/operator_anchor_point.drawio.svg){#fig:operator-anchor-point}
 
-Devices often support a hierarchy of identity keys, derived from a number of inputs. @fig:identity-key-derivation illustrates how identity keys are derived in Caliptra. Other devices may have different identity layering schemes.
+Devices often support a hierarchy of identity keys, derived from a number of inputs. @fig:identity-key-derivation illustrates how identity keys are derived in Caliptra [@{caliptra}]. Other devices may have different identity layering schemes.
 
 ![Identity key derivation](./diagrams/identity_key_derivation.drawio.svg){#fig:identity-key-derivation}
 
