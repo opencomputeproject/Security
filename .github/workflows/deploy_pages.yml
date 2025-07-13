@@ -57,7 +57,7 @@ jobs:
             if [[ "${ref}" == "master" ]]; then
               # Label the current spec version.
               commit_hash=$(git rev-parse --short HEAD)
-              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" lock_spec.ocp
+              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" spec.ocp
             fi
 
             /usr/bin/build.sh \
