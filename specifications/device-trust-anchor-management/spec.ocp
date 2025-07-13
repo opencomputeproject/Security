@@ -138,6 +138,10 @@ In the example illustrated in @fig:tenant-anchor-point, the identity hierarchy c
 
 While each identity certificate issued by a given owner PKI could be distributed to that owner's attestation verifier through a number of means, the most tractable method in many cases is for the device to cache each of its owner's identity certificates locally, and serve a selected identity certificate along with each attestation statement. Each owner must be able to request a different PKI anchor point on a per-attestation-request basis.
 
+![Anchor point selection](./diagrams/anchor_point_selection.drawio.svg){#fig:anchor-point-selection}
+
+Note: any intermediate PKI certificates that chain the owner-issued identity certificate back to the owner's trust anchor are not part of the device's attestation response. These must be communicated to the verifier out-of-band. Such communication is outside the scope of this specification.
+
 This specification describes the following aspects of device trust anchor management:
 
 - Discovering the set of identity keypairs supported by a device, along with each keypair's respective derivation inputs.
