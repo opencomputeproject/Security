@@ -69,7 +69,7 @@ This specification is open-source.
 
 ## Efficiency
 
-This specification allows device owners to efficiently configure attestation trust anchors.
+This specification allows trust domain owners to efficiently configure attestation trust anchors.
 
 ## Impact
 
@@ -89,9 +89,9 @@ This specification does not impact sustainability.
 
 ## Terminology
 
-- **Device owner**: An entity that relies on the authenticity of a given device. The term bears no relation to the concept of device ownership transfer.
-- **PKI anchor point**: The point at which a certificate issued by an external PKI connects to a device's internal identity key hierarchy.
 - **Trust anchor**: A root public key implicitly trusted by an attestation verifier. May belong to a vendor, data center operator, or a sophisticated tenant.
+- **Trust domain owner**: An entity that owns a trust anchor and issues device identity certificates that chain back to that trust anchor.
+- **PKI anchor point**: The point at which a device identity certificate issued by a trust domain owner connects to a device's internal identity key hierarchy.
 
 ## Introduction
 
@@ -105,9 +105,9 @@ The security of this scheme relies on the ongoing security of the vendor's PKI. 
 
 ![Vendor PKI compromise](./diagrams/compromised_vendor_pki.drawio.svg){#fig:compromised-vendor-pki}
 
-To mitigate the risk of a vendor's PKI becoming compromised, a device owner can issue their own certificate for the device's identity upon receipt of the device. This owner certificate chains back to the owner's own PKI, rather than the vendor's. Verifiers can verify attestations against the owner's PKI, and thus be insulated from a compromise of the vendor's PKI.
+To mitigate the risk of a vendor's PKI becoming compromised, a trust domain owner can issue their own certificate for the device's identity upon receipt of the device. This identity certificate chains back to the trust domain owner's trust anchor, rather than the vendor's. Verifiers can verify attestations against the trust domain owner's PKI, and thus be insulated from a compromise of the vendor's PKI.
 
-@fig:operator-anchor-point illustrates the case of a data center operator acting as the device owner and issuing a certificate for the device's identity.
+@fig:operator-anchor-point illustrates the case of a data center operator acting as the trust domain owner and issuing a certificate for the device's identity.
 
 ![Operator PKI anchor point](./diagrams/operator_anchor_point.drawio.svg){#fig:operator-anchor-point}
 
@@ -117,30 +117,30 @@ Devices often support a hierarchy of identity keys, derived from a number of inp
 
 Note: see the Caliptra [specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/caliptra_1x/Caliptra.md#ldevid-key) for commentary on the utility of LDevID and field entropy.
 
-The owner may select different keys in the identity hierarchy for which to issue a certificate. The choice of key will determine two useful aspects for the certificate:
+The trust domain owner may select different keys in the identity hierarchy for which to issue a certificate. The choice of key will determine two useful aspects for the certificate:
 
 - Properties that are implicitly attested by way of the issued certificate
 - Mechanisms for performing implicit certificate disablement.
 
-In the example illustrated in @fig:identity-key-derivation, the owner has issued a certificate for the LDevID keypair. A device wielding an identity key endorsed by this certificate implicitly attests that its field entropy fuse bank contains the same entropy that was programmed when the owner's identity certificate was issued. The certificate will be implicitly disabled if this entropy changes, as the derived LDevID keypair will change.
+In the example illustrated in @fig:identity-key-derivation, the trust domain owner has issued a certificate for the LDevID keypair. A device wielding an identity key endorsed by this certificate implicitly attests that its field entropy fuse bank contains the same entropy that was programmed when the trust domain owner issued its identity certificate for the device. The certificate will be implicitly disabled if this entropy changes, as the derived LDevID keypair will change.
 
-A separate owner may wish to have different attestation and disablement properties. Such an owner can issue their identity certificate, for example, over the FMC Alias certificate.
+A separate trust domain owner may wish to have different attestation and disablement properties. Such an owner can issue their identity certificate, for example, over the FMC Alias certificate.
 
-Note that a device may have multiple simultaneous owners. Consider the case of a data center operator that deploys a device, and a tenant that leases the device. This arrangement is illustrated in @fig:tenant-anchor-point.
+Note that a device may have multiple simultaneous trust domain owners. Consider the case of a data center operator that deploys a device, and a tenant that leases the device. This arrangement is illustrated in @fig:tenant-anchor-point.
 
 ![Tenant PKI anchor point](./diagrams/tenant_anchor_point.drawio.svg){#fig:tenant-anchor-point}
 
-In this example, a device wielding an identity key endorsed by the tenant's certificate implicitly attests that its owner configuration and FMC hash are the same as was present on the device when the owner's identity certificate was issued. The certificate will be implicitly disabled if either of these values change.
+In this example, a device wielding an identity key endorsed by the tenant's certificate implicitly attests that its owner configuration and FMC hash are the same as was present on the device when the tenant issued its identity certificate for the device. The certificate will be implicitly disabled if the owner configuration or FMC hash change.
 
-Note: "certificate disablement" is not the same as certificate revocation or expiration. A certificate that was disabled by virtue of an identity key derivation input changing will become re-enabled if that input reverts to its prior value. Owners wishing to permanently revoke an identity certificate must therefore use a separate mechansim, such as a CRL.
+Note: "certificate disablement" is not the same as certificate revocation or expiration. A certificate that was disabled by virtue of an identity key derivation input changing will become re-enabled if that input reverts to its prior value. Trust domain owners wishing to permanently revoke an identity certificate must therefore use a separate mechansim, such as a CRL.
 
-In the example illustrated in @fig:tenant-anchor-point, the identity hierarchy contains multiple PKI anchor points, each targeting a different location in the device's internal key hierarchy. The location of each PKI anchor point is based on each device owner's certificate issuance policy. As each owner may request an attestation from the device, an attestation destined for a given owner must chain back to that owner's preferred trust anchor.
+In the example illustrated in @fig:tenant-anchor-point, the identity hierarchy contains multiple PKI anchor points, each targeting a different location in the device's internal key hierarchy. The location of each PKI anchor point is based on each trust domain owner's certificate issuance policy. As the verifier for a given attestation may be configured with any of the trust anchors to which the device's identity hierarchy chains back, an attestation destined for a given verifier must chain back to that verifier's preferred trust anchor.
 
-While each identity certificate issued by a given owner PKI could be distributed to that owner's attestation verifier through a number of means, the most tractable method in many cases is for the device to cache each of its owner's identity certificates locally, and serve a selected identity certificate along with each attestation statement. Each owner must be able to request a different PKI anchor point on a per-attestation-request basis.
+While each identity certificate issued by a given trust domain owner could be distributed to the relevant attestation verifiers through a number of means, the most tractable method in many cases is for the device to cache each of its trust domain owner's identity certificates locally, and serve a selected identity certificate along with each attestation statement. Each attestation requester must be able to request a PKI anchor point on a per-attestation-request basis.
 
 ![Anchor point selection](./diagrams/anchor_point_selection.drawio.svg){#fig:anchor-point-selection}
 
-Note: any intermediate PKI certificates that chain the owner-issued identity certificate back to the owner's trust anchor are not part of the device's attestation response. These must be communicated to the verifier out-of-band. Such communication is outside the scope of this specification.
+Note: any intermediate PKI certificates that chain the trust domain owner's identity certificate back to the associated trust anchor are not part of the device's attestation response. These must be communicated to the verifier out-of-band. Such communication is outside the scope of this specification.
 
 This specification describes the following aspects of device trust anchor management:
 
