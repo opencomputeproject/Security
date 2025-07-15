@@ -1,5 +1,5 @@
 ---
-title: "Device Trust Anchor Management"
+title: "Device Identity Provisioning"
 version: 0.1
 type: BASE
 project: Security
@@ -69,7 +69,7 @@ This specification is open-source.
 
 ## Efficiency
 
-This specification allows trust domain owners to efficiently configure attestation trust anchors.
+This specification allows PKI owners to efficiently issue and provision device identity certificates.
 
 ## Impact
 
@@ -89,72 +89,103 @@ This specification does not impact sustainability.
 
 ## Terminology
 
-- **Trust anchor**: A root public key implicitly trusted by an attestation verifier. May belong to a vendor, data center operator, or a sophisticated tenant.
-- **Trust domain owner**: An entity that owns a trust anchor and issues device identity certificates that chain back to that trust anchor.
-- **PKI anchor point**: The point at which a device identity certificate issued by a trust domain owner connects to a device's internal identity key hierarchy.
+- **PKI**: Public-key infrastructure. Consists of a root key that is trusted by relying parties and infrastructure that manages the issuing of certificates.
+- **PKI owner**: An entity that owns a PKI and issues device identity certificates that chain back to that PKI's root key.
+- **PKI anchor point**: In the context of this specification, this is the key in a device's internal identity key hierarchy for which a PKI owner issues an identity certificate.
+- **Certificate deactivation**: In the context of this specification, this occurs when a device identity certificate subject key's derivation input changes, which causes the identity keypair to change.
 
 ## Introduction
 
 In a data center environment, hardware roots of trust leverage device identity keys to attest to their current configuration. Verifiers ensure that the device emitting the attestation is authentic, before going on to evaluate the attested claims against a policy.
 
-In a simple case, such as the one illustrated in @fig:device-cert-hierarchy, a device ships with an identity keypair that is endorsed by the device vendor. Verifiers ensure that the key which signed a given attestation chains back to a known vendor trust anchor via the vendor's PKI.
+In a simple case, such as the one illustrated in @fig:device-cert-hierarchy, a device ships with an identity keypair that is endorsed by the device vendor. Verifiers ensure that the key which signed a given attestation chains back to a known vendor PKI root key.
 
 ![Device certificate hierarchy](./diagrams/device_cert_hierarchy.drawio.svg){#fig:device-cert-hierarchy}
 
-The security of this scheme relies on the ongoing security of the vendor's PKI. @fig:compromised-vendor-pki illustrates the risk of a vendor PKI compromise.
+A separate PKI owner may elect to issue their own certificate for the device's identity upon receipt of the device. This identity certificate chains back to the PKI owner's root key, rather than the vendor's. Verifiers can verify attestations against the PKI owner's root key, rather than the vendor's.
+
+@fig:operator-anchor-point illustrates the case of a data center operator acting as a PKI owner and issuing a certificate for the device's identity.
+
+![Operator PKI anchor point](./diagrams/operator_anchor_point.drawio.svg){#fig:operator-anchor-point}
+
+There are several reasons an operator may wish to issue their own identity certificate for devices in their possession:
+
+**Consistent attestation verification**
+
+An operator's fleet may be heterogeneous, with devices from a number of different vendors, each with their own distinct PKI. By issuing an identity certificate for devices based on the operator's PKI, attestation verification within the operator's fleet can be rendered more consistent and simple, as attestation can rely on a single PKI root key.
+
+![Consistent operator PKI](./diagrams/consistent_operator_pki.drawio.svg){#fig:consistent-operator-pki}
+
+**Insulation from potential vendor PKI compromise**
+
+A verifier that relies on a vendor PKI root key is relying on the ongoing security of the vendor's PKI. @fig:compromised-vendor-pki illustrates the risk of a vendor PKI compromise, and how that risk is mitigated by way of the operator's PKI.
 
 ![Vendor PKI compromise](./diagrams/compromised_vendor_pki.drawio.svg){#fig:compromised-vendor-pki}
 
-To mitigate the risk of a vendor's PKI becoming compromised, a trust domain owner can issue their own certificate for the device's identity upon receipt of the device. This identity certificate chains back to the trust domain owner's trust anchor, rather than the vendor's. Verifiers can verify attestations against the trust domain owner's PKI, and thus be insulated from a compromise of the vendor's PKI.
+Note that the act of issuing an identity certificate via an operator PKI necessarily involves relying on the trustworthiness of the vendor's PKI. This necessary trust in the vendor's PKI is point-in-time and does not extend past the time at which the certificate was issued. In the event that a vendor PKI becomes compromised, verifiers that trust the operator's PKI can continue to rely on attestations emitted from existing devices that have already been deployed to the operator's fleet. Furthermore, during identity certificate issuance, an operator may be able to rely on other signals in addition to the vendor's PKI to establish the authenticity of devices. See @sec:establishing-trust-in-identity for more details.
 
-@fig:operator-anchor-point illustrates the case of a data center operator acting as the trust domain owner and issuing a certificate for the device's identity.
-
-![Operator PKI anchor point](./diagrams/operator_anchor_point.drawio.svg){#fig:operator-anchor-point}
+**Insulation from potential supply-chain compromise**
 
 Devices often support a hierarchy of identity keys, derived from a number of inputs. @fig:identity-key-derivation illustrates how identity keys are derived in Caliptra [@{caliptra}]. Other devices may have different identity layering schemes.
 
 ![Identity key derivation](./diagrams/identity_key_derivation.drawio.svg){#fig:identity-key-derivation}
 
-Note: see the Caliptra [specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/caliptra_1x/Caliptra.md#ldevid-key) for commentary on the utility of LDevID and field entropy.
+In Caliptra, the LDevID keypair is derived not only from UDS, but also field entropy, which is typically held in fuses and may be programmed into the device upon initial ingestion. By choosing the LDevID keypair as the PKI anchor point for the operator's device identity certificate, the operator insulates themselves from supply-chain attackers that may have invasively exfiltrated the device's UDS. See the Caliptra [specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/caliptra_1x/Caliptra.md#ldevid-key) for additional commentary on the utility of LDevID and field entropy.
 
-The trust domain owner may select different keys in the identity hierarchy for which to issue a certificate. The choice of key will determine two useful aspects for the certificate:
+**Implicit attestation**
 
-- Properties that are implicitly attested by way of the issued certificate
-- Mechanisms for performing implicit certificate disablement.
+The PKI owner may select various keys in the identity hierarchy for which to issue a certificate. Each key will have different measurements contribute to that key's derivation. By issuing a device identity certificate for a given key, the PKI owner is implicitly blessing the measurements which contribute to that key's derivation. Any attestations endorsed via that identity certificate carry implicit assurance that the measurements which contribute to that identity key are the same as when the identity certificate was issued.
 
-In the example illustrated in @fig:identity-key-derivation, the trust domain owner has issued a certificate for the LDevID keypair. A device wielding an identity key endorsed by this certificate implicitly attests that its field entropy fuse bank contains the same entropy that was programmed when the trust domain owner issued its identity certificate for the device. The certificate will be implicitly disabled if this entropy changes, as the derived LDevID keypair will change.
-
-A separate trust domain owner may wish to have different attestation and disablement properties. Such an owner can issue their identity certificate, for example, over the FMC Alias certificate.
-
-Note that a device may have multiple simultaneous trust domain owners. Consider the case of a data center operator that deploys a device, and a tenant that leases the device. This arrangement is illustrated in @fig:tenant-anchor-point.
+Consider the case of a data center operator that deploys a device, and a tenant that leases the device. This arrangement is illustrated in @fig:tenant-anchor-point.
 
 ![Tenant PKI anchor point](./diagrams/tenant_anchor_point.drawio.svg){#fig:tenant-anchor-point}
 
-In this example, a device wielding an identity key endorsed by the tenant's certificate implicitly attests that its owner configuration and FMC hash are the same as was present on the device when the tenant issued its identity certificate for the device. The certificate will be implicitly disabled if the owner configuration or FMC hash change.
+In this example, a device wielding an identity key endorsed by the tenant-issued identity certificate implicitly attests that its owner configuration and FMC hash are the same as was present on the device when the tenant issued the identity certificate. The certificate will be implicitly deactivated if the owner configuration or FMC hash change.
 
-Note: "certificate disablement" is not the same as certificate revocation or expiration. A certificate that was disabled by virtue of an identity key derivation input changing will become re-enabled if that input reverts to its prior value. Trust domain owners wishing to permanently revoke an identity certificate must therefore use a separate mechansim, such as a CRL.
+Note: "certificate deactivation" is not the same as certificate revocation or expiration. A certificate that was deactivated by virtue of an identity key derivation input changing will become re-activated if that input reverts to its prior value. PKI owners wishing to permanently revoke an identity certificate must therefore use a separate mechansim, such as a CRL.
 
-In the example illustrated in @fig:tenant-anchor-point, the identity hierarchy contains multiple PKI anchor points, each targeting a different location in the device's internal key hierarchy. The location of each PKI anchor point is based on each trust domain owner's certificate issuance policy. As the verifier for a given attestation may be configured with any of the trust anchors to which the device's identity hierarchy chains back, an attestation destined for a given verifier must chain back to that verifier's preferred trust anchor.
+Each PKI owner may have their own desired implicit attestation properties, and can select their PKI anchor point accordingly.
 
-While each identity certificate issued by a given trust domain owner could be distributed to the relevant attestation verifiers through a number of means, the most tractable method in many cases is for the device to cache each of its trust domain owner's identity certificates locally, and serve a selected identity certificate along with each attestation statement. Each attestation requester must be able to request a PKI anchor point on a per-attestation-request basis.
+### Support for multiple PKI owners
+
+A device may have multiple simultaneous PKI owners, and serve attestations to multiple verifiers, each with their own configured PKI root key.
+
+While each identity certificate issued by a given PKI owner could be distributed to the relevant attestation verifiers through a number of means, the most tractable method in many cases is for the device to cache each of its PKI owner's identity certificates locally, and serve a selected identity certificate along with each attestation statement. Each attestation requester must be able to request a PKI anchor point on a per-attestation-request basis.
 
 ![Anchor point selection](./diagrams/anchor_point_selection.drawio.svg){#fig:anchor-point-selection}
 
-Note: any intermediate PKI certificates that chain the trust domain owner's identity certificate back to the associated trust anchor are not part of the device's attestation response. These must be communicated to the verifier out-of-band. Such communication is outside the scope of this specification.
+Note: there may be intermediate certificates between a given PKI owner's root key and the identity certificate issued for a device. This specification does not impose an upper-limit on the number of intermediate certificates that may exist for a given PKI owner. Devices typically have limited internal storage capacity. As a result, this specification does not require that the device's attestation responses include any intermediate certificates beyond the identity certificate issued by a PKI owner. These intermediate certificates should be communicated to the verifier out-of-band. Such communication is outside the scope of this specification.
 
-This specification describes the following aspects of device trust anchor management:
+### Specification scope
+
+This specification describes the following aspects of device identity endorsement and provisioning:
 
 - Discovering the set of identity keypairs supported by a device, along with each keypair's respective derivation inputs.
-- Obtaining a certificate signing request for a selected keypair from the device.
+- Establishing trust in a selected identity keypair from the device.
 - Issuing and provisioning an identity certificate to the device.
 - Requesting a given identity certificate when obtaining an attestation statement from the device.
 
-## Discovering device identity keypairs
+The following items are out of scope:
 
-## Obtaining a certificate signing request
+- Certificate revocation
+- General attestation verification
 
-## Issuing and provisioning an identity certificate
+## Discovering device identity keypairs {#sec:discovering-device-keypairs}
 
-## Requesting an identity certificate during attestation
+TODO: fill in
+
+## Establishing trust in a selected identity keypair {#sec:establishing-trust-in-identity}
+
+TODO: fill in
+
+## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
+
+TODO: fill in
+
+## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
+
+TODO: fill in
 
 ## Confidential compute considerations
+
+TODO: fill in
