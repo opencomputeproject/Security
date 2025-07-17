@@ -16,8 +16,8 @@ defaults:
   run:
     shell: bash
 jobs:
-  # Upload Device Trust Anchor Management spec
-  device-trust-anchor-management-spec:
+  # Upload Device Identity Provisioning spec
+  device-identity-provisioning-spec:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/trustedcomputinggroup/pandoc:latest
@@ -36,7 +36,7 @@ jobs:
           fetch-tags: true
           repository: "opencomputeproject/ocp-spec-tools"
           # The underlying tex and templates assume this exists under the "extra" folder.
-          path: "specifications/device-trust-anchor-management/extra"
+          path: "specifications/device-identity-provisioning/extra"
 
       - name: Render Device Trust Anchor Management HTML
         run: |
@@ -52,7 +52,7 @@ jobs:
 
             git reset --hard $ref
 
-            pushd specifications/device-trust-anchor-management
+            pushd specifications/device-identity-provisioning
 
             if [[ "${ref}" == "master" ]]; then
               # Label the current spec version.
@@ -73,15 +73,15 @@ jobs:
 
             trimmed_ref="HEAD"
 
-            mkdir -p "gh-pages/device-trust-anchor-management/${trimmed_ref}"
-            cp specifications/device-trust-anchor-management/spec.html "gh-pages/device-trust-anchor-management/${trimmed_ref}/index.html"
-            echo "Added webpage device-trust-anchor-management/${trimmed_ref}/index.html"
+            mkdir -p "gh-pages/device-identity-provisioning/${trimmed_ref}"
+            cp specifications/device-identity-provisioning/spec.html "gh-pages/device-identity-provisioning/${trimmed_ref}/index.html"
+            echo "Added webpage device-identity-provisioning/${trimmed_ref}/index.html"
           done
 
-      - name: Upload artifacts for device-trust-anchor-management spec
+      - name: Upload artifacts for device-identity-provisioning spec
         uses: actions/upload-artifact@v4
         with:
-          name: device-trust-anchor-management
+          name: device-identity-provisioning
           path: gh-pages
 
   deploy:
@@ -89,12 +89,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: [device-trust-anchor-management-spec]
+    needs: [device-identity-provisioning-spec]
     steps:
-      - name: Download device-trust-anchor-management artifacts
+      - name: Download device-identity-provisioning artifacts
         uses: actions/download-artifact@v4
         with:
-          name: device-trust-anchor-management
+          name: device-identity-provisioning
           path: gh-pages
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
