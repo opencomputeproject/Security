@@ -102,6 +102,8 @@ In a simple case, such as the one illustrated in @fig:device-cert-hierarchy, a d
 
 ![Device certificate hierarchy](./diagrams/device_cert_hierarchy.drawio.svg){#fig:device-cert-hierarchy}
 
+Note: see Appendix [-@sec:dice-terminology-clarification] for clarification on DICE terminology in this and later diagrams.
+
 A separate PKI owner may elect to issue their own certificate for the device's identity upon receipt of the device. This identity certificate chains back to the PKI owner's root key, rather than the vendor's. Verifiers can verify attestations against the PKI owner's root key, rather than the vendor's.
 
 @fig:operator-anchor-point illustrates the case of a data center operator acting as a PKI owner and issuing a certificate for the device's identity.
@@ -189,3 +191,13 @@ TODO: fill in
 ## Confidential compute considerations
 
 TODO: fill in
+
+# Appendix
+
+## Clarification of DICE Terminology {#sec:dice-terminology-clarification}
+
+In this specification, several example device identity key hierarchies use the term "FMC". In this context, FMC stands for "First Mutable Code".
+
+In TCG's DICE Hardware Requirements [@{tcg-dice-hardware-requirements}], FMC is defined as "First Measured Code", and is "the code and/or configuration information that is executed and/or takes effect immediately following the Device Identifier Composition Engine". First Measured Code is synonymous with Layer 0 in the DICE Layering Architecture [@{tcg-dice-layering-architecture}].
+
+The difference between First Measured Code and First Mutable Code is subtle but important. In Caliptra, the First Measured Code corresponds with the Caliptra ROM layer. As such, Caliptra's Device ID or IDevID keypair is wielded by ROM, rather than Caliptra's FMC.
