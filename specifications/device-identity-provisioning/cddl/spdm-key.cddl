@@ -12,6 +12,6 @@ spdm-key-dict = {
 }
 
 spdm-key-map = {
-  &(key: 0) =>  [+ spdm-key-map]
+  &(key: 0) =>  [+ spdm-key-dict]
 }
 
