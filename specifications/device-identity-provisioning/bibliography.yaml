@@ -3,3 +3,17 @@ references:
     title: "Caliptra"
     publisher: "CHIPS Alliance"
     url: "https://caliptra.io"
+  - id: "tcg-dice-layering-architecture"
+    title: "TCG DICE Layering Architecture version 1.0 r0.19"
+    publisher: "Trusted Computing Group"
+    issued:
+      year: 2020
+      month: 7
+    url: "https://trustedcomputinggroup.org/wp-content/uploads/DICE-Layering-Architecture-r19_pub.pdf"
+  - id: "tcg-dice-hardware-requirements"
+    title: "Hardware Requirements for a Device Identifier Composition Engine version 1.0 r0.91"
+    publisher: "Trusted Computing Group"
+    issued:
+      year: 2024
+      month: 8
+    url: "https://trustedcomputinggroup.org/wp-content/uploads/Hardware-Requirements-for-a-Device-Identifier-Composition-Engine-Version-1.0-Revision-0.91_pub.pdf"
