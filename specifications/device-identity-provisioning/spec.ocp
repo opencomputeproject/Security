@@ -178,7 +178,117 @@ TODO: fill in
 
 ## Establishing trust in a selected identity keypair {#sec:establishing-trust-in-identity}
 
-TODO: fill in
+To allow a remote party to establish trust in a selected keypair, the device can emit a CSR. This is supported in SPDM 1.3 [@{spdm-1.3}] via the GET_CSR command. However, there is a drawback to GET_CSR as it is currently defined: the CSR is signed only by the subject key, and does not include a way to attest that the CSR was emitted from a given device.
+
+To allow a device to attest that a given key is trustworthy, the device should issue its own endorsement over the keypair, which can include a freshness nonce and additional metadata, such as the key's derivation attribute OID.
+
+![Endorsed CSR](./diagrams/endorsed_csr.drawio.svg){#fig:endorsed-csr}
+
+The CSR is included as a component of a Conceptual Message Wrapper [@{ietf-cmw}].
+
+Some devices may not support the generation of self-signed CSRs for certain keys in their identity key hierarchy, such as LDevID. To support such devices, this specification defines a "null-signed CSR", which includes the subject public key but an all-zeroes signature field. The null-signed CSR is still itself signed, by way of the Conceptual Message Wrapper.
+
+![Endorsed Null-signed CSR](./diagrams/endorsed_csr_nullsigned.drawio.svg){#fig:endorsed-csr-nullsigned}
+
+This specification provides a definition for a vendor-defined SPDM command, utilizing VENDOR_DEFINED_REQUEST from SPDM 1.3, which can be used to surface these endorsed CSRs.
+
+GET_ENDORSED_CSR request and ENDORSED_CSR response messages are transported as follows:
+
+- The Requester must use the SPDM VENDOR_DEFINED_REQUEST format
+- The Responder must use the SPDM VENDOR_DEFINED_RESPONSE format
+- The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain the value assigned in SPDM to identify OCP.
+- The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must be empty.
+- The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 01h to indicate GET_ENDORSED_CSR.
+- The GET_ENDORSED_CSR request and ENDORSED_CSR response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:ecsr-req] and [-@tbl:ecsr-resp].
+
+Table: GET_ENDORSED_CSR VendorDefinedReqPayload {#tbl:ecsr-req}
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandCode         | 1                   | Shall be 01h to indicate GET_ENDORSED_CSR.   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 4                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 6                   | Param1              | 1                   | KeyPairID. The value of this field           |
+|                     |                     |                     | shall be the keypair ID identifying          |
+|                     |                     |                     | the desired asymmetric key pair for          |
+|                     |                     |                     | which the CSR should be issued.              |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 7                   | Param2              | 1                   | Request Attributes. Shall adhere to          |
+|                     |                     |                     | Table 91 of SPDM 1.3.                        |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 8                   | RequesterInfoLength | 2                   | Shall be the length of the RequesterInfo     |
+|                     |                     |                     | field in bytes provided by the Requester.    |
+|                     |                     |                     | This field can be 0.                         |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 10                  | OpaqueDataLength    | 2                   | Shall be the length of the OpaqueData        |
+|                     |                     |                     | field in bytes provided by the Requester.    |
+|                     |                     |                     | The value should not be greater than 1024    |
+|                     |                     |                     | bytes. Shall be 0 if no OpaqueData is        |
+|                     |                     |                     | provided.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 12                  | endorser_keypair    | 1                   | The value of this field shall be the         |
+|                     |                     |                     | keypair ID identifying the desired           |
+|                     |                     |                     | asymmetric key pair which should be          |
+|                     |                     |                     | used to endorse the CSR.                     |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 13                  | nonce               | 32                  | The Requester should choose a random         |
+|                     |                     |                     | value.                                       |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 45                  | RequesterInfo       | RequesterInfoLength | Shall be the optional information provided   |
+|                     |                     |                     | by the Requester. This field shall be        |
+|                     |                     |                     | DER-encoded.                                 |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 45 +                | OpaqueData          | OpaqueDataLength    | The Requester can include vendor-specific    |
+| RequesterInfoLength |                     |                     | information for the Responder to generate    |
+|                     |                     |                     | the CSR. This field is optional. If present, |
+|                     |                     |                     | this field shall conform to the selected     |
+|                     |                     |                     | opaque data format in OtherParamsSelection   |
+|                     |                     |                     | from Table 21 of SPDM 1.3.                   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+The following fields should be treated identically as in GET_CSR from SPDM 1.3:
+
+- Param1
+- Param2
+- RequesterInfoLength
+- OpaqueDataLength
+- RequesterInfo
+- OpaqueData
+
+The following fields present in this command are not present in GET_CSR:
+
+- **endorser_keypair** - defines which key signs the CSR envelope.
+- **nonce** - provides freshness.
+
+Table: ENDORSED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
+
++--------+-------------------+-------------------+----------------------------------------+
+| Byte   | Field             | Size (bytes)      | Description                            |
+| offset |                   |                   |                                        |
++========+===================+===================+========================================+
+| 0      | CommandCode       | 1                 | Shall be 01h to indicate ENDORSED_CSR. |
++--------+-------------------+-------------------+----------------------------------------+
+| 1      | CommandVersion    | 1                 | The version of this request structure. |
+|        |                   |                   | Shall be zero.                         |
++--------+-------------------+-------------------+----------------------------------------+
+| 2      | Reserved          | 4                 | Reserved.                              |
++--------+-------------------+-------------------+----------------------------------------+
+| 6      | EndorsedCSRLength | 2                 | Shall be the length of the             |
+|        |                   |                   | EndorsedCSRdata in bytes.              |
++--------+-------------------+-------------------+----------------------------------------+
+| 8      | EndorsedCSRdata   | EndorsedCSRLength | Shall be the requested contents of the |
+|        |                   |                   | endorsed CSR. This field shall be      |
+|        |                   |                   | CBOR-encoded.                          |
++--------+-------------------+-------------------+----------------------------------------+
+
+The EndorsedCSRdata shall adhere to the following requirements:
+
+- TODO: fill in
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
