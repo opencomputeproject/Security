@@ -2,7 +2,7 @@ name: Deploy specifications to GitHub pages
 
 on:
   push:
-    branches: ["master"]
+    branches: ["main"]
 permissions:
   contents: read
   pages: write
@@ -43,9 +43,9 @@ jobs:
           # Need to trust directory in the docker container.
           chown -R $(id -u):$(id -g) $PWD
 
-          # Publish pages for `master`
+          # Publish pages for `main`
           GIT_REFS=()
-          GIT_REFS+=("master")
+          GIT_REFS+=("main")
 
           for ref in "${GIT_REFS[@]}"; do
             echo "Building git ref $ref"
@@ -54,7 +54,7 @@ jobs:
 
             pushd specifications/device-identity-provisioning
 
-            if [[ "${ref}" == "master" ]]; then
+            if [[ "${ref}" == "main" ]]; then
               # Label the current spec version.
               commit_hash=$(git rev-parse --short HEAD)
               sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" spec.ocp
