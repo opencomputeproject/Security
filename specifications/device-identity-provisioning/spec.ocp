@@ -196,8 +196,8 @@ GET_ENDORSED_CSR request and ENDORSED_CSR response messages are transported as f
 
 - The Requester must use the SPDM VENDOR_DEFINED_REQUEST format
 - The Responder must use the SPDM VENDOR_DEFINED_RESPONSE format
-- The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain the value assigned in SPDM to identify OCP.
-- The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must be empty.
+- The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 4 (the value assigned in SPDM to identify IANA).
+- The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 42623 (the value assigned in IANA to identify Open Compute Project).
 - The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 01h to indicate GET_ENDORSED_CSR.
 - The GET_ENDORSED_CSR request and ENDORSED_CSR response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:ecsr-req] and [-@tbl:ecsr-resp].
 
