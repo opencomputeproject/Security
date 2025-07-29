@@ -216,8 +216,7 @@ Table: GET_ENDORSED_CSR VendorDefinedReqPayload {#tbl:ecsr-req}
 | 6                   | Param1              | 1                   | KeyPairID. The value of this field           |
 |                     |                     |                     | shall be the keypair ID identifying          |
 |                     |                     |                     | the desired asymmetric key pair for          |
-|                     |                     |                     | which the CSR should be issued. if 0xFF      |
-|                     |                     |                     | returns a list of all availabe CSRs          |
+|                     |                     |                     | which the CSR should be issued.              |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 7                   | Param2              | 1                   | Request Attributes. Shall adhere to          |
 |                     |                     |                     | Table 91 of SPDM 1.3.                        |
