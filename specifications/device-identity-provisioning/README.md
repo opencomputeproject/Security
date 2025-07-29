@@ -1,3 +1,5 @@
+# Device Identity Provisioning
+
 ## Specification Website
 
 A version of the specification tracking the latest content in the `master` branch can be found at https://opencomputeproject.github.io/Security/device-identity-provisioning/HEAD/.
