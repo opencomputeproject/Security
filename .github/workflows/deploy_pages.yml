@@ -16,12 +16,12 @@ defaults:
   run:
     shell: bash
 jobs:
-  # Upload Device Identity Provisioning spec
-  device-identity-provisioning-spec:
+  # Upload spec HTML
+  spec-html:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/trustedcomputinggroup/pandoc:latest
-    name: Render Device Identity Provisioning HTML
+    name: Render Spec HTML
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -36,7 +36,7 @@ jobs:
           fetch-tags: true
           repository: "opencomputeproject/ocp-spec-tools"
           # The underlying tex and templates assume this exists under the "extra" folder.
-          path: "specifications/device-identity-provisioning/extra"
+          path: "ocp-spec-tools"
 
       - name: Render Device Identity Provisioning HTML
         run: |
@@ -46,6 +46,8 @@ jobs:
           # Publish pages for `main`
           GIT_REFS=()
           GIT_REFS+=("main")
+
+          ln -s ocp-spec-tools specifications/device-identity-provisioning/extra
 
           for ref in "${GIT_REFS[@]}"; do
             echo "Building git ref $ref"
@@ -78,10 +80,52 @@ jobs:
             echo "Added webpage device-identity-provisioning/${trimmed_ref}/index.html"
           done
 
-      - name: Upload artifacts for device-identity-provisioning spec
+      - name: Render DPE iRoT Profile HTML
+        run: |
+          # Need to trust directory in the docker container.
+          chown -R $(id -u):$(id -g) $PWD
+
+          # Publish pages for `main`
+          GIT_REFS=()
+          GIT_REFS+=("main")
+
+          ln -s ocp-spec-tools specifications/dpe-irot-profile/extra
+
+          for ref in "${GIT_REFS[@]}"; do
+            echo "Building git ref $ref"
+
+            git reset --hard $ref
+
+            pushd specifications/dpe-irot-profile
+
+            if [[ "${ref}" == "main" ]]; then
+              # Label the current spec version.
+              commit_hash=$(git rev-parse --short HEAD)
+              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" spec.ocp
+            fi
+
+            /usr/bin/build.sh \
+              --crossref=tcg \
+              --csl extra/ocp-pandoc-resources/ieee.csl \
+              --nogitversion \
+              --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
+              --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
+              --html_stylesheet extra/ocp-pandoc-resources/html/github-markdown.css \
+              --html spec.html spec.ocp
+
+            popd
+
+            trimmed_ref="HEAD"
+
+            mkdir -p "gh-pages/dpe-irot-profile/${trimmed_ref}"
+            cp specifications/dpe-irot-profile/spec.html "gh-pages/dpe-irot-profile/${trimmed_ref}/index.html"
+            echo "Added webpage dpe-irot-profile/${trimmed_ref}/index.html"
+          done
+
+      - name: Upload artifacts for rendered specs
         uses: actions/upload-artifact@v4
         with:
-          name: device-identity-provisioning
+          name: rendered-html
           path: gh-pages
 
   deploy:
@@ -89,12 +133,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: [device-identity-provisioning-spec]
+    needs: [spec-html]
     steps:
-      - name: Download device-identity-provisioning artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: device-identity-provisioning
+          name: rendered-html
           path: gh-pages
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
