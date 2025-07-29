@@ -47,7 +47,7 @@ jobs:
           GIT_REFS=()
           GIT_REFS+=("main")
 
-          ln -s ocp-spec-tools specifications/device-identity-provisioning/extra
+          cp -R ocp-spec-tools specifications/device-identity-provisioning/extra
 
           for ref in "${GIT_REFS[@]}"; do
             echo "Building git ref $ref"
@@ -89,7 +89,7 @@ jobs:
           GIT_REFS=()
           GIT_REFS+=("main")
 
-          ln -s ocp-spec-tools specifications/dpe-irot-profile/extra
+          cp -R ocp-spec-tools specifications/dpe-irot-profile/extra
 
           for ref in "${GIT_REFS[@]}"; do
             echo "Building git ref $ref"
