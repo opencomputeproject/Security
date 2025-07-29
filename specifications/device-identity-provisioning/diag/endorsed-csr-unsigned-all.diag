@@ -1,14 +1,16 @@
-/ tagged-spdm-key-map / 572( {
+/ ocp-endorsed-csr-map  / 572( {
    / key / 0 : [
     {
       / id / 0 : 0,
-      / attrib / 1: [
+      / csr / 1 :  h'59025630820252308201d9a003020102021431a4e0',
+      / attrib / 2: [
         / tagged-oid-type / 111(h'6086480186F84D010F046301')
         ]
     },
     {
       / id / 0 : 1,
-      / attrib / 1: [
+      / csr / 1 :  h'59025630820252308201d9a003020102021431a4e0',
+      / attrib / 2: [
         / tagged-oid-type / 111(h'6086480186F84D010F046301')
         ]
     }

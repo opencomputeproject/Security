@@ -1,0 +1,18 @@
+ocp-endorsed-csr = ocp-endorsed-csr-map / tagged-ocp-endorsed-csr
+
+tagged-ocp-endorsed-csr= #6.572(ocp-endorsed-csr) ; speculative because IANA registry is still pending
+
+; TODO: OCP will assign few attributes types but the field is not restricted to those
+
+ocp-endorsed-csr-map = {
+  &(key: 0) =>  [+ ocp-endorsed-csr-dict]
+}
+
+ocp-endorsed-csr-dict = {
+  &(id: 0) => uint
+  &(csr: 1) => bstr
+  &(attrib: 2) => [+ $key-attributes-type]
+}
+
+$key-attributes-type = tagged-oid-type
+
