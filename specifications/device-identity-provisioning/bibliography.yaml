@@ -32,7 +32,7 @@ references:
       month: 5
     url: "https://datatracker.ietf.org/doc/html/rfc8392"
   - id: ietf-eat
-    title: "RATS Entity Attestation Token"
+    title: "Entity Attestation Token"
     publisher: "IETF"
     issued:
       year: 2025
