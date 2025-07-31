@@ -9,9 +9,8 @@ signed-cwt / 18([
       / eat-profile / 265 : h'88378952',
       / iss / 1 : "RT Alias Key",
       / nonce / 10: h'AAAABBBBAAAABBBBAAAABBBB', 
-      / id / -70001 : 0,
-      / csr / -70002 :  h'59025630820252308201d9a003020102021431a4e0',
-      / attrib / -70003: [
+      / csr / -70001 :  h'59025630820252308201d9a003020102021431a4e0',
+      / attrib / -70002: [
       / tagged-oid-type / 111(h'6086480186F84D010F046301')
       ]
   }>>,

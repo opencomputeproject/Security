@@ -10,14 +10,11 @@ cwt-envelope-signed-csr-eat = {
   
   ; Private Claims (they have to be < -65536 for rfc8392)
   
-  ; KeyPair Id
-  ?&(id: -70001) => uint
-
   ; CSR bytestring
-  &(csr: -70002) => bstr
+  &(csr: -70001) => bstr
 
   ; Attribute List of OIDs
-  &(attrib: -70003) => [+ $key-attributes-type]
+  &(attrib: -70002) => [+ $key-attributes-type]
 }
 
 $key-attributes-type = tagged-oid-type
