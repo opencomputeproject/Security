@@ -178,7 +178,7 @@ TODO: fill in
 
 ## Establishing trust in a selected identity keypair {#sec:establishing-trust-in-identity}
 
-To allow a remote party to establish trust in a selected keypair, the device can emit a CSR. This is supported in SPDM 1.3 [@{spdm-1.3}] via the GET_CSR command. However, there is a drawback to GET_CSR as it is currently defined: the CSR is signed only by the subject key, and does not include a way to attest that the CSR was emitted from a given device.
+To allow a remote party to establish trust in a selected keypair, the device can emit a Certification Signing Request (CSR) [@{pkcs-10}]. This is supported in SPDM 1.3 [@{spdm-1.3}] via the GET_CSR command. However, there is a drawback to GET_CSR as it is currently defined: the CSR is signed only by the subject key, and does not include a way to attest that the CSR was emitted from a given device.
 
 To allow a device to attest that a given key is trustworthy, the device should issue its own signature over the public key, which can include a freshness nonce and additional metadata, such as the key's derivation attribute OID.
 
@@ -302,7 +302,7 @@ The EnvelopeSignedCSRdata shall adhere to the following requirements:
 - The EAT SHALL conform to the OCP Envelope-Signed CSR EAT profile (TODO: OCP to assign OID for this profile).
 - The EAT SHALL include standard claims for issuer identification and nonce for freshness verification.
 - The EAT SHALL include private claims[^private-claims] containing:
-  - The Certification Signing Request (CSR) as a byte string
+  - The CSR as a byte string
   - An array of OIDs representing the key's derivation attributes (see @sec:key-derivation-attribute-oids for defined OIDs)
 - The CSR included in the EAT SHALL be DER-encoded and may be either self-signed or non-self-signed depending on device capabilities. For non-self-signed CSRs, the signature field SHALL contain all zeroes and be the same size as would be required for a valid signature using the subject key's algorithm.
 - The nonce claim SHALL match the nonce value provided in the GET_ENVELOPE_SIGNED_CSR request to ensure freshness.
