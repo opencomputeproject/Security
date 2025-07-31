@@ -24,10 +24,17 @@ references:
       year: 2024
       month: 9
     url: "https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.3.2.pdf"
-  - id: ietf-cmw
-    title: "RATS Conceptual Messages Wrapper (CMW)"
+  - id: ietf-cwt
+    title: "CBOR Web Token (CWT)"
+    publisher: "IETF"
+    issued:
+      year: 2018
+      month: 5
+    url: "https://datatracker.ietf.org/doc/html/rfc8392"
+  - id: ietf-eat
+    title: "RATS Entity Attestation Token"
     publisher: "IETF"
     issued:
       year: 2025
-      month: 7
-    url: "https://www.ietf.org/archive/id/draft-ietf-rats-msg-wrap-16.html"
+      month: 4
+    url: "https://datatracker.ietf.org/doc/rfc9711/"

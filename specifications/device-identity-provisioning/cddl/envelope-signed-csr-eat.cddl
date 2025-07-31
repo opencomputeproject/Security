@@ -1,5 +1,5 @@
-cwt-enveloped-csr-eat = {  
-  ; The EAT Profile for Endorsed CSR OCP will register
+cwt-envelope-signed-csr-eat = {  
+  ; The EAT Profile for Envelope-Signed CSR OCP will register
   &(eat-profile : 265 ) => ~oid ; "2.16.840.1.113741.1.16.1" - note: `~` strips CBOR tag #6.111(oid) from `oid`
 
   ; Issuer claim is StringOrURI (tstr)
@@ -11,7 +11,7 @@ cwt-enveloped-csr-eat = {
   ; Private Claims (they have to be < -65536 for rfc8392)
   
   ; KeyPair Id
-  &(id: -70001) => uint
+  ?&(id: -70001) => uint
 
   ; CSR bytestring
   &(csr: -70002) => bstr
@@ -27,7 +27,7 @@ signed-cwt = #6.18(COSE-Sign1-concise-evidence)
 COSE-Sign1-concise-evidence = [
   protected: bstr .cbor protected-ce-header-map
   unprotected: unprotected-ce-header-map
-  payload: bstr .cbor cwt-enveloped-csr-eat
+  payload: bstr .cbor cwt-envelope-signed-csr-eat 
   signature: bstr
 ]
 
