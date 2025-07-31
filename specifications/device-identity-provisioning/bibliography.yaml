@@ -38,3 +38,10 @@ references:
       year: 2025
       month: 4
     url: "https://datatracker.ietf.org/doc/rfc9711/"
+  - id: pkcs-10
+    title: "PKCS #10: Certification Request Syntax Specification Version 1.7"
+    publisher: "IETF"
+    issued:
+      year: 2000
+      month: 11
+    url: "https://datatracker.ietf.org/doc/html/rfc2986"
