@@ -184,7 +184,7 @@ To allow a device to attest that a given key is trustworthy, the device should i
 
 ![Envelope-signed CSR](./diagrams/envelope_signed_csr.drawio.svg){#fig:envelope-signed-csr}
 
-The CSR is included as a component of a Conceptual Message Wrapper [@{ietf-cmw}].
+The CSR is included as a claim of a CBOR Web Token [@{ietf-cwt}].
 
 Metadata such as the key's derivation attribute OID can also be embedded in a CoRIM. The mechanism for this is out of scope of this specification.
 
@@ -298,7 +298,30 @@ Table: ENVELOPE_SIGNED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
 
 The EnvelopeSignedCSRdata shall adhere to the following requirements:
 
-- TODO: fill in
+- The payload SHALL be an Entity Attestation Token (EAT) [@{ietf-rats-eat}] encoded as a CBOR Web Token (CWT) [@{ietf-cwt}].
+- The EAT SHALL conform to the OCP Envelope-Signed CSR EAT profile (TODO: OCP to assign OID for this profile).
+- The EAT SHALL include standard claims for issuer identification and nonce for freshness verification.
+- The EAT SHALL include private claims[^private-claims] containing:
+  - The Certification Signing Request (CSR) as a byte string
+  - An array of OIDs representing the key's derivation attributes (see @sec:key-derivation-attribute-oids for defined OIDs)
+- The CSR included in the EAT SHALL be DER-encoded and may be either self-signed or non-self-signed depending on device capabilities. For non-self-signed CSRs, the signature field SHALL contain all zeroes and be the same size as would be required for a valid signature using the subject key's algorithm.
+- The nonce claim SHALL match the nonce value provided in the GET_ENVELOPE_SIGNED_CSR request to ensure freshness.
+- If SignerSlotIDParam indicates a signed envelope, the CWT SHALL be signed by an Attestation Key endorsed by the certificate chain corresponding to the specified SlotID. In addition, the unprotected header of the CWT SHALL contain the Attestation Key's certificate chain, including at least all certificates from the Attestation Key up to the identity certificate issued by the slot's PKI owner.
+  - E.g., Slot 0's certificate chain would extend at least to the vendor-endorsed certificate over IDevID. A separate slot's certificate chain would extend at least to the certificate issued by the slot's configured PKI owner.
+  - A device may report intermediate certificates for the slot's PKI owner if it is configured to do so.
+
+[^private-claims]: RFC 8392 defines a private claim as one whose key value has an integer value < -65536.
+
+### Key Derivation Attribute OIDs {#sec:key-derivation-attribute-oids}
+
+The following OIDs are defined for key derivation attributes:
+
+- **Derived from Owner Entropy Fuse** - (TODO: OCP to assign OID)
+- **Derived from First Mutable Code** - (TODO: OCP to assign OID)
+- **Derived from Non-First Mutable Code** - (TODO: OCP to assign OID)
+- **Derived from Owner Provisioned Key** - (TODO: OCP to assign OID)
+
+These OIDs indicate which inputs contribute to the derivation of the identity key for which the CSR is being requested.
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
