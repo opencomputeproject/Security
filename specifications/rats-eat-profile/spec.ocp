@@ -1,0 +1,297 @@
+---
+title: "OCP Profile for RATS Entity Attestation Token (Draft)"
+version: 0.1
+type: BASE
+project: Security
+authors: [(See Acknowledgements section)]
+bibliography: bibliography.yaml
+...
+---
+
+\currenttemplateversion
+
+---
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+---
+
+<!-- Will bring this in when its an actual contribution
+
+# License
+
+## Open Web Foundation (OWF) CLA
+
+-->
+
+# Acknowledgements
+
+The Contributors of this Specification would like to acknowledge the following:
+
+- Fabrizio Damato (AMD)
+- Piotr Kwidzinski (AMD)
+- Jason Young (Google)
+- Jeff Andersen (Google)
+- Ned Smith (Intel)
+- Roksana Golizadeh Mojarad (Microsoft)
+- Steven Bellock (Nvidia)
+
+# Compliance with OCP Tenets
+
+<!---
+Please describe how this Specification complies with the OCP tenets. 
+A full explanation of the OCP core tenets can be seen [here](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/bf648bb75091907147e76846cad590f402660d2e.pdf).
+-->
+
+## Openness
+
+This specification is open.
+
+## Efficiency
+
+This specification is efficient.
+
+## Impact
+
+This specification is impactful.
+
+## Scale
+
+This specification is scalable.
+
+## Sustainability
+
+This specification is sustainable.
+
+# Overview
+
+This profile builds on the **Concise Evidence Binding for SPDM**
+[@{tcg-dice-concise-evidence-binding-for-spdm}] by defining a dedicated
+profile. This profile utilizes a **CBOR Web Token (CWT)** that includes claims
+as defined by **Entity Attestation Token (EAT)** to ensure the integrity of
+CoEv through the implementation of a **COSE_Sign1** data structure.
+
+The document details the binding between the **Secure Protocol and Data Model
+(SPDM)** and the CWT Data Structure profile tailored for Data Center devices.
+Importantly, while the profile is designed to integrate seamlessly with SPDM as
+the message exchange protocol, its usage is not restricted solely to SPDM and
+can be applied with other protocols as well.
+
+The primary objective of this specification is to establish a standardized
+method for representing evidence that is scalable across a diverse range of
+attesters, including **Systems on Chips (SoCs)**, hard drives, and AI
+accelerators. By providing a unified approach, the specification aims to
+simplify and streamline the attestation process within complex and
+heterogeneous environments.
+
+## Terms and Definitions
+
+- **CWT**: CBOR Web Token
+- **SPDM**: Secure Protocol and Data Model 
+- **DICE**: Device Identifier Composition Engine 
+- **AK**: Attestation Key 
+- **RATS**: Remote Attestation Procedures 
+- **EAT**: Entity Attestation Token
+- **CDDL**: Concise Data Definition Language 
+- **CBOR**: Concise Binary Object Representation 
+
+## Introduction
+
+This specification details how an attester should represent its evidence within
+a CBOR Web Token (CWT) Profile. Specifically, the CWT serves as the CBOR
+(Concise Binary Object Representation) encoding of a RATS (Remote Attestation
+and Trust Status) Entity Attestation Token (EAT), in accordance with the CDDL
+(Concise Declarative Data Language) semantics. The specification delineates the
+essential set of claims required within the CWT to form a coherent and
+interoperable profile.
+
+Moreover, the specification elaborates on the method for transmitting the CWT
+via SPDM (Security Protocol and Data Model), as outlined in the "Concise
+Evidence Binding for SPDM" [@{tcg-dice-concise-evidence-binding-for-spdm}]. It
+is crucial to note that while the profile is designed to work effectively with
+SPDM, it is not limited to this protocol and can be employed with alternative
+transmission methods as needed.
+
+## Motivation
+
+Data centers are becoming increasingly complex due to the growing number of
+integrated devices. For Cloud Service Providers (CSPs) and their tenants,
+evaluating the security posture of these intricate configurations is vital.
+This specification aims to simplify the attestation process by providing a
+common profile for representing evidence across various vendors’ devices,
+thereby reducing the diversity of environments that RATS Verifiers need to
+accommodate.
+
+## Scope
+
+This profile defines the evidence format for an Attester Endpoint Application.
+With respect to RFC 9711, it is a partial profile, as it allows the integrator
+to choose the algorithm to use for signing the statement. It is application
+layer agnostic, supporting implementations such as an SPDM Responder or any
+other custom solution. The profile focuses solely on the evidence related to
+the claims gathered by the Attester Application. Consequently, it does not
+differentiate whether the Attestation Key is part of a DICE hierarchy that
+attests to the measurements of the Attester Application, or if the Attester
+Application measurements are implicitly trusted or verified in a separate
+manner. The profile's scope is solely intended to guide both attesters and
+verifiers on the recommended claims and appraisal policy methodologies. It is
+important to note that this profile does not extend any CDDL, as it uses CDDL
+already defined by the IETF CoRIM Draft and DICE Concise Evidence.
+
+The evidence is expressed as a CBOR Web Token (CWT). This profile describes the
+list of claims that must be included in the CWT and how they should be used.
+Additionally, the profile outlines how the COSE_Sign1 fields must be populated
+and asserts that the certificate path of the Attestation Key must be included
+in the unsigned section of the COSE_Sign1 header.
+
+<-- TODO: insert diagram here -->
+
+## CWT Claim Set
+
+The CWT claim set is intentionally minimalistic, serving primarily as an
+integrity-protected wrapper for concise evidence.
+
+1. **eat-profile**
+    * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID assigned to the OCP Profile. **TODO: OCP to assign OID Value**
+2. **eat-issuer**
+    * This claim is optionally used by the attester to bind the EAT to the certificate chain that issued it. If present, **SHALL** match the SUBJECT Common Name of the Attestation Key (AK) Certificate.
+3. **eat-nonce**
+    * This claim is used by the attester to ensure the freshness of the response. It **MUST** be present and **SHALL** be a string or an array of strings. It **SHALL** contain as minimum the nonce value passed by the requester.
+4. **eat-measurements**
+    * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a “concise-evidence” using the appropriate IANA media type.
+5. **rim-locators**
+    * This claim is used by the attester to point the verifier to the rim repository. If present, **SHALL** be an array of corim-locator-map (as defined by the IETF CoRIM Draft).
+
+The cwt-eat statement is defined as follows:
+
+## Attesters Topology
+
+In certain setups, an attester may need to gather evidence from additional
+devices, including a **Root of Trust (RoT)**. In such scenarios, this attester
+acts as the lead attester, while the other devices serve as sub-attesters.
+
+Ensuring the freshness of evidence collected by the lead attester from the
+sub-attesters is essential. To achieve this, the attester will present a
+secondary nonce. The Lead Attester creates a random value and uses it to
+request evidence from the sub-attesters.
+
+Both the lead attester and the sub-attesters are required to attest to this
+value: it **MUST** be present in both lead attester and sub-attester evidence
+as nonce claim.
+
+A Remote verifier confirms that the evidence from the sub attester has been
+gathered by the lead attester by verifying that one of the eat-nonce in the
+lead attester’s evidence matches the eat-nonce located in the sub attester’s
+evidence. Additionally, the requester is expected to relax time constraints to
+accommodate any latency the lead attester may experience while collecting
+evidence from the sub-attesters.
+
+<-- TODO: insert diagram here -->
+
+## CWT Integrity Protection
+
+The CWT is protected against integrity breaches and can be cryptographically
+authenticated. An **Attestation Key (AK)**, which is managed by the Attester’s
+**Root of Trust (RoT)**, is used to sign the **COSE_Sign1** [@{ietf-rfc8152}]
+data structure that ensures the integrity of the token.
+
+The unprotected section of the COSE_Sign1 data structure is not secured by the
+CWT signature and **MUST** include an **x5-chain** field [@{ietf-rfc9360}].
+This x5-chain field **SHALL** be either a single byte string (bstr) or an array
+of byte strings and **MUST** contain at least one ASN.1 DER-encoded
+certificate, specifically the Attestation Key (AK) Certificate. The AK
+Certificate may optionally include a TCBInfo extension, which reports the
+Attester's **TCB (Trusted Computing Base)** Claims.
+
+Additionally, an Attester has the option to include a complete certificate path
+within the x5-chain, extending from a recognized Trusted Anchor (such as a
+Vendor Root CA) or up to the Initial Device Identity (IDEVID).
+
+The signed-cwt CDDL is defined in the following manner:
+
+## Concise Evidence
+
+The concise evidence **MUST** be defined according to the specifications
+outlined in [@{tcg-dice-concise-evidence-binding-for-spdm}] and **SHOULD**
+comprehensively describe all **Target Environments**
+that the Attester Environment is responsible for attesting. The concise
+evidence **SHALL** follow the definition from
+[@{tcg-dice-concise-evidence-binding-for-spdm}]. The choice of using concise evidence
+to report the target environment claims is to converge on the
+“reference-triple” [@{tcg-dice-concise-evidence-binding-for-spdm}] data
+structure used by the CoRIM to represent reference values, simplifying the
+appraisal policy for the verifier.
+
+<-- TODO: insert diagram here -->
+
+Each Target Environment **MUST** comprehensively describe three key components:
+
+1. **Firmware (FW) Component**: This includes details such as
+* Name
+* Digest (a cryptographic hash of the firmware)
+* SVN (Security Version Number)
+* FW version
+* Vendor ID
+* Product ID
+* Digest of FW journey to reflect impactless update since last cold reboot
+* List of FW version since last cold reboot
+* Flags Attributes that indicate specific firmware states or configurations like debug mode or production mode, anti-roll back enable or disable
+
+The table below maps the above entries with the reference-triple dictionary structure:
+
+| Field | reference-triple entry | Description |
+| :--- | :--- | :--- |
+| Name | environment-map->class->class_id | Identification of the Component |
+| Vendor | environment-map->class->vendor | Identification of the Platform Vendor |
+| Model | environment-map->class->model | Identification of the Platform Model |
+| Version | measurement-map->mval->version | FW version number |
+| SVN | measurement-map->mval->SVN | FW Security Version Number |
+| Digest | measurement-map->mval->digests | FW Digest (Current) |
+| Journey Digest | measurement-map->mval->integrity-registers | FW Journey Measurement |
+
+2. **Hardware (HW) Configuration**: This includes details such as
+    * Fuse Settings
+    * Crypto HW security posture
+    * Selected/configured Encryption type and key size for memory encryption engines
+    * FIPS status of relevant boundary for FW component
+    * HW configurations and settings that impacts security posture like device life cycle and so on
+    * Note, this info **MUST** be defined for CPU, devices, and links as all would impact the target environment.
+
+The table below maps the above entries with the reference-triple dictionary structure:
+
+| Field | reference-triple entry | Description |
+| :--- | :--- | :--- |
+| Name | environment-map->class->class_id | Identification of the Component |
+| Vendor | environment-map->class->vendor | Identification of the Attester Vendor |
+| Model | environment-map->class->model | Identification of the Attester Model |
+| Digest | measurement-map->mval->digests | Digest of the Secure Fuse Configuration |
+| Value | measurement-map->mval->raw_value | (Optional) Raw Value of the Fuse Setting |
+
+3. **Software (SW) Configuration**: This includes information about the
+software environment, such as the Debug State, which indicates whether
+debugging features are enabled or disabled, along with other relevant software
+parameters such as
+    * Configured migration pool policy
+    * Total memory encryption enable/disable
+    * Configured I/O policy
+
+The table below maps the above entries with the reference-triple dictionary structure:
+
+| Field | reference-triple entry | Description |
+| :--- | :--- | :--- |
+| Name | environment-map->class->class_id | Identification of the Component |
+| Vendor | environment-map->class->vendor | Identification of the Attester Vendor |
+| Model | environment-map->class->model | Identification of the Attester Model |
+| Value | measurement-map->mval->raw_value | Raw Value of the Security Setting |
+| ValueMask | measurement-map->mval->raw_value_mask | (Optional) Raw Value Mask |
+
+## Appendix
+
+The following example illustrates a CWT containing claims for three target environments:
+* **Firmware (FW) Component**: Digest and Security Version Number (SVN)
+* **Hardware (HW) Configuration**: RAW Value (e.g., Fuse Configuration)
+* **Software (SW) Configuration**: RAW Value (e.g., Debug State)
