@@ -1,5 +1,5 @@
 cwt-envelope-signed-csr-eat = {  
-  ; The EAT Profile for Envelope-Signed CSR OCP will register
+  ; The EAT Profile for OCP OID
   &(eat-profile : 265 ) => ~oid ; "2.16.840.1.113741.1.16.1" - note: `~` strips CBOR tag #6.111(oid) from `oid`
 
   ; Issuer claim is StringOrURI (tstr)
@@ -39,4 +39,5 @@ unprotected-ce-header-map = {
   ? &(x5-chain: 33) => bstr / [ 2*certs: bstr ]
   * cose-label => cose-value
 }
+
 
