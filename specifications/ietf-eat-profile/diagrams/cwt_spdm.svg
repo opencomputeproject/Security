@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="background: #ffffff; background-color: light-dark(#ffffff, #121212);" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+		xmlns:v="http://schemas.microsoft.com/visio/2003/SVGExtensions/" width="8.5in" height="11in" viewBox="0 0 612 792"
+		xml:space="preserve" color-interpolation-filters="sRGB" class="st16">
+	<v:documentProperties v:langID="1033" v:viewMarkup="false">
+		<v:userDefs>
+			<v:ud v:nameU="msvNoAutoConnect" v:val="VT0(1):26"/>
+		</v:userDefs>
+	</v:documentProperties>
+
+	<style type="text/css">
+	<![CDATA[
+		.st1 {fill:url(#grad0-4);stroke:#000000;stroke-width:0.75}
+		.st2 {fill:#000000;font-family:Calibri;font-size:1.00001em}
+		.st3 {font-size:1em}
+		.st4 {fill:url(#grad0-11);stroke:#ae5a21;stroke-width:0.75}
+		.st5 {fill:#feffff;font-family:Calibri;font-size:1.00001em;font-style:italic}
+		.st6 {fill:#bfbfbf}
+		.st7 {stroke:#8a98ab;stroke-width:0.75}
+		.st8 {fill:#a5a5a5;stroke:#8a98ab;stroke-width:0.75}
+		.st9 {fill:#feffff;font-family:Calibri;font-size:1.00001em;font-weight:bold}
+		.st10 {marker-end:url(#mrkr4-36);stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:1}
+		.st11 {fill:#000000;fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:0.28409090909091}
+		.st12 {fill:#ffffff}
+		.st13 {stroke:#000000;stroke-width:0.25}
+		.st14 {fill:#ffffff;stroke:#000000;stroke-width:0.25;visibility:hidden}
+		.st15 {fill:#ffffff;stroke:none;stroke-linecap:butt}
+		.st16 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<defs id="Patterns_And_Gradients">
+		<linearGradient id="grad0-4" x1="0" y1="0" x2="1" y2="0" gradientTransform="rotate(60 0.5 0.5)">
+			<stop offset="0" stop-color="#e8ebf4" stop-opacity="1"/>
+			<stop offset="0.24" stop-color="#f4f5f9" stop-opacity="1"/>
+			<stop offset="0.54" stop-color="#feffff" stop-opacity="1"/>
+		</linearGradient>
+		<linearGradient id="grad0-11" x1="0" y1="0" x2="1" y2="0" gradientTransform="rotate(250 0.5 0.5)">
+			<stop offset="0" stop-color="#d06d29" stop-opacity="1"/>
+			<stop offset="0.48" stop-color="#d06d29" stop-opacity="1"/>
+			<stop offset="0.82" stop-color="#ed7d31" stop-opacity="1"/>
+		</linearGradient>
+	</defs>
+	<defs id="Markers">
+		<g id="lend4">
+			<path d="M 2 1 L 0 0 L 2 -1 L 2 1 " style="stroke:none"/>
+		</g>
+		<marker id="mrkr4-36" class="st11" v:arrowType="4" v:arrowSize="2" v:setback="7.04" refX="-7.04" orient="auto"
+				markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend4" transform="scale(-3.52,-3.52) "/>
+		</marker>
+	</defs>
+	<g v:mID="0" v:index="1" v:groupContext="foregroundPage">
+		<title>Page-1</title>
+		<v:pageProperties v:drawingScale="1" v:pageScale="1" v:drawingUnits="19" v:shadowOffsetX="8.50394"
+				v:shadowOffsetY="-8.50394"/>
+		<v:layer v:name="Connector" v:index="0"/>
+		<g id="shape5-1" v:mID="5" v:groupContext="shape" transform="translate(135,-299.48)">
+			<title>Rectangle.1000</title>
+			<desc>Attester Application (e.g SPDM Responder)</desc>
+			<v:userDefs>
+				<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+			</v:userDefs>
+			<v:textBlock v:margins="rect(4,4,4,4)"/>
+			<v:textRect cx="56.6929" cy="749.48" width="113.39" height="85.0394"/>
+			<rect x="0" y="706.961" width="113.386" height="85.0394" class="st1"/>
+			<text x="7.78" y="738.68" class="st2" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>Attester Application<v:newlineChar/><tspan
+						x="31.52" dy="1.2em" class="st3">(e.g SPDM </tspan><tspan x="28.59" dy="1.2em" class="st3">Responder)</tspan></text>		</g>
+		<g id="shape6-8" v:mID="6" v:groupContext="shape" transform="translate(293.339,-366.418)">
+			<title>Snip Corner Rectangle.1003</title>
+			<desc>OCP Profile Claim 0 Claim 1 Claim 2 Signature</desc>
+			<v:userDefs>
+				<v:ud v:nameU="CTypeTopLeftSnip" v:prompt="" v:val="VT0(1):5"/>
+				<v:ud v:nameU="CTypeTopRightSnip" v:prompt="" v:val="VT0(1):5"/>
+				<v:ud v:nameU="CTypeBotLeftSnip" v:prompt="" v:val="VT0(1):5"/>
+				<v:ud v:nameU="CTypeBotRightSnip" v:prompt="" v:val="VT0(1):5"/>
+				<v:ud v:nameU="CornerLockHoriz" v:prompt="" v:val="VT0(0):5"/>
+				<v:ud v:nameU="CornerLockVert" v:prompt="" v:val="VT0(0):5"/>
+				<v:ud v:nameU="CornerLockDiag" v:prompt="" v:val="VT0(0):5"/>
+				<v:ud v:nameU="TopLeftOffset" v:prompt="" v:val="VT0(0.15748031496063):24"/>
+				<v:ud v:nameU="TopRightOffset" v:prompt="" v:val="VT0(0.15748031496063):24"/>
+				<v:ud v:nameU="BotLeftOffset" v:prompt="" v:val="VT0(0.15748031496063):24"/>
+				<v:ud v:nameU="BotRightOffset" v:prompt="" v:val="VT0(0.15748031496063):24"/>
+				<v:ud v:nameU="visVersion" v:prompt="" v:val="VT0(15):26"/>
+				<v:ud v:nameU="TopLeftOffset" v:prompt="" v:val="VT0(0.13517059514799):1"/>
+				<v:ud v:nameU="TopRightOffset" v:prompt="" v:val="VT0(0.13517059514799):1"/>
+				<v:ud v:nameU="BotLeftOffset" v:prompt="" v:val="VT0(0.13517059514799):1"/>
+				<v:ud v:nameU="BotRightOffset" v:prompt="" v:val="VT0(0.13517059514799):1"/>
+			</v:userDefs>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197" v:verticalAlign="0"/>
+			<v:textRect cx="48.6614" cy="739.863" width="97.33" height="104.274"/>
+			<path d="M9.73 792 L87.59 792 L97.32 782.27 L97.32 697.46 L87.59 687.73 L9.73 687.73 L0 697.46 L0 782.27 L9.73 792 Z"
+					class="st4"/>
+			<text x="21.46" y="702.53" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>OCP Profile<v:newlineChar/><tspan
+						x="25.3" dy="1.2em" class="st3">ClaimSet 0<v:newlineChar/></tspan><tspan x="25.3" dy="1.2em" class="st3">ClaimSet 1<v:newlineChar/></tspan><tspan
+						x="25.3" dy="1.2em" class="st3">ClaimSet 2<v:newlineChar/><v:newlineChar/><v:paragraph v:horizAlign="1"/></tspan><tspan
+						x="25.3" dy="2.4em" class="st3">Signature</tspan></text>		</g>
+		<g id="group7-17" transform="translate(301.843,-508.961)" v:mID="7" v:groupContext="group">
+			<v:userDefs>
+				<v:ud v:nameU="ScrollDia" v:prompt="" v:val="VT0(0.14763779527559):24"/>
+				<v:ud v:nameU="visVersion" v:prompt="" v:val="VT0(15):26"/>
+				<v:ud v:nameU="ScrollDia" v:prompt="" v:val="VT0(0.14763778896482):1"/>
+			</v:userDefs>
+			<title>Vertical Scroll.1007</title>
+			<desc>Cert Chain</desc>
+			<g id="shape7-18" v:mID="7" v:groupContext="groupContent">
+				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+				<v:textRect cx="42.5197" cy="754.795" width="63.78" height="85.0394"/>
+				<path d="M10.63 781.37 L5.31 781.37 A5.31496 5.31496 -180 1 0 5.31 792 L69.09 792 A5.31327 5.31327 -180 0 0 74.41
+							 786.69 L74.41 717.59 L79.72 717.59 A5.31496 5.31496 -180 0 0 79.72 706.96 L15.94 706.96 A5.31327 5.31327
+							 -180 0 0 10.63 712.28 L10.63 781.37 Z" class="st6"/>
+				<path d="M10.63 781.37 L5.31 781.37 A5.31496 5.31496 -180 1 0 5.31 792 L69.09 792 A5.31327 5.31327 -180 0 0 74.41
+							 786.69 L74.41 717.59 L79.72 717.59 A5.31496 5.31496 -180 0 0 79.72 706.96 L15.94 706.96 A5.31327 5.31327
+							 -180 0 0 10.63 712.28 L10.63 781.37" class="st7"/>
+				<path d="M10.63 781.37 L10.63 786.69" class="st7"/>
+				<path d="M15.94 717.59 L79.72 717.59" class="st7"/>
+				<path d="M21.26 712.28 A5.31327 5.31327 -180 0 0 15.94 706.96" class="st7"/>
+				<text x="17.12" y="758.4" class="st2" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>Cert Chain</text>			</g>
+			<g id="shape8-25" v:mID="8" v:groupContext="shape">
+				<title>Sheet.8</title>
+				<v:userDefs>
+					<v:ud v:nameU="ScrollDia" v:prompt="" v:val="VT0(0.14763779527559):24"/>
+					<v:ud v:nameU="FillForegnd" v:prompt="" v:val="VT5(1)"/>
+					<v:ud v:nameU="ScrollDia" v:prompt="" v:val="VT0(0.14763778896482):1"/>
+					<v:ud v:nameU="FillForegnd" v:prompt="" v:val="VT5(#bfbfbf)"/>
+				</v:userDefs>
+				<path d="M10.63 786.69 L5.31 786.69 A2.65748 2.65748 -180 0 0 5.31 781.37 A5.31496 5.31496 -180 1 0 5.31 792 A5.31327
+							 5.31327 -180 0 0 10.63 786.69 ZM21.26 712.28 L15.94 712.28 A2.65748 2.65748 -180 1 0 15.94 717.59 A5.31327
+							 5.31327 -180 0 0 21.26 712.28 Z" class="st8"/>
+			</g>
+		</g>
+		<g id="shape9-27" v:mID="9" v:groupContext="shape" transform="translate(311.764,-470.693)">
+			<title>Rectangle.1008</title>
+			<desc>CWT</desc>
+			<v:userDefs>
+				<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+			</v:userDefs>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197" v:verticalAlign="0"/>
+			<v:textRect cx="32.5984" cy="779.244" width="65.2" height="25.5118"/>
+			<rect x="0" y="766.488" width="65.1968" height="25.5118" class="st4"/>
+			<text x="21.01" y="781.29" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>CWT</text>		</g>
+		<g id="shape10-31" v:mID="10" v:groupContext="shape" v:layerMember="0" transform="translate(335.362,-511.583)">
+			<title>Dynamic connector.1010</title>
+			<v:custProps>
+				<v:cp v:nameU="visWfBranch" v:lbl="Condition" v:prompt="" v:type="1" v:format="Yes;No;(Blank)" v:sortKey=""
+						v:invis="false" v:ask="false" v:langID="1033" v:cal="0" v:val="VT4((Blank))"/>
+			</v:custProps>
+			<v:userDefs>
+				<v:ud v:nameU="visWfBranchIndex" v:prompt="" v:val="VT0(2):26"/>
+				<v:ud v:nameU="visWfBranchStr" v:prompt="" v:val="VT4()"/>
+				<v:ud v:nameU="SolSH" v:prompt="" v:val="VT4({21c62d3a-0c14-434d-b64e-fc6e5bbfa482})"/>
+				<v:ud v:nameU="ShapeClass" v:prompt="" v:val="VT0(4):26"/>
+				<v:ud v:nameU="ShapeType" v:prompt="" v:val="VT0(0):26"/>
+				<v:ud v:nameU="visVersion" v:prompt="" v:val="VT0(15):26"/>
+				<v:ud v:nameU="visKeywords" v:prompt="" v:val="VT4(SharePoint;Workflow)"/>
+				<v:ud v:nameU="visWfEvent" v:prompt="" v:val="VT0(0):26"/>
+			</v:userDefs>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="9" cy="801" width="50" height="20.0036"/>
+			<path d="M9 794.62 L9 800.34" class="st10"/>
+		</g>
+		<g id="shape11-37" v:mID="11" v:groupContext="shape" transform="translate(450,-299.48)">
+			<title>Rectangle.1011</title>
+			<desc>Verifier Application (e.g SPDM Requester)</desc>
+			<v:userDefs>
+				<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+			</v:userDefs>
+			<v:textBlock v:margins="rect(4,4,4,4)"/>
+			<v:textRect cx="56.6929" cy="749.48" width="113.39" height="85.0394"/>
+			<rect x="0" y="706.961" width="113.386" height="85.0394" class="st1"/>
+			<text x="9.55" y="738.68" class="st2" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>Verifier Application<v:newlineChar/><tspan
+						x="31.52" dy="1.2em" class="st3">(e.g SPDM </tspan><tspan x="29.91" dy="1.2em" class="st3">Requester)</tspan></text>		</g>
+		<g id="group12-43" transform="translate(257.726,-313.654)" v:mID="12" v:groupContext="group">
+			<v:userDefs>
+				<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+			</v:userDefs>
+			<title>1-D single.1017</title>
+			<desc>GET_MEASUREMENTS</desc>
+			<g id="shape13-44" v:mID="13" v:groupContext="shape">
+				<title>Sheet.13</title>
+				<path d="M0 777.83 L167.24 777.83 L167.24 792 L181.42 763.65 L167.24 735.31 L167.24 749.48 L0 749.48 L0 777.83 Z"
+						class="st12"/>
+				<path d="M0 777.83 L167.24 777.83 L167.24 792 L181.42 763.65 L167.24 735.31 L167.24 749.48 L0 749.48" class="st13"/>
+			</g>
+			<g id="shape14-47" v:mID="14" v:groupContext="shape">
+				<title>Sheet.14</title>
+				<path d="M0 777.83 L167.24 777.83 L167.24 792 L181.42 763.65 L167.24 735.31 L167.24 749.48 L0 749.48 L0 777.83"
+						class="st13"/>
+			</g>
+			<g id="shape15-50" v:mID="15" v:groupContext="shape" transform="translate(-2.32617,-14.4132)">
+				<title>Sheet.15</title>
+				<rect x="0" y="764.134" width="1.024" height="27.8665" class="st14"/>
+			</g>
+			<g id="shape12-52" v:mID="12" v:groupContext="groupContent">
+				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+				<v:textRect cx="90.7087" cy="763.654" width="181.42" height="56.6929"/>
+				<rect v:rectContext="textBkgnd" x="36.1431" y="756.454" width="109.131" height="14.4001" class="st15"/>
+				<text x="36.14" y="767.25" class="st2" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>GET_MEASUREMENTS</text>			</g>
+		</g>
+	</g>
+</svg>

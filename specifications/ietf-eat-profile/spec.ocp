@@ -1,5 +1,5 @@
 ---
-title: "OCP Profile for RATS Entity Attestation Token (Draft)"
+title: "OCP Profile for IETF Entity Attestation Token (Draft)"
 version: 0.1
 type: BASE
 project: Security
@@ -38,7 +38,8 @@ The Contributors of this Specification would like to acknowledge the following:
 - Jeff Andersen (Google)
 - Ned Smith (Intel)
 - Roksana Golizadeh Mojarad (Microsoft)
-- Steven Bellock (Nvidia)
+- Steven Bellock (NVIDIA)
+- Raghu Krishnamurthy (NVIDIA)
 
 # Compliance with OCP Tenets
 
@@ -75,7 +76,7 @@ profile. This profile utilizes a **CBOR Web Token (CWT)** that includes claims
 as defined by **Entity Attestation Token (EAT)** to ensure the integrity of
 CoEv through the implementation of a **COSE_Sign1** data structure.
 
-The document details the binding between the **Secure Protocol and Data Model
+The document details the binding between the **Security Protocol and Data Model
 (SPDM)** and the CWT Data Structure profile tailored for Data Center devices.
 Importantly, while the profile is designed to integrate seamlessly with SPDM as
 the message exchange protocol, its usage is not restricted solely to SPDM and
@@ -148,7 +149,7 @@ Additionally, the profile outlines how the COSE_Sign1 fields must be populated
 and asserts that the certificate path of the Attestation Key must be included
 in the unsigned section of the COSE_Sign1 header.
 
-<-- TODO: insert diagram here -->
+![CWT over SPDM](./diagrams/cwt_spdm.svg){#fig:cwt_spdm}
 
 ## CWT Claim Set
 
@@ -190,7 +191,7 @@ evidence. Additionally, the requester is expected to relax time constraints to
 accommodate any latency the lead attester may experience while collecting
 evidence from the sub-attesters.
 
-<-- TODO: insert diagram here -->
+![Lead Attester binding to SubAttester](./diagrams/attester_binding.svg){#fig:attester_binding}
 
 ## CWT Integrity Protection
 
@@ -226,7 +227,6 @@ to report the target environment claims is to converge on the
 structure used by the CoRIM to represent reference values, simplifying the
 appraisal policy for the verifier.
 
-<-- TODO: insert diagram here -->
 
 Each Target Environment **MUST** comprehensively describe three key components:
 
@@ -244,7 +244,7 @@ Each Target Environment **MUST** comprehensively describe three key components:
 The table below maps the above entries with the reference-triple dictionary structure:
 
 | Field | reference-triple entry | Description |
-| :--- | :--- | :--- |
+| :--- | :-------- | :---- |
 | Name | environment-map->class->class_id | Identification of the Component |
 | Vendor | environment-map->class->vendor | Identification of the Platform Vendor |
 | Model | environment-map->class->model | Identification of the Platform Model |
@@ -264,7 +264,7 @@ The table below maps the above entries with the reference-triple dictionary stru
 The table below maps the above entries with the reference-triple dictionary structure:
 
 | Field | reference-triple entry | Description |
-| :--- | :--- | :--- |
+| :--- | :-------- | :---- |
 | Name | environment-map->class->class_id | Identification of the Component |
 | Vendor | environment-map->class->vendor | Identification of the Attester Vendor |
 | Model | environment-map->class->model | Identification of the Attester Model |
@@ -282,7 +282,7 @@ parameters such as
 The table below maps the above entries with the reference-triple dictionary structure:
 
 | Field | reference-triple entry | Description |
-| :--- | :--- | :--- |
+| :--- | :-------- | :---- |
 | Name | environment-map->class->class_id | Identification of the Component |
 | Vendor | environment-map->class->vendor | Identification of the Attester Vendor |
 | Model | environment-map->class->model | Identification of the Attester Model |
