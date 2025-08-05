@@ -19,16 +19,16 @@ cwt-envelope-signed-csr-eat = {
 
 $key-attributes-type = tagged-oid-type
 
-signed-cwt = #6.18(COSE-Sign1-concise-evidence)
+signed-cwt = #6.18(COSE-Sign1-envelope-signed-csr)
 
-COSE-Sign1-concise-evidence = [
-  protected: bstr .cbor protected-ce-header-map
-  unprotected: unprotected-ce-header-map
+COSE-Sign1-envelope-signed-csr = [
+  protected: bstr .cbor protected-esc-header-map
+  unprotected: unprotected-esc-header-map
   payload: bstr .cbor cwt-envelope-signed-csr-eat 
   signature: bstr
 ]
 
-protected-ce-header-map = {
+protected-esc-header-map {
   ; Well-defined header fields
   &(alg-id: 1) => int
   &(content-type: 3) => tstr / int
@@ -37,7 +37,7 @@ protected-ce-header-map = {
   * cose-label => cose-value
 }
 
-unprotected-ce-header-map = {
+unprotected-esc-header-map = {
   ? &(x5-chain: 33) => bstr / [ 2*certs: bstr ]
   * cose-label => cose-value
 }
