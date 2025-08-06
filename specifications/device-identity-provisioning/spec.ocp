@@ -299,11 +299,11 @@ Table: ENVELOPE_SIGNED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
 The EnvelopeSignedCSRdata shall adhere to the following requirements:
 
 - The payload SHALL be an EAT encoded as a CBOR Web Token (CWT) [@{ietf-cwt}].
-- The EAT SHALL conform to the OCP Envelope-Signed CSR EAT profile (TODO: OCP to assign OID for this profile).
+- The EAT SHALL conform to the OCP Envelope-Signed CSR EAT profile (see @sec:defined-oids for the defined OID).
 - The EAT SHALL include standard claims for issuer identification and nonce for freshness verification.
 - The EAT SHALL include private claims[^private-claims] containing:
   - The CSR as a byte string
-  - An array of OIDs representing the key's derivation attributes (see @sec:key-derivation-attribute-oids for defined OIDs)
+  - An array of OIDs representing the key's derivation attributes (see @sec:defined-oids for defined OIDs)
 - The CSR included in the EAT SHALL be DER-encoded and may be either self-signed or non-self-signed depending on device capabilities. For non-self-signed CSRs, the signature field SHALL contain all zeroes and be the same size as would be required for a valid signature using the subject key's algorithm.
 - The nonce claim SHALL match the nonce value provided in the GET_ENVELOPE_SIGNED_CSR request to ensure freshness.
 - If SignerSlotIDParam indicates a signed envelope, the CWT SHALL be signed by an Attestation Key endorsed by the certificate chain corresponding to the specified SlotID. In addition, the unprotected header of the CWT SHALL contain the Attestation Key's certificate chain, including at least all certificates from the Attestation Key up to the identity certificate issued by the slot's PKI owner.
@@ -312,16 +312,24 @@ The EnvelopeSignedCSRdata shall adhere to the following requirements:
 
 [^private-claims]: RFC 8392 [@{ietf-cwt}] defines a private claim as one whose key value has an integer value < -65536.
 
-### Key Derivation Attribute OIDs {#sec:key-derivation-attribute-oids}
+### Defined OIDs {#sec:defined-oids}
+
+**OCP Security Branch**: `ocp-security OBJECT IDENTIFIER ::= {1 3 6 1 4 1 42623 1}`
+
+**Envelope-signed EAT profile OID**: `ocp-security-dip-eat-profile OBJECT IDENTIFIER ::= {ocp-security 1}`
+
+**Key Derivation Attribute OID Branch**: `ocp-security-dip-kda OBJECT IDENTIFIER ::= {ocp-security 2}`
 
 The following OIDs are defined for key derivation attributes:
 
-- **Derived from Owner Entropy Fuse** - (TODO: OCP to assign OID)
-- **Derived from First Mutable Code** - (TODO: OCP to assign OID)
-- **Derived from Non-First Mutable Code** - (TODO: OCP to assign OID)
-- **Derived from Owner Provisioned Key** - (TODO: OCP to assign OID)
+- **Derived from Owner Entropy Fuse**: `ocp-security-dip-kda-OwnerEntropyFuse ::= {ocp-security-dip-kda 1}`
+- **Derived from First Mutable Code**: `ocp-security-dip-kda-FirstMutableCode ::= {ocp-security-dip-kda 2}`
+- **Derived from Non-First Mutable Code**: `ocp-security-dip-kda-NonFirstMutableCode ::= {ocp-security-dip-kda 3}`
+- **Derived from Owner Provisioned Key**: `ocp-security-dip-kda-OwnerProvisionedKey ::= {ocp-security-dip-kda 4}`
 
 These OIDs indicate which inputs contribute to the derivation of the identity key for which the CSR is being requested.
+
+Subsequent versions of this specification may be expanded with additional key derivation attribute OIDs.
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 

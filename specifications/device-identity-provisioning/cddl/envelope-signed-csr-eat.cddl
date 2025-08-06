@@ -1,6 +1,6 @@
 cwt-envelope-signed-csr-eat = {  
   ; The EAT Profile for Envelope-Signed CSR OCP will register
-  &(eat-profile : 265 ) => ~oid ; "2.16.840.1.113741.1.16.1" - note: `~` strips CBOR tag #6.111(oid) from `oid`
+  &(eat-profile : 265 ) => ~oid ; "1.3.6.1.4.1.42623.1" - note: `~` strips CBOR tag #6.111(oid) from `oid`
 
   ; Issuer claim is StringOrURI (tstr)
   &(iss : 1) => tstr
