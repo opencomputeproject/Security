@@ -329,7 +329,7 @@ The following OIDs are defined for key derivation attributes:
 
 These OIDs indicate which inputs contribute to the derivation of the identity key for which the CSR is being requested.
 
-This specification may be expanded in the future with additional key derivation attribute OIDs.
+Subsequent versions of this specification may be expanded with additional key derivation attribute OIDs.
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
