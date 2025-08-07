@@ -17,6 +17,19 @@ cwt-envelope-signed-csr-eat = {
   ? &(corim-locator-array: -70001) => [ + corim-locator-map]
 }
 
+; The concise-evidence-map CDDL is defined in 
+; https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Concise-Evidence-Binding-for-SPDM-Version-1.0-Revision-54_pub.pdf
+$measurements-body-cbor /= bytes .cbor concise-evidence-map
+oid = tagged-oid-type
+
+; The measurement-type encapsulates the concise-evidence-map as CBOR bytestring
+measurements-type = [+ measurements-format]
+measurements-format = [
+  content-type:   coap-content-format,
+  content-format:  $measurements-body-cbor
+]
+coap-content-format = uint .le 65535
+
 signed-cwt = #6.18(COSE-Sign1-concise-evidence)
 
 COSE-Sign1-concise-evidence = [
