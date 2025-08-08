@@ -1,8 +1,8 @@
-# OCP Profile for RATS Entity Attestation Token
+# OCP Profile for IETF Entity Attestation Token
 
 ## Specification Website
 
-A version of the specification tracking the latest content in the `main` branch can be found at https://opencomputeproject.github.io/Security/rats-eat-profile/HEAD/.
+A version of the specification tracking the latest content in the `main` branch can be found at https://opencomputeproject.github.io/Security/ietf-eat-profile/HEAD/.
 
 ## Specification source
 

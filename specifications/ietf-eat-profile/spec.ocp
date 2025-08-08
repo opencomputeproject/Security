@@ -95,7 +95,6 @@ heterogeneous environments.
 - **SPDM**: Secure Protocol and Data Model 
 - **DICE**: Device Identifier Composition Engine 
 - **AK**: Attestation Key 
-- **RATS**: Remote Attestation Procedures 
 - **EAT**: Entity Attestation Token
 - **CDDL**: Concise Data Definition Language 
 - **CBOR**: Concise Binary Object Representation 
@@ -104,8 +103,8 @@ heterogeneous environments.
 
 This specification details how an attester should represent its evidence within
 a CBOR Web Token (CWT) Profile. Specifically, the CWT serves as the CBOR
-(Concise Binary Object Representation) encoding of a RATS (Remote Attestation
-and Trust Status) Entity Attestation Token (EAT), in accordance with the CDDL
+(Concise Binary Object Representation) encoding of an IETF
+Entity Attestation Token (EAT), in accordance with the CDDL
 (Concise Declarative Data Language) semantics. The specification delineates the
 essential set of claims required within the CWT to form a coherent and
 interoperable profile.
@@ -124,7 +123,7 @@ integrated devices. For Cloud Service Providers (CSPs) and their tenants,
 evaluating the security posture of these intricate configurations is vital.
 This specification aims to simplify the attestation process by providing a
 common profile for representing evidence across various vendors’ devices,
-thereby reducing the diversity of environments that RATS Verifiers need to
+thereby reducing the diversity of environments that Verifiers need to
 accommodate.
 
 ## Scope
