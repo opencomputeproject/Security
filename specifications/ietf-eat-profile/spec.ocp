@@ -148,7 +148,7 @@ Additionally, the profile outlines how the COSE_Sign1 fields must be populated
 and asserts that the certificate path of the Attestation Key must be included
 in the unsigned section of the COSE_Sign1 header.
 
-![CWT over SPDM](./diagrams/cwt_spdm.svg){#fig:cwt_spdm}
+![CWT over SPDM](./diagrams/cwt_spdm.drawio.svg){#fig:cwt_spdm}
 
 ## CWT Claim Set
 
@@ -190,7 +190,7 @@ evidence. Additionally, the requester is expected to relax time constraints to
 accommodate any latency the lead attester may experience while collecting
 evidence from the sub-attesters.
 
-![Lead Attester binding to SubAttester](./diagrams/attester_binding.svg){#fig:attester_binding}
+![Lead Attester binding to SubAttester](./diagrams/attester_binding.drawio.svg){#fig:attester_binding}
 
 ## CWT Integrity Protection
 
