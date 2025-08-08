@@ -68,7 +68,6 @@ jobs:
               --nogitversion \
               --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
               --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
-              --html_stylesheet extra/ocp-pandoc-resources/html/github-markdown.css \
               --html spec.html spec.ocp
 
             popd
@@ -110,7 +109,6 @@ jobs:
               --nogitversion \
               --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
               --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
-              --html_stylesheet extra/ocp-pandoc-resources/html/github-markdown.css \
               --html spec.html spec.ocp
 
             popd
@@ -120,6 +118,47 @@ jobs:
             mkdir -p "gh-pages/dpe-irot-profile/${trimmed_ref}"
             cp specifications/dpe-irot-profile/spec.html "gh-pages/dpe-irot-profile/${trimmed_ref}/index.html"
             echo "Added webpage dpe-irot-profile/${trimmed_ref}/index.html"
+          done
+
+      - name: Render OCP EAT Profile HTML
+        run: |
+          # Need to trust directory in the docker container.
+          chown -R $(id -u):$(id -g) $PWD
+
+          # Publish pages for `main`
+          GIT_REFS=()
+          GIT_REFS+=("main")
+
+          cp -R ocp-spec-tools specifications/ietf-eat-profile/extra
+
+          for ref in "${GIT_REFS[@]}"; do
+            echo "Building git ref $ref"
+
+            git reset --hard $ref
+
+            pushd specifications/ietf-eat-profile
+
+            if [[ "${ref}" == "main" ]]; then
+              # Label the current spec version.
+              commit_hash=$(git rev-parse --short HEAD)
+              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" spec.ocp
+            fi
+
+            /usr/bin/build.sh \
+              --crossref=tcg \
+              --csl extra/ocp-pandoc-resources/ieee.csl \
+              --nogitversion \
+              --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
+              --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
+              --html spec.html spec.ocp
+
+            popd
+
+            trimmed_ref="HEAD"
+
+            mkdir -p "gh-pages/ietf-eat-profile/${trimmed_ref}"
+            cp specifications/ietf-eat-profile/spec.html "gh-pages/ietf-eat-profile/${trimmed_ref}/index.html"
+            echo "Added webpage ietf-eat-profile/${trimmed_ref}/index.html"
           done
 
       - name: Upload artifacts for rendered specs
