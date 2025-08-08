@@ -1,23 +1,23 @@
-cwt-envelope-signed-csr-eat = {  
+cwt-envelope-signed-csr-eat = {
   ; The EAT Profile for OCP OID
-  &(eat-profile : 265 ) => ~oid ; "2.16.840.1.113741.1.16.1" - note: `~` strips CBOR tag #6.111(oid) from `oid`
+  &(eat_profile : 265 ) => ~oid ; "2.16.840.1.113741.1.16.1" - note: `~` strips CBOR tag #6.111(oid) from `oid`
 
   ; Issuer claim is StringOrURI (tstr)
   &(iss : 1) => tstr
 
   ; Nonce claim is nonce-type = bstr .size (8..64)
   &(nonce : 10) => bstr
-  
-  ; EAT measurements claim is defined in section-4.2.16
-  &(eat-measurements : 273) => measurements-type
 
-  ; Private Claims (they have to be < -65536 for rfc8392) per RFC 8392 
-  
+  ; EAT measurements claim is defined in section-4.2.16
+  &(measurements : 273) => measurements-type
+
+  ; Private Claims (they have to be < -65536 for rfc8392) per RFC 8392
+
   ; CoRIM Locator Map (Optional)
-  ? &(corim-locator-array: -70001) => [ + corim-locator-map]
+  ? &(rim-locators : -70001) => [ + corim-locator-map]
 }
 
-; The concise-evidence-map CDDL is defined in 
+; The concise-evidence-map CDDL is defined in
 ; https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Concise-Evidence-Binding-for-SPDM-Version-1.0-Revision-54_pub.pdf
 $measurements-body-cbor /= bytes .cbor concise-evidence-map
 oid = tagged-oid-type
@@ -52,5 +52,3 @@ unprotected-ce-header-map = {
   ? &(x5-chain: 33) => bstr / [ 2*certs: bstr ]
   * cose-label => cose-value
 }
-
-
