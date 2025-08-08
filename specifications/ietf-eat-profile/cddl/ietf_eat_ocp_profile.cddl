@@ -14,7 +14,7 @@ cwt-envelope-signed-csr-eat = {
   ; Private Claims (they have to be < -65536 for rfc8392) per RFC 8392
 
   ; CoRIM Locator Map (Optional)
-  ? &(corim-locator-array: -70001) => [ + corim-locator-map]
+  ? &(rim-locators : -70001) => [ + corim-locator-map]
 }
 
 ; The concise-evidence-map CDDL is defined in
