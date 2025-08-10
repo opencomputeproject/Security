@@ -159,7 +159,7 @@ integrity-protected wrapper for concise evidence.
     * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID assigned to the OCP Profile. **TODO: OCP to assign OID Value**
 2. **issuer**
     * This claim is optionally used by the attester to bind the EAT to the certificate chain that issued it. If present, **SHALL** match the SUBJECT Common Name of the Attestation Key (AK) Certificate.
-3. **eat_nonce**
+3. **Nonce**
     * This claim is used by the attester to ensure the freshness of the response. It **MUST** be present and **SHALL** be a string or an array of strings. It **SHALL** contain as minimum the nonce value passed by the requester.
 4. **measurements**
     * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a “concise-evidence” using the appropriate IANA media type.
@@ -181,11 +181,11 @@ request evidence from the sub-attesters.
 
 Both the lead attester and the sub-attesters are required to attest to this
 value: it **MUST** be present in both lead attester and sub-attester evidence
-as nonce claim.
+as a Nonce claim.
 
 A Remote verifier confirms that the evidence from the sub attester has been
-gathered by the lead attester by verifying that one of the eat_nonce in the
-lead attester’s evidence matches the eat_nonce located in the sub attester’s
+gathered by the lead attester by verifying that one of the nonces in the
+lead attester’s evidence matches a nonce located in the sub attester’s
 evidence. Additionally, the requester is expected to relax time constraints to
 accommodate any latency the lead attester may experience while collecting
 evidence from the sub-attesters.
