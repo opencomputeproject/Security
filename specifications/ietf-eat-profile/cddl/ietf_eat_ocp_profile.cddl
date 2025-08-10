@@ -6,7 +6,7 @@ cwt-envelope-signed-csr-eat = {
   &(iss : 1) => tstr
 
   ; Nonce claim is nonce-type = bstr .size (8..64)
-  &(nonce : 10) => bstr
+  &(Nonce : 10) => bstr
 
   ; EAT measurements claim is defined in section-4.2.16
   &(measurements : 273) => measurements-type
