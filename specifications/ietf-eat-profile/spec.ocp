@@ -155,13 +155,13 @@ in the unsigned section of the COSE_Sign1 header.
 The CWT claim set is intentionally minimalistic, serving primarily as an
 integrity-protected wrapper for concise evidence.
 
-1. **eat_profile**
+1. **EAT Profile**
     * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID assigned to the OCP Profile. **TODO: OCP to assign OID Value**
 2. **issuer**
     * This claim is optionally used by the attester to bind the EAT to the certificate chain that issued it. If present, **SHALL** match the SUBJECT Common Name of the Attestation Key (AK) Certificate.
 3. **Nonce**
     * This claim is used by the attester to ensure the freshness of the response. It **MUST** be present and **SHALL** be a string or an array of strings. It **SHALL** contain as minimum the nonce value passed by the requester.
-4. **measurements**
+4. **Measurements**
     * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a “concise-evidence” using the appropriate IANA media type.
 5. **rim-locators**
     * This claim is used by the attester to point the verifier to the rim repository. If present, **SHALL** be an array of corim-locator-map (as defined by the IETF CoRIM Draft).
