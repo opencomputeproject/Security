@@ -16,8 +16,8 @@ defaults:
   run:
     shell: bash
 jobs:
-  # Upload spec HTML
-  spec-html:
+  # Render specs
+  spec-render:
     uses: opencomputeproject/ocp-spec-tools/.github/workflows/render.yml@main
     with:
       tcg-container-version: latest
@@ -28,6 +28,7 @@ jobs:
             "src": "specifications/device-identity-provisioning/spec.ocp",
             "append_git_rev_to_version": true,
             "gh_pages_html": "device-identity-provisioning/HEAD"
+            "gh_pages_html": "device-identity-provisioning/HEAD/pdf"
           },
           {
             "src": "specifications/dpe-irot-profile/spec.ocp",
@@ -46,7 +47,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: [spec-html]
+    needs: [spec-render]
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
