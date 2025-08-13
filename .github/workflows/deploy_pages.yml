@@ -40,7 +40,7 @@ jobs:
             "gh_pages_html": "ietf-eat-profile/HEAD",
           }
         ]
-      atrifact-name: rendered-specs
+      artifact-name: rendered-specs
   deploy:
     environment:
       name: github-pages
