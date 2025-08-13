@@ -27,17 +27,17 @@ jobs:
           {
             "src": "specifications/device-identity-provisioning/spec.ocp",
             "append_git_rev_to_version": true,
-            "gh_pages_html": "device-identity-provisioning/HEAD",
+            "gh_pages_html": "device-identity-provisioning/HEAD"
           },
           {
             "src": "specifications/dpe-irot-profile/spec.ocp",
             "append_git_rev_to_version": true,
-            "gh_pages_html": "dpe-irot-profile/HEAD",
+            "gh_pages_html": "dpe-irot-profile/HEAD"
           },
           {
             "src": "specifications/ietf-eat-profile/spec.ocp",
             "append_git_rev_to_version": true,
-            "gh_pages_html": "ietf-eat-profile/HEAD",
+            "gh_pages_html": "ietf-eat-profile/HEAD"
           }
         ]
       artifact-name: rendered-specs
