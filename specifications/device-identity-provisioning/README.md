@@ -2,7 +2,10 @@
 
 ## Specification Website
 
-A version of the specification tracking the latest content in the `main` branch can be found at https://opencomputeproject.github.io/Security/device-identity-provisioning/HEAD/.
+A version of the specification tracking the latest content in the `main` branch can be found at the following links:
+
+- HTML render: https://opencomputeproject.github.io/Security/device-identity-provisioning/HEAD/
+- PDF render: https://opencomputeproject.github.io/Security/device-identity-provisioning/HEAD/pdf/
 
 ## Specification source
 
