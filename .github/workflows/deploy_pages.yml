@@ -18,155 +18,29 @@ defaults:
 jobs:
   # Upload spec HTML
   spec-html:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/trustedcomputinggroup/pandoc:latest
-    name: Render Spec HTML
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Checkout Template dependencies
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          repository: "opencomputeproject/ocp-spec-tools"
-          # The underlying tex and templates assume this exists under the "extra" folder.
-          path: "ocp-spec-tools"
-
-      - name: Render Device Identity Provisioning HTML
-        run: |
-          # Need to trust directory in the docker container.
-          chown -R $(id -u):$(id -g) $PWD
-
-          # Publish pages for `main`
-          GIT_REFS=()
-          GIT_REFS+=("main")
-
-          cp -R ocp-spec-tools specifications/device-identity-provisioning/extra
-
-          for ref in "${GIT_REFS[@]}"; do
-            echo "Building git ref $ref"
-
-            git reset --hard $ref
-
-            pushd specifications/device-identity-provisioning
-
-            if [[ "${ref}" == "main" ]]; then
-              # Label the current spec version.
-              commit_hash=$(git rev-parse --short HEAD)
-              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" spec.ocp
-            fi
-
-            /usr/bin/build.sh \
-              --crossref=tcg \
-              --csl extra/ocp-pandoc-resources/ieee.csl \
-              --nogitversion \
-              --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
-              --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
-              --html spec.html spec.ocp
-
-            popd
-
-            trimmed_ref="HEAD"
-
-            mkdir -p "gh-pages/device-identity-provisioning/${trimmed_ref}"
-            cp specifications/device-identity-provisioning/spec.html "gh-pages/device-identity-provisioning/${trimmed_ref}/index.html"
-            echo "Added webpage device-identity-provisioning/${trimmed_ref}/index.html"
-          done
-
-      - name: Render DPE iRoT Profile HTML
-        run: |
-          # Need to trust directory in the docker container.
-          chown -R $(id -u):$(id -g) $PWD
-
-          # Publish pages for `main`
-          GIT_REFS=()
-          GIT_REFS+=("main")
-
-          cp -R ocp-spec-tools specifications/dpe-irot-profile/extra
-
-          for ref in "${GIT_REFS[@]}"; do
-            echo "Building git ref $ref"
-
-            git reset --hard $ref
-
-            pushd specifications/dpe-irot-profile
-
-            if [[ "${ref}" == "main" ]]; then
-              # Label the current spec version.
-              commit_hash=$(git rev-parse --short HEAD)
-              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" spec.ocp
-            fi
-
-            /usr/bin/build.sh \
-              --crossref=tcg \
-              --csl extra/ocp-pandoc-resources/ieee.csl \
-              --nogitversion \
-              --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
-              --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
-              --html spec.html spec.ocp
-
-            popd
-
-            trimmed_ref="HEAD"
-
-            mkdir -p "gh-pages/dpe-irot-profile/${trimmed_ref}"
-            cp specifications/dpe-irot-profile/spec.html "gh-pages/dpe-irot-profile/${trimmed_ref}/index.html"
-            echo "Added webpage dpe-irot-profile/${trimmed_ref}/index.html"
-          done
-
-      - name: Render OCP EAT Profile HTML
-        run: |
-          # Need to trust directory in the docker container.
-          chown -R $(id -u):$(id -g) $PWD
-
-          # Publish pages for `main`
-          GIT_REFS=()
-          GIT_REFS+=("main")
-
-          cp -R ocp-spec-tools specifications/ietf-eat-profile/extra
-
-          for ref in "${GIT_REFS[@]}"; do
-            echo "Building git ref $ref"
-
-            git reset --hard $ref
-
-            pushd specifications/ietf-eat-profile
-
-            if [[ "${ref}" == "main" ]]; then
-              # Label the current spec version.
-              commit_hash=$(git rev-parse --short HEAD)
-              sed -i -r "/^---$/,/^---$/s/(version: .*)/\1 (Git commit ${commit_hash})/g" spec.ocp
-            fi
-
-            /usr/bin/build.sh \
-              --crossref=tcg \
-              --csl extra/ocp-pandoc-resources/ieee.csl \
-              --nogitversion \
-              --template_html extra/ocp-pandoc-resources/html/ocp.html.template \
-              --html_stylesheet extra/ocp-pandoc-resources/html/style.css \
-              --html spec.html spec.ocp
-
-            popd
-
-            trimmed_ref="HEAD"
-
-            mkdir -p "gh-pages/ietf-eat-profile/${trimmed_ref}"
-            cp specifications/ietf-eat-profile/spec.html "gh-pages/ietf-eat-profile/${trimmed_ref}/index.html"
-            echo "Added webpage ietf-eat-profile/${trimmed_ref}/index.html"
-          done
-
-      - name: Upload artifacts for rendered specs
-        uses: actions/upload-artifact@v4
-        with:
-          name: rendered-html
-          path: gh-pages
-
+    uses: opencomputeproject/ocp-spec-tools/.github/workflows/render.yml@main
+    with:
+      tcg-container-version: latest
+      ocp-template-ref: main
+      inputs: >-
+        [
+          {
+            "src": "specifications/device-identity-provisioning/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "device-identity-provisioning/HEAD",
+          },
+          {
+            "src": "specifications/dpe-irot-profile/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "dpe-irot-profile/HEAD",
+          },
+          {
+            "src": "specifications/ietf-eat-profile/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "ietf-eat-profile/HEAD",
+          }
+        ]
+      atrifact-name: rendered-specs
   deploy:
     environment:
       name: github-pages
@@ -177,7 +51,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: rendered-html
+          name: rendered-specs
           path: gh-pages
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
