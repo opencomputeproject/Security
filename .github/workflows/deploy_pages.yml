@@ -27,7 +27,7 @@ jobs:
           {
             "src": "specifications/device-identity-provisioning/spec.ocp",
             "append_git_rev_to_version": true,
-            "gh_pages_html": "device-identity-provisioning/HEAD"
+            "gh_pages_html": "device-identity-provisioning/HEAD",
             "gh_pages_pdf": "device-identity-provisioning/HEAD/pdf"
           },
           {
