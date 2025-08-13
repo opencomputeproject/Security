@@ -5,6 +5,7 @@ type: BASE
 project: Security
 authors: [(See Acknowledgements section)]
 bibliography: bibliography.yaml
+geometry: "left=0.5in,right=0.5in"
 ...
 ---
 
