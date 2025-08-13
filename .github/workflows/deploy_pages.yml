@@ -18,10 +18,10 @@ defaults:
 jobs:
   # Render specs
   spec-render:
-    uses: opencomputeproject/ocp-spec-tools/.github/workflows/render.yml@main
+    uses: opencomputeproject/ocp-spec-tools/.github/workflows/render.yml@stable
     with:
       tcg-container-version: latest
-      ocp-template-ref: main
+      ocp-template-ref: stable
       inputs: >-
         [
           {
