@@ -353,3 +353,15 @@ In this specification, several example device identity key hierarchies use the t
 In TCG's DICE Hardware Requirements [@{tcg-dice-hardware-requirements}], FMC is defined as "First Measured Code", and is "the code and/or configuration information that is executed and/or takes effect immediately following the Device Identifier Composition Engine". First Measured Code is synonymous with Layer 0 in the DICE Layering Architecture [@{tcg-dice-layering-architecture}].
 
 The difference between First Measured Code and First Mutable Code is subtle but important. In Caliptra, the First Measured Code corresponds with the Caliptra ROM layer. As such, Caliptra's Device ID or IDevID keypair is wielded by ROM, rather than Caliptra's FMC.
+
+## Envelope-signed CSR EAT CDDL
+
+```include {.small}
+!include cddl/envelope-signed-csr-eat.cddl
+```
+
+## Envelope-signed CSR EAT example CDDL diag
+
+```include {.small}
+!include diag/envelope-signed-csr-eat-example.diag
+```

@@ -288,7 +288,15 @@ The table below maps the above entries with the reference-triple dictionary stru
 | Value | measurement-map->mval->raw_value | Raw Value of the Security Setting |
 | ValueMask | measurement-map->mval->raw_value_mask | (Optional) Raw Value Mask |
 
-## Appendix
+# Appendix
+
+## Profile CDDL
+
+```include {.small}
+!include cddl/ietf_eat_ocp_profile.cddl
+```
+
+## CWT example
 
 The following example illustrates a CWT containing claims for three target environments:
 * **Firmware (FW) Component**: Digest and Security Version Number (SVN)
