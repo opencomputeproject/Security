@@ -53,3 +53,5 @@ unprotected-ce-header-map = {
   * cose-label => cose-value
 }
 
+; Explicitly assert that CWT is encoded as CBOR with the self-described CBOR tag.
+ocp-evidence-eat = #6.55799(signed-cwt)
