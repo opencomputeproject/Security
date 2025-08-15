@@ -1,4 +1,4 @@
-cwt-envelope-signed-eat = {
+cwt-eat = {
   ; The EAT Profile for OCP OID
   &(EAT Profile : 265 ) => ~oid ; TODO: OCP Security to assign a value - note: `~` strips CBOR tag #6.111(oid) from `oid`
 
@@ -35,7 +35,7 @@ signed-cwt = #6.18(COSE-Sign1-concise-evidence)
 COSE-Sign1-concise-evidence = [
   protected: bstr .cbor protected-ce-header-map
   unprotected: unprotected-ce-header-map
-  payload: bstr .cbor concise-evidence-map
+  payload: bstr .cbor cwt-eat
   signature: bstr
 ]
 
