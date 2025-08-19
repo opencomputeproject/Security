@@ -275,6 +275,11 @@ The table below maps the above entries with the reference-triple dictionary stru
 ## CWT example
 
 The following example illustrates a CWT containing claims for three target environments:
+
 * **Firmware (FW) Component**: Digest and Security Version Number (SVN)
 * **Hardware (HW) Configuration**: RAW Value (e.g., Fuse Configuration)
 * **Software (SW) Configuration**: RAW Value (e.g., Debug State)
+
+```include {.small}
+TODO: fill in with a diag
+```
