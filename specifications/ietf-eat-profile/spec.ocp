@@ -168,30 +168,6 @@ integrity-protected wrapper for concise evidence.
 
 The cwt-eat statement is defined as follows:
 
-## Attesters Topology
-
-In certain setups, an attester may need to gather evidence from additional
-devices, including a **Root of Trust (RoT)**. In such scenarios, this attester
-acts as the lead attester, while the other devices serve as sub-attesters.
-
-Ensuring the freshness of evidence collected by the lead attester from the
-sub-attesters is essential. To achieve this, the attester will present a
-secondary nonce. The Lead Attester creates a random value and uses it to
-request evidence from the sub-attesters.
-
-Both the lead attester and the sub-attesters are required to attest to this
-value: it **MUST** be present in both lead attester and sub-attester evidence
-as a Nonce claim.
-
-A Remote verifier confirms that the evidence from the sub attester has been
-gathered by the lead attester by verifying that one of the nonces in the
-lead attester’s evidence matches a nonce located in the sub attester’s
-evidence. Additionally, the requester is expected to relax time constraints to
-accommodate any latency the lead attester may experience while collecting
-evidence from the sub-attesters.
-
-![Lead Attester binding to SubAttester](./diagrams/attester_binding.drawio.svg){#fig:attester_binding}
-
 ## CWT Integrity Protection
 
 The CWT is protected against integrity breaches and can be cryptographically
