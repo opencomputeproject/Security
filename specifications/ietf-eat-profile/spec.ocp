@@ -192,7 +192,7 @@ The signed-cwt CDDL is defined in the following manner:
 ## Concise Evidence
 
 The concise evidence **MUST** be defined according to the specifications
-outlined in [@{tcg-dice-concise-evidence-binding-for-spdm}] and **SHOULD**
+outlined in [@{tcg-dice-concise-evidence-binding-for-spdm}] and **SHALL**
 comprehensively describe all **Target Environments**
 that the Attester Environment is responsible for attesting. The concise
 evidence **SHALL** follow the definition from
@@ -203,7 +203,7 @@ structure used by the CoRIM to represent reference values, simplifying the
 appraisal policy for the verifier.
 
 
-Each Target Environment **MUST** comprehensively describe three key components:
+Each Target Environment **SHOULD** comprehensively describe three key components:
 
 1. **Firmware (FW) Component**: This includes details such as
 * Name
