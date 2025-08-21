@@ -1,0 +1,857 @@
+---
+title: "Attestation of System Components; Requirements and Recommendations"
+version: 1.1
+type: BASE
+project: Security
+authors: [(See Acknowledgements section)]
+bibliography: bibliography.yaml
+geometry: "left=0.5in,right=0.5in"
+...
+---
+
+\currenttemplateversion
+
+---
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+---
+
+<!-- Will bring this in when it's an actual contribution.
+
+# License
+
+## Open Web Foundation (OWF) CLA
+
+Contributions to this Specification are made under the terms and conditions set forth in **Modified Open Web Foundation Agreement 0.9 (OWFa 0.9)**. (As of October 16, 2024)  (“Contribution License”) by:
+
+- TODO: fill in
+
+Usage of this Specification is governed by the terms and conditions set forth in **Modified OWFa 0.9 Final Specification Agreement (FSA)** (As of October 16, 2024) **(“Specification License”)**.
+
+You can review the applicable Specification License(s) referenced above by the contributors to this Specification on the OCP website at <https://www.opencompute.org/contributions/templates-agreements>.
+
+For actual executed copies of either agreement, please contact OCP directly.
+
+NOTWITHSTANDING THE FOREGOING LICENSES, THIS SPECIFICATION IS PROVIDED BY OCP "AS IS" AND OCP EXPRESSLY DISCLAIMS ANY WARRANTIES (EXPRESS, IMPLIED, OR OTHERWISE), INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, OR TITLE, RELATED TO THE SPECIFICATION. NOTICE IS HEREBY GIVEN, THAT OTHER RIGHTS NOT GRANTED AS SET FORTH ABOVE, INCLUDING WITHOUT LIMITATION, RIGHTS OF THIRD PARTIES WHO DID NOT EXECUTE THE ABOVE LICENSES, MAY BE IMPLICATED BY THE IMPLEMENTATION OF OR COMPLIANCE WITH THIS SPECIFICATION. OCP IS NOT RESPONSIBLE FOR IDENTIFYING RIGHTS FOR WHICH A LICENSE MAY BE REQUIRED IN ORDER TO IMPLEMENT THIS SPECIFICATION. THE ENTIRE RISK AS TO IMPLEMENTING OR OTHERWISE USING THE SPECIFICATION IS ASSUMED BY YOU. IN NO EVENT WILL OCP BE LIABLE TO YOU FOR ANY MONETARY DAMAGES WITH RESPECT TO ANY CLAIMS RELATED TO, OR ARISING OUT OF YOUR USE OF THIS SPECIFICATION, INCLUDING BUT NOT LIMITED TO ANY LIABILITY FOR LOST PROFITS OR ANY CONSEQUENTIAL, INCIDENTAL, INDIRECT, SPECIAL OR PUNITIVE DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS SPECIFICATION, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND EVEN IF OCP HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-->
+
+<!---
+THE UPDATED DEFAULT CONTRIBUTOR LICENSE AGREEMENT (CLA) IS [OWFa 0.9](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/ed0befaf86bee2568ad720ff4a9a554d1f4260f7.pdf).
+PLEASE VERIFY THE CORRECT CLA/FSA IS USED AND EXECUTED FOR THIS CONTRIBUTION.
+-->
+
+# Acknowledgements
+
+The Contributors of this Specification would like to acknowledge the following:
+
+- Elaine Palmer, IBM Corporation
+- Yigal Edery, Kameleon
+- Joe Foster, Microchip
+- Ahmed Abbas Hassan, CyShield
+- Brett Henning, Broadcom, Inc.
+- Bryan Kelly, Microsoft
+- Darpana Munjal Loodu, Microsoft
+- Jeff Andersen, Google
+- Nate Klein, Google
+- Jubin Mehta, Facebook, Inc.
+- Alberto Munoz, Intel Corporation
+- Rajeev Sharma, Open Compute Project
+- Wojtek Powiertowski, Facebook, Inc.
+- Eric Spada, Broadcom, Inc.
+- Ben Stoltz, Google
+
+<!---
+Please describe how this Specification complies with the OCP tenets.
+A full explanation of the OCP core tenets can be seen [here](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/bf648bb75091907147e76846cad590f402660d2e.pdf).
+-->
+
+<!-- Will bring this in when it's an actual contribution.
+
+# Compliance with OCP Tenets
+
+## Openness
+
+This specification is open-source.
+
+## Efficiency
+
+This specification allows PKI owners to efficiently issue and provision device identity certificates.
+
+## Impact
+
+This specification unblocks key identity use-cases.
+
+## Scale
+
+This specification is applicable to a wide range of devices that support SPDM.
+
+## Sustainability
+
+This specification does not impact sustainability.
+
+# Base specification
+
+-->
+
+# Revision History
+
+| Revision      | Date       | Guiding Contributor(s)          | Description                                                                            |
+| :------------ | :--------- | :------------------------------ | :------------------------------------------------------------------------------------- |
+| 1.0           | 2020-11-04 | Elaine Palmer, IBM Corporation  | Initial Release                                                                        |
+| 1.1 (initial) | 2023-06-10 | Darpana Munjal Loodu, Microsoft | Definition of OCP SPDM profile and additions to Requirements for SPDM standard support |
+
+# Executive Summary {#sec:executive-summary}
+
+**The environment.**  In cloud data centers, servers are filled with a plethora of subsystems, peripherals, accelerators, hardware, and firmware from multiple global suppliers. To add to the complexity, those servers are typically configured on demand.
+
+**The problem to be solved.**  Until this document, servers had no standardized, open, and automated mechanism to dynamically establish and verify trust in those products. For example, does a network adapter still contain the initial firmware that was installed by its manufacturer?  Has the latest security patch been applied to the firmware in a memory controller?  Which country’s certified cryptographic algorithms are implemented in a storage unit?  Cloud service providers cannot rely on procurement agreements alone to assure that the products they buy are secure. These products must be protected during design, development, manufacture, testing, shipping, provisioning, installation, and operation.
+
+**The Open Compute Project solution.**  This document presents a design for dynamically establishing and verifying trust in the components in a server. In this design, a platform (e.g., server, baseboard management controller, or trusted external service acting in this role) communicates with attester devices (e.g., roots of trust for subsystems and adapters) to determine whether or not the device is trustworthy.
+
+The platform must:
+
+1. Determine which devices are present
+2. Collect measurements (e.g., firmware version and cryptographic functions) from each device
+3. Verify the device’s certificate(s) and the certificate chain back to a trusted root
+4. Verify the device’s digital signature over the measurements
+5. Either accept the device or decide on a remedial action
+
+The attester device must:
+
+1. Contain a tamper-protected, immutable hardware root of trust
+2. Be provisioned with a unique identity, firmware, and cryptographic keys in a secure facility
+3. Implement secure boot, executing only digitally signed and verified firmware
+4. Respond to platform requests for digitally signed measurements (evidence) of the device’s configuration.
+
+This  document identifies required and optional functionality for platforms and attester devices.
+Feedback on version 1.0 of this document is invited, especially from vendors implementing it.
+
+## Purpose {#sec:purpose}
+
+This document is intended to create a specification for the functionality and interoperability of attestation operations. These operations produce information about the ownership and configuration of systems (servers) and system components (devices). This document is part of a larger specification created by the OCP Security Project.
+
+## Audience {#sec:audience}
+
+The audience for this document includes, but is not limited to, system and system component designers, security information and event management (SIEM) system developers, and cloud service providers.
+
+## Syntax and conventions {#sec:syntax-and-conventions}
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [BCP 14](https://tools.ietf.org/html/bcp14) \[[RFC2119](https://tools.ietf.org/html/rfc2119)\] \[[RFC8174](https://tools.ietf.org/html/rfc8174)\] when, and only when, they appear in all capitals, as shown here.
+
+The roles “attester”, “verifier”, and “reference integrity measurements” are defined in the draft [Reference Terminology for Attestation Procedures](https://github.com/henkbirkholz/draft-birkholz-attestation-terminology).
+
+## Requirements, Recommendations, and Choices {#requirements-recommendations-and-choices}
+
+Critical requirements, recommendations, and choices described in this document are highlighted *in this style.*
+
+### REQUIREMENTS - Conformance Statement {#requirements-conformance-statement}
+
+*The manufacturer / Provisioner **MUST** provide a statement of conformance describing how the attester device satisfies the critical requirements, follows the recommendations, and selects from the choices allowed by this document.*
+
+# Introduction {#sec:introduction}
+
+## Platforms, Attesters, and Verifiers {#sec:platforms-attesters-and-verifiers}
+
+A platform verifier (a system such as a server,  a storage controller, or a trusted service acting in this role) must assess the trustworthiness of the devices within a platform (physically or logically). It must also determine whether to admit the devices into the platform in their full capacity, admit them in a reduced capacity, exclude them entirely, or disable them. In order to make this determination, it uses attestation from the devices to reliably ascertain their trustworthiness. In this specification, certain devices within a platform are the attesters. Reliability of attestation (over and above simple logs) is established by using proven industry standard cryptographic methods to mitigate unscrupulous behaviors such as (but not limited to) the “lying endpoint” and the “man-in-the-middle”.
+
+An attester is a collection of hardware, software, firmware, and a root of trust (RoT) with the ability to provide reliable evidence of trustworthiness (i.e. measurements) to the verifier. For example, an attester may be a network interface controller (NIC), redundant array of independent disks (RAID) controller, or non-volatile memory express (NVMe) solid state drive (SSD). An attester’s RoT may be a discrete component with its own firmware and policy, separate from the device it attests.
+
+The relationship between a platform, verifier, and attester is shown in the platform attestation UML model below. A platform must have its own RoT and a verifier that can verify attestations from attester devices. The platform’s RoT and verifier may reside in the main processing unit, in a trusted baseboard management controller (BMC), or in a dedicated device or service.
+
+![Platform Attestation UML Model](images/image2.png){#fig:platform-attestation-uml-model}
+
+Notice that in this model, attestation is not hierarchical. That is, an attester does not include other attesters, and it is not responsible for verifying another attester attached to it. However, attested devices may act as a bridge, with the responsibility of relaying communication between an attester and a verifier. For example a PCIe bridge may relay communication from a NVMe SSD attached to it, but it is not responsible for verifying the trustworthiness of it. Other examples of bridges include host bus adapters (HBAs), RAID controllers, and NICs.
+
+The detailed content (hardware, software, and firmware) of an attester is out of scope of this specification. However within a platform, there are natural attester boundaries \- such as PCIe Card Electromechanical (CEM) form factors, Enterprise & Data Center SSD Form Factor (EDSFF), a SPI bus connecting the attester RoT to its attested device, etc. (generally called field replaceable units).
+
+## Interactions Between Verifiers and Attesters {#sec:interactions-between-verifiers-and-attesters}
+
+The figure below is an overview of interactions that may take place between platform verifiers and attesters. Details of these interactions appear later in this specification.
+
+![](images/image3.png)
+
+Each attester device must have a root of trust (RoT).[^1]  Its RoT is trusted to calculate measurements of the security state of the attester device (e.g., firmware digests, boot parameters, etc.). At a minimum, the RoT is responsible for measuring and reporting the security state of the lowest layer of firmware and the initial security-relevant data in the attester device. Additional layers of firmware measure and record subsequent layers, prior to executing them.
+
+The attester device reports its identity and its measurements to the verifier, which collects and verifies them. The platform verifier may “pull” the measurements from the attester, or the attester may “push” the measurements to the platform verifier. Verification typically involves verifying a digital signature applied by the attester device’s RoT, and comparing the reported measurements against a reference manifest. The reference manifest may include, for example, a list of allowed device identities, or a list of hashes of known good firmware for attester devices. Based on the results of the verification, the platform decides what to do with the attested device, e.g., admit it, repair it, isolate or “fence” it, or disable it.
+
+The communication between the attester device’s RoT and the verifier, and between the reference repository and the verifier must be secure against man-in-the-middle attacks, replay attacks, spoofing, and undetected modification.
+
+Attestation may be performed any time during the lifecycle of the platform:  during the provisioning process, at initial deployment, periodically while the platform is deployed, at redeployment, or during decommissioning.
+
+Because the degree of certainty needed to establish trustworthiness is a balance between risk tolerance, cost, and ease of use, this specification permits multiple methods of:
+
+1. Establishing the Root of Trust (RoT)
+2. Measuring attester state
+3. Reporting measured attester state for consumption by the verifier
+4. Communicating expected attester state to the verifier
+5. Verifying the identity of the attester
+6. Verifying the measured attester state
+7. Mitigating an untrustworthy attester
+
+## Supply Chain Assurance {#sec:supply-chain-assurance}
+
+Security-critical components in platforms and attester devices should be designed assuming a security-hostile manufacturing environment and should be protected as early as possible in the supply chain. Key material should be protected end-to-end, assuming manufacturing networks are fully compromised. Safeguards include, but are not limited to securing provisioning facilities, limiting physical access, disabling hardware debug interfaces (e.g., JTAG), maintaining chain of custody, auditing quantities of production and scrapped components, protecting firmware development systems, digitally signing firmware, protecting and limiting access to key material, and enabling secure boot. An extensive list of recommendations for securing the supply chain appears in [Secure Firmware Development Best Practices](https://www.opencompute.org/documents/csis-firmware-security-best-practices-position-paper-version-1-0-pdf) and [Secure Device Manufacturing:  Supply Chain Security Resilience](https://www.nccgroup.trust/uk/our-research/secure-device-manufacturing-supply-chain-security-resilience/).
+
+At points in the supply chain, provisioning operations establish an attester device’s unique identity and its Device Owner. The Device Owner puts the device into service and determines the authority to update the device. Details of these operations appear later in this specification.
+
+Device ownership may transition from the initial owner, to interim owners, and eventually to the final Device Owner. For example, during final testing, a manufacturing facility may temporarily establish ownership of a device to enable frequent replacement of the firmware. Eventually, it may transfer device ownership to a final customer. The following are common models for changing ownership:	
+
+* Send the device back to provisioning to be changed
+* Generate new ownership credentials in the field (back to factory state)
+* Transfer ownership as directed by the current owner
+
+The following [white paper](https://www.opencompute.org/documents/ibm-white-paper-ownership-and-control-of-firmware-in-open-compute-project-devices) and [presentation](https://www.youtube.com/watch?v=59mM6hnUiKE) discuss those and additional approaches to changing ownership.
+
+# Keys, seeds, and device identifiers {#sec:keys-seeds-and-device-identifiers}
+
+The table below lists the keys, random seeds, and device identifiers used in this document. Official sources of information on cryptographic algorithms, key types, key strength, and cryptoperiods are listed in the section [REQUIREMENTS \- Keys, Entropy, and Random Bits](#heading) below. Helpful, but unofficial information is available in D. Giry’s interactive article [Cryptographic Key Length Recommendation](https://www.keylength.com/en/4).
+
+| Short name      | Long name,  symbol used in protocols             | Key Type / Key Usage                                                                                                                                                                                                    | Purpose                                                                                                   | Stored where?                                                                  | Protections                                                                                                                        | Where generated / created                    | How initialized                                                                                                     | Revocable or updated in field? Under what authority?                             | Value registered or recorded? Usage auditable?                |
+| :-------------- | :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------- | :------------------------------------------------------------ |
+| UDS             | Unique Device secret                             | [Seed](https://csrc.nist.gov/glossary/term/RBG_seed) value generated by random bit generator (RBG) e.g., [primary seed](https://trustedcomputinggroup.org/wp-content/uploads/TCG_TPM2_r1p59_Part1_Architecture_pub.pdf) | Input to key generation function according to [NIST SP800-133](https://doi.org/10.6028/NIST.SP.800-133r2) | Device persistent protected store or regenerated deterministically on power up | read forbidden except by key generation function   write forbidden after provisioning                                              | In device or in secure provisioning facility | Self-generated by device or injected during provisioning                                                            | Not recommended   Allowed only by device Provisioner to assure device provenance | no                                                            |
+| DevIKpr         | Device identity private key                      | Private authentication key                                                                                                                                                                                              | Unique for each device  Used to sign certificate for DevAKpub and tie DevAKpr to device identity          | Device persistent store or regenerated on demand                               | read forbidden after mfg except by the signing operation  write forbidden after provisioning                                       | During device provisioning                   | Generated on board by key generation function using UDS or injected during provisioning (optionally DICE compliant) | Not recommended  Allowed only by device Provisioner to assure device provenance  | no                                                            |
+| DevIKpub        | Device identity public key                       | Public authentication key  / digitalSignature                                                                                                                                                                           | Used to verify device identity                                                                            | X.509 Cert for public key in device persistent store or external to device     | write forbidden after mfg                                                                                                          | During device provisioning                   | Same as DevIKpr                                                                                                     | Not recommended  Allowed only by device Provisioner to assure device provenance  | Recorded by platform at discovery                             |
+| DevAKpr         | Device attestation private key                   | Private signature key                                                                                                                                                                                                   | Used when attesting device state                                                                          | Device persistent store or regenerated on demand                               | read forbidden after mfg except by the signing operation  write forbidden after provisioning except when triggered by Device Owner | During device provisioning                   | Generated on board by key generation function (optionally DICE compliant)                                           | yes by Device Owner                                                              | no                                                            |
+| DevAKpub        | Device attestation public key                    | Public signature \- verification key               digitalSignature, contentCommit- ment                                                                                                                                | Used when verifying device state                                                                          | X.509 Cert for public key in device persistent store or external to device     | write forbidden  after provisioning except when triggered by Device Owner                                                          | During device provisioning                   | Same as DevAKpr                                                                                                     | yes by Device Owner                                                              | Recorded by platform at discovery                             |
+| pCApr           | Provisioner’s Certificate Authority private key  | Private authentication key                                                                                                                                                                                              | Used to sign certificate for DevIKpub                                                                     | pCA’s HSM for private key                                                      | HSM                                                                                                                                | pCA’s HSM                                    | pCA’s HSM                                                                                                           | Revocable by Provisioner                                                         | Audit number of certificatessigned                            |
+| pCApub          | Provisioner’s Certificate Authority public key   | Public authentication key / keyCertSign                                                                                                                                                                                 | Used to verify certificate for DevIKpub                                                                   | X.509 Cert for public key                                                      |                                                                                                                                    | pCA’s HSM                                    | pCA’s HSM                                                                                                           | Certificate revocation list made available to platform                           | Recorded in platform in advance of or during device discovery |
+| DevOwnCApr      | Device Owner’s Certificate Authority private key | Private authentication key                                                                                                                                                                                              | Used to sign alternate certificate for DevIKpub                                                           | DevOwn CA’s HSM for private key                                                | HSM                                                                                                                                | DevOwn CA’s HSM                              | DevOwn CA’s HSM                                                                                                     | Revocable by Device Owner                                                        | Audit number of certificates signed                           |
+| DevOwnCApub     | Device Owner’s Certificate Authority public key  | Public authentication key / keyCertSign                                                                                                                                                                                 | Used to verify alternate certificate for DevIKpub                                                         | X.509 Cert for public key stored on or off device                              |                                                                                                                                    | DevOwn CA’s HSM                              | DevOwn CA’s HSM                                                                                                     | Revoked by Device Owner’s CA or removed from platform if Device Owner changes    | Recorded in platform in advance of or during device discovery |
+| DevUpdtKpr      | Device Update private key                        | Private authorization key                                                                                                                                                                                               | Used to authorize updates to device’s critical configuration                                              | Device Updater’s HSM for private key                                           | HSM                                                                                                                                | Device Updater’s HSM                         | Device Updater’s HSM                                                                                                | Revocable by device updater                                                      | Audit all device updates that were signed / authorized        |
+| DevUpdtKpub     | Device Update public key                         | Public authorization key  digitalSignature, contentCommit- ment                                                                                                                                                         | Used to verify updates to device’s critical configuration                                                 | Device persistent store                                                        | Authenticated update                                                                                                               | Device Updater’s  HSM                        | When provisioned or when deployed by Device Owner                                                                   | Removed at change in ownership or by device-specific mechanism                   | May be attested                                               |
+| FWKeys Manifest | Key Manifest (for secure boot)                   | List of Public authentication keys                                                                                                                                                                                      | Used to contain list of FWSignKpub                                                                        | Device persistent store                                                        | Write authorized only by DevUpdtKpr                                                                                                | Device Updater’s deployment system           | When provisioned or when deployed by Device Owner                                                                   | Revocable by device updater                                                      | Audit all key manifests that were signed / authorized         |
+| FWSignKpr       | Firmware Signer’s private key(s)                 | Private authentication key                                                                                                                                                                                              | Used to sign firmware or critical data                                                                    | Firmware signer’s HSM                                                          | HSM                                                                                                                                | Firmware Signer’s HSM                        | Firmware Signer’s HSM                                                                                               | Revocable by Firmware Signer                                                     | Audit all firmware that was signed                            |
+| FWSignKpub      | Firmware Signer’s public key(s)                  | Public authentication key  digitalSignature, contentCommit- ment, codeSigning                                                                                                                                           | Used to verify signature on firmware or critical data                                                     | Device persistent store or Key manifest                                        | Write authorized only by DevUpdtKpr                                                                                                | Firmware Signer’s HSM                        | Delivered in Key Manifest                                                                                           | Removal from device authorized by DevUpdtKpr                                     | May be attested                                               |
+
+## REQUIREMENTS - Keys, Entropy, and Random Bits {#sec:requirements-keys-entropy-and-random-bits}
+
+*Symmetric keys, asymmetric keys, entropy, and random bits in the key table above **MUST***
+
+- *Follow recommendations in [NIST Special Publication 800-57 Recommendation for Key Management](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-57pt1r5.pdf)*
+- *Follow recommendations in [NIST Special Publication 800-90A, Recommendation for Random Number Generation Using Deterministic Random Bit Generators](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf)*
+- *Follow recommendations in [NIST Special Publication 800-90B, Recommendation for the Entropy Sources Used for Random Bit Generation](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90B.pdf)*
+- *Follow recommendations in [NIST Special Publication 800-133 Recommendation for Cryptographic Key Generation](https://doi.org/10.6028/NIST.SP.800-133r2)*
+- *Follow the guidance in the [Commercial National Security Algorithm (CNSA) Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) regarding quantum resistant algorithms and  key sizes.*
+- *Provide a statement of minimum key strength and cryptoperiods of the values in the key table above.*
+
+# Certificate chains and credentials {#sec:certificate-chains-and-credentials}
+
+The figure below depicts certificate chains that link the keys associated with an attester device. Three credentials (drawn in bold lines) are either stored or dynamically generated onboard the device:  the Device Identity Key certificate, chained to the Provisioner, the Device Attestation Key certificate, chained to the Device Identity key, and the Device Update public key. The most common configuration is shown in the two outer columns. The middle column shows an alternative configuration in which the
+
+Device Owner adds to or replaces the Provisioner’s certificate chain prior to putting the device in service. Note that if the Device Owner replaces the original certificate chain (perhaps because there is not enough storage in which to keep it), then the device cannot be reset securely in the field to its initial, post-provisioning state. Instead, it must be returned to the Provisioner to restore the Provisioner’s root and certificate chain.
+
+![](images/image4.png)
+
+# Protocols {#sec:protocols}
+
+## Participants {#sec:participants}
+
+In this specification, the following organizations and equipment participate in the protocols:
+
+* Attester Device
+* Attester Device Provisioner
+* Attester Device Provisioner’s Certificate Authority
+* Certificate Registry
+* Device Registry
+* Device Owner
+* Platform
+* Verifier
+
+A platform verifier uses the protocols described in this specification to communicate with attester devices to determine whether or not to trust those devices and allow them into the system. These protocols, however, do not describe how the platform verifier actually makes that determination. Some common ways to establish trust include one or more of the following acceptance criteria:
+
+* device certificates chain back to a trusted root certificate authority
+* device is certified by a vendor with whom there is a business relationship
+* device measurements match a predetermined list (manifest) of measurements
+* device accepted on first use, and subsequent measurements match the first
+
+## Provisioning Facility {#sec:provisioning-facility}
+
+An attester device Provisioner provisions the attester device with a unique device secret, a unique device id key pair, and a corresponding certificate.
+
+Provisioning establishes the **hardware root of trust and the unique, unclonable, and immutable identity of an attester device**. It also creates the device’s initial credentials. Use cases for these and subsequent credentials are described  in [TCG TPM 2.0 Provisioning Guidance](https://trustedcomputinggroup.org/wp-content/uploads/TCG-TPM-v2.0-Provisioning-Guidance-Published-v1r1.pdf), Section 5.1, “Identity,” and Section 5.3, “Attestation of Firmware Integrity Measurements.”
+
+The participants in this operation are the Provisioner’s certification authority (pCA) and the device. An additional participant in this protocol is an optional secure value generator.
+
+Often, however, Provisioners prefer to generate secure values offline and inject (aka “squirt”) them into the device. Provisioners prefer to use injection instead of self-generation, because they can use external processes that are much faster at generating keys and deterministic random bits.
+
+Additionally, external processes can perform more extensive entropy tests that a single device might pass, but multiple devices would fail collectively. [^2] Thus, there are trade-offs among the throughput of provisioning processes, protection of secure values, and assurance that secure values are properly generated.
+
+![](images/image5.png)
+
+The figure above illustrates the provisioning of secrets, device identity, device identity and attestation key pairs, the Provisioner’s identity, the Device Owner’s certificate, and the device update public key. The left to right arrows in the middle row show the progression of an attester device through the provisioning process.
+
+**Provisioning step 1** shows two methods of generating the device’s unique device secret (UDS):  1\) a device generates its own secret, or 2\) a hardware security module (HSM) generates it, for later injection into the device. Injecting the UDS exposes it to potential attacks that are not present (or minimized) when the device generates the UDS on its own. Therefore, it is recommended that each attester device generates its own UDS.
+
+In **provisioning step 2**,  the UDS is provided as input to a key generation function,  which generates a unique device identity key pair (DevIKpub,pr). The device identity key can be thought of as a “trustworthy serial number.”    In some devices, the device identity key never changes throughout the lifetime of the device. In others, the device identity key will change if the UDS or the cryptographic identity of the first mutable firmware changes.
+
+Provisioning step 2 shows two methods of generating the device’s identity key pair:
+
+1. A device generates its own keypair, then sends the public key to the Provisioner, or
+2. the Provisioner’s HSM generates it, for later injection into the device.
+
+In either method, the Provisioner’s HSM, which is a component of the Provisioner’s Certificate Authority (pCA), signs a certificate for the device identity public key (DevIKpub).
+
+Some devices may simplify the generation of  the device identity key pair by following the Device Identifier Composition Engine (DICE) architecture (see [TCG Implicit Identity Based Device Attestation](https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Arch-Implicit-Identity-Based-Device-Attestation-v1-rev93.pdf)). In DICE, additional values, such as the Compound Device Identifier are incorporated into the key generation function.
+
+Note that injecting the device identity private key exposes it to potential attacks that are not present (or minimized) when the device generates the key pair on its own. Therefore, it is recommended that each attester device generates its own identity key pair. There is a performance benefit to generating the key pair externally:  The key pair and certificate for the public key can be created at the same time, without having to wait for the attester device to send the public key to the Provisioner.
+
+For those familiar with TPMs, provisioning step 2 is somewhat similar to creating the endorsement key, EK, except that there is no concern for anonymity when using the DevIK.
+
+In **provisioning step 3**, the device records the Provisioner’s authorization of the device’s identity key pair (an X.509 certificate signed by the Provisioner). The Provisioner may optionally record an initial device updater’s public key. This key may be temporary, such as one used to verify the signature of manufacturing test key manifests, or an interim one until the Device Owner replaces it later. Alternatively, the Provisioner may record a device updater’s key and lock it permanently in the device.
+
+In **provisioning step 4**, the device uses an initial random secret to generate a device attestation key pair (DevAKpu, DevAKpr). As in provisioning step 2, the key generation function may optionally follow the DICE architecture. The device fills in a certificate template with the attestation public key, then signs the certificate using DevIKpr.
+
+In **provisioning step 5**, the Device Owner establishes ownership of the device (see “Device Ownership Provisioning” below).
+
+In **provisioning step 6**, the Device Owner provides the device update public key, and the device records it to use later to verify signatures on updates to its critical configuration.
+
+![](images/image6.png)
+
+The protocol diagram above shows the interaction between a newly manufactured attester device and a Provisioner, as they interact to provision the identity credentials for a device. In this interaction, the device creates its own unique device secret (UDS). There are no challenge-responses, because there is not yet a root of trust in the device on which the pCA can rely. The benefit of this approach is that the UDS is never exposed outside of the device.
+
+![](images/image7.png)
+
+The protocol diagram above shows a variation of the interaction between a newly manufactured attester device and a Provisioner. In this interaction, the Provisioner creates the unique device secret (UDS), and both the Provisioner and the device use it as input to a key generation function to derive the device’s unique identity keypair. The benefit of this approach is that a certificate authority is not required on the manufacturing line. The drawback is that the UDS is vulnerable to disclosure at the Provisioner’s site.
+
+### REQUIREMENTS - Initial Provisioning Environment, Operations, and Equipment {#sec:requirements-initial-provisioning-environment-operations-and-equipment}
+
+- *Initial provisioning operations **MUST** be carried out in a trusted facility, in which a secure channel between the Provisioner and the device is guaranteed.*
+
+- *The Provisioner **MUST** report which of the following provisioning methods is used:*
+  	*{attester device self-generates both UDS and DevIKpr ,*
+  	*Provisioner injects UDS and device self-generates DevIKpr , or*
+  	*Provisioner injects both UDS and DevIKpr }.*
+
+- *Cryptographic algorithms and deterministic random bit generators **MUST** be validated under the [NIST Cryptographic Algorithm Validation Program (CAVP)](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program)*
+
+- *Cryptographic modules, if used, **SHOULD** be validated at overall level 2 or higher under [FIPS 140-2 SECURITY REQUIREMENTS FOR CRYPTOGRAPHIC MODULES](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf) or [Security Requirements for Cryptographic Modules, FIPS 140-3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-3.pdf)*
+
+- *Entropy, random bits, symmetric keys, and private asymmetric keys **MUST** be generated within the attester device itself, in a hardware security module, or locally, in a device with the following properties:*
+
+  - *Follows recommendations in [NIST Special Publication 800-90A Rev 1,  Recommendation for Random Number Generation Using Deterministic Random Bit Generators](http://dx.doi.org/10.6028/NIST.SP.800-90Ar1)*
+
+  - *Follows recommendations in [NIST Special Publication 800-90B, Recommendation for the Entropy Sources Used for Random Bit Generation](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90B.pdf)*
+
+  - *Follows recommendations in [NIST Special Publication 800-133 Recommendation for Cryptographic Key Generation](https://doi.org/10.6028/NIST.SP.800-133r2)*
+
+  - *Complies with [Annex C: Approved Random Number Generators for FIPS PUB 140-2, Security Requirements for Cryptographic Modules](https://csrc.nist.gov/CSRC/media//Publications/fips/140/2/final/documents/fips1402annexc.pdf)*
+
+  - *Follows the guidance in the [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) regarding quantum resistant algorithms and  key sizes.*
+
+- *Each attester device has the following properties:*
+
+  - *Each attester device **MUST** have a unique, and immutable device ID key pair.*
+
+  - *Each attester device **MAY** be provisioned with a hash of the first mutable firmware.*
+
+  - *Each attester device **MUST** prevent exfiltration of device secrets through defined interfaces.*
+
+- *The Provisioner **MUST** generate a certificate signed by its pCA private key, which links the unique device identity with its Provisioner.*
+
+- *Each attester device **MUST** generate a certificate signed by the device ID private key, which links the attestation public key with the device identity.*
+
+## Device Ownership Provisioning  {#sec:device-ownership-provisioning}
+
+The first Device Owner provisions the attester device with a Device Update public key (DevUpdtKpub). The attester device uses this key to verify the authenticity and integrity of updates to the device’s critical configuration.
+
+The device ownership provisioning operation should take place as early as possible in the lifecycle of the attester device, ideally as soon as the identity of the device (DevIKpub,pr) is established. Until the legitimate Device Update public key is provisioned, the attester device is vulnerable to an attack in which an attacker’s own Device Update public key is provisioned, then later authorizes malicious updates to the attester device.
+
+Optionally, the Device Owner’s Certificate Authority generates a certificate over the device identity public key (DevIKpub). If present, this certificate can be presented during attestation operations to attest that an owner has taken ownership of the device.
+
+The parties to this protocol are the Device Owner and the attester device. (Sometimes, the Provisioner and the Device Owner are one and the same.)
+
+### REQUIREMENTS - Device Ownership Provisioning {#sec:requirements-device-ownership-provisioning}
+
+- *Each attester device **MUST** be provisioned with a Device Update public key, which is used to verify updates to the device’s critical configuration.*
+
+- *The Device Update public key, once provisioned on the attester device, **MUST** only be modified through an authenticated ownership transfer.*
+
+- *Each attester device **MAY** be provisioned with a Device Owner’s certificate over the device identity public key.*
+
+- *Each attester device **MAY** be provisioned with a hash of the device firmware.*
+
+- *Each attester device **MAY** be provisioned with a hash of the Device Owner’s certificate over the device identity public key.*
+
+![](images/image8.png)
+
+The protocol diagram above shows the interaction between a newly provisioned attester device and a Device Owner, as they interact to provision ownership information, attestation credentials, and update verification keys for a device.
+
+First, the Device Owner verifies that the device was provisioned by a trusted provisioner and optionally issues its own certificate over the device’s unique identity public key.
+
+Next, the device calculates a seed which will be used as input to the key generation function for its attestation key. It can use the same UDS and key generation function as was used when generating the device identity key (DevIK), but the key generation function must be informed that the key is an authentication key, otherwise it would create a key pair identical to DevIK.
+
+In the DICE architecture, the attestation key is derived from the device firmware. If the device firmware changes, then a new attestation key is regenerated. In this specification, including a hash of the device firmware is optional. Another optional parameter to the key derivation function is a hash of the Device Owner’s public key. If it is included and the owner changes, then a new attestation key is regenerated.
+
+Some attester devices may not be able to generate and sign an X.509 certificate. In an alternative method, the device builds a lightweight TPM-style certificate containing the attestation public key, then signs it using its device ID private key. This TPM-style certificate is then sent to the Device Owner to be parsed, converted to an X.509 certificate, signed by the Device Owner’s CA, and sent back to the device. Just as in the provisioning protocol above, these operations must be carried out in a secure facility or in a trusted platform.
+
+## Discovery and Interrogation protocol {#sec:discovery-and-interrogation-protocol}
+
+The platform determines what attester devices are present and their authentication and attestation capabilities.
+
+The platform begins to build a platform inventory of the attester devices present. (It completes the inventory after the authentication and enrollment protocol.)  Platforms should be able to perform such a discovery as soon as power is up. On some platforms, discovery would happen after the firmware completes device initialization. However, it is expected that some platforms would perform early discovery, and sequence the startup process by holding devices in reset until they are discovered and optionally checked for integrity, using a sideband for the discovery. It is also expected that some devices may not support discovery before they are taken out of reset, mainly for legacy and flashless devices, but for modern and smart devices, this should be made possible.
+
+Platforms can optionally hold the main data bus (i.e. PCIe) in reset while the platform interrogates the attester devices. This process is referred to as a split reset sequence. In this use case, the attester device is required to respond to requests while its main data bus interface is held in reset. One example of this mechanism is to hold PCIe reset (PERST\#) asserted while the interrogation process occurs. The following diagram shows an example of this sequence using PCIe as the main data bus. In the following diagram, the platform holds PERST\# asserted while attester devices are allowed to initialize their CPUs and firmware stacks. When the attester devices are ready to respond, the platform interrogates the attester devices according to its policies. When the platform is complete with the interrogation and satisfied with its results, the platform allows the attester devices out of reset.
+
+![](images/image9.png)
+
+Another possible reset sequence is for the platform to be held in a state that cannot cause harm. This process is referred to as a unified reset sequence. In this case, the attester devices are brought out of reset as normal and interrogated by the platform. When the platform is complete with the interrogation and satisfied with its results, the platform is admitted into production servicing, or allowed to move to its fully operational state. When using a unified reset sequence, the previous diagram does not apply.
+
+An implementation can also use an external root of trust chip that controls the attester device. In such an implementation, the RoT chip controls the sequence of the attestation operations and attester device reset. In this case, the platform initialization appears to be unaltered from the perspective of the attester device.
+
+This protocol is highly dependent on the specific technology of the platform, bus, and devices, and thus is out of scope. The goal, however, is in scope. The goal is to build a platform inventory containing a list of all security-relevant devices, whether or not they support authentication and attestation, and, if they do, what commands they support.
+
+### REQUIREMENTS - Discovery and Interrogation {#sec:requirements-discovery-and-interrogation}
+
+- *Attester devices **MUST** be capable of communicating their authentication and attestation capabilities to the platform.*
+
+- *Attester devices **SHOULD** be capable of communicating their capabilities to the platform within 15 seconds of being provided with power, even if their data plane bus (e.g. PCIe) is held in reset by the platform.*
+
+- *Platforms **MUST** be capable of interrogating potential attester devices and recording their authentication and attestation capabilities.*
+
+- *Platforms **MUST** be capable of interrogating attester devices that do not communicate their capabilities before being taken out of reset, e.g., by interrogating them later in the boot cycle or by having them pre-configured as such, in the platform reference manifest.*
+
+- *Platforms **MAY** use the message formats for GET\_CAPABILITIES and NEGOTIATE\_ALGORITHMS as described in* [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf) or *Device Capabilities* *as described in [Project Cerberus Firmware Challenge Specification](https://github.com/opencomputeproject/Project_Olympus/blob/master/Project_Cerberus/Project%20Cerberus%20Challenge%20Protocol.pdf) .* *Where necessary, bridge components may be responsible for translating from the native bus protocol into the GET\_CAPABILITIES/ NEGOTIATE\_ALGORITHMS message formats.*
+
+***NOTE from Alberto Munoz: "Should we remove this reference to Cerberus, or are there devices that still support it?"***
+
+## Authentication, Attestation, and Enrollment protocol {#sec:authentication-attestation-and-enrollment-protocol}
+
+After the platform completes the interrogation phase, it authenticates attester device identities, and completes an inventory of authenticated devices and their measurements.
+
+In this protocol,
+
+1. The platform authenticates the identity of each attester device by collecting (from the device) and verifying the certificate chain of its attestation key, all the way back to the Provisioner’s root public key pCApub. This operation assures that the attestation key is on a device that was provisioned by a trusted provisioner. For efficiency, the platform may cache the digests of the certificates to avoid having to verify them again, and to reduce the amount of storage required to store the entire chain.
+
+2. The platform verifies that each attester device possesses and can use a private authentication key corresponding to the certificate chain that was verified in the previous step. Optimization allows a platform to skip re-verification of a certificate chain. An attacker device may attempt to take advantage of this optimization by presenting the certificate chain (and hash) of a good device. If so, then this step will fail, because the attacker device cannot sign the challenge response with a private key corresponding to the certificate hash in the response, which also matches the certificate hash previously verified and cached by the platform.
+
+3. The platform verifies the authenticity and integrity of measurements of the firmware on authenticated attester devices.
+
+4. The platform assembles an inventory of authenticated attester devices, their identities, and their associated measurements.
+
+5. The platform optionally compares the assembled inventory to a platform reference manifest of expected devices and measurements.
+
+6. Should any steps in the protocol fail, a platform-dependent action is taken, such as admit the attested device, repair it, isolate or “fence” it, or disable it.
+
+Example message formats and content are as described in [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf) or [Project Cerberus Firmware Challenge Specification](https://github.com/opencomputeproject/Project_Olympus/tree/master/Project_Cerberus).
+
+![](images/image10.png)
+
+### REQUIREMENTS - Authentication, Attestation, and Enrollment {#sec:requirements-authentication-attestation-and-enrollment}
+
+1. *Attester devices **MUST** provide certificate digests and certificates when requested by the platform.*
+
+2. *Attester devices **MUST** build and sign responses to challenges from the platform. Although this step is optional in the SPDM specification, it is required here.*
+
+3. *Platform verifiers **MUST** request certificate digests and certificates from attester devices.*
+
+4. *Platform verifiers **MUST** verify ASN.1 DER encoded X.509v3 certificates and certificate chains from attester devices back to each device’s Provisioner root public key.*
+
+5. *Platform verifiers **MUST** present challenges to attester devices and verify the content in the responses.*
+
+6. *Platform verifiers **MUST** verify attester device signatures on the challenge responses.*
+
+7. *Platform verifiers **MAY** build a platform inventory containing authentication status, firmware signing keys, firmware measurements, and Device Owners of attester devices.*
+
+8. *Platform verifiers **MAY** accept a predefined manifest (an expected inventory of devices) or build it dynamically.*
+
+9. *Platform verifiers **MAY** compare the platform inventory to a platform manifest containing expected devices and their configurations.*
+
+## REQUIREMENTS - SPDM Standards Support {#sec:requirements-spdm-standards-support}
+
+To conform to the OCP SPDM profile the following requirements must be met:
+
+***NOTE from Brett Henning: "We should have a command to discover OCP profile support, and presumably a version for the profile. This could be an SPDM vendor defined (we'll have to create a vendor ID for OCP, but we just made that process much simpler)."***
+
+10. *Attester devices that support the SPDM standard **MUST** conform to the set of capabilities as defined in the table “Required Capabilities for SPDM.”*
+
+11. *Attester devices that support the SPDM standard **SHOULD** support  the set of algorithms as defined in the table “Recommended Algorithms for SPDM”.*
+
+12. *Attester devices that support the SPDM standard **MUST** support SPDM version 1.2 or higher.*
+
+13. *Attester devices that support the SPDM standard **SHOULD**  support the current version.*
+
+14. *Attestor devices **MUST** support the required commands as listed per version*
+
+15. *Attester devices SHALL provide attestation report in either RATS EAT Format expressed as CWT (Cbor Web Token) or as SPDM evidence manifest TOC (direct measurement form) as defined by the TCG DICE Concise Evidence for SPDM Specification*
+
+16. *Attester devices that provide an IETF EAT SHALL locate the IETF EAT at SPDM measurement indexblock 0xF0*
+
+### Required Capabilities for SPDM
+
+***NOTE from Alberto Munoz: "We need to update (add) capabilities required to support 1.1 and 1.2 commands listed in 8.5.2.2 to this section (e.g., KEY_EX_CAP, CSR_CAP,  CHUNK_CAP)"***
+
+The following table lists the SPDM capabilities, as defined in the CAPABILITIES response, that are required for attester devices that are compliant with this specification. Note, this table is based on version 1.1.0 of the SPDM specification, and capabilities that are only defined in version 1.1.0 are not required if the attester device does not support version 1.1.0.
+
+| Capability       | Description                                                                          |
+| :--------------- | :----------------------------------------------------------------------------------- |
+| CERT\_CAP        | Supports certificate exchanges                                                       |
+| CHAL\_CAP        | Supports challenge                                                                   |
+| MEAS\_CAP        | Supports MEASUREMENTS and should support signed MEASUREMENTS (SPDM MEAS\_CAP \= 10b) |
+| MEAS\_FRESH\_CAP | 1 (always return fresh measurements)                                                 |
+
+***NOTE from Jeff Andersen: "To discuss, MEAS\_FRESH\_CAP is a bit problematic."***
+
+### Required Commands for SPDM
+
+Attestor devices are allowed to implement a large number of commands under the SPDM specification. To be OCP SPDM profile compliant, attestor devices requires support of the following commands:
+
+Table: Required SPDM Commands
+
+| SPDM  Version | Command                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| :------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1.0**       | GET\_CERTIFICATE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|               | GET\_MEASUREMENTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **1.2**       | GET\_CSR  Note: the SPDM 1.2 specification states that the key within the CSR is the Device Certificate CA key. To satisfy this OCP specification, the key within the CSR may instead be (directly or indirectly) endorsed by the DeviceID key. The key within the CSR should change infrequently, to avoid triggering frequent re-enrollment flows. The CSR may be null-signed rather than self-signed. The key within the CSR must be endorsed (directly or indirectly) by the vendor’s PKI. See CSR in note below. |
+|               | SET\_CERTIFICATE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|               | CHUNK\_SEND                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|               | CHUNK\_GET                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+Note: SPDM GET\_CSR assumes responders have access to the signing key corresponding to the public key in the CSR. For devices where the SPDM responder operates at a locality where the signing key is not accessible, it is acceptable for the end entity to omit the signature from the CSR. In this instance, the burden of verifying the CSRs integrity falls upon the PKI owner. Evidence from the device vendor's certificate chain and endorsement of the CSR may be used in the verification.
+
+### Recommended Algorithms for SPDM
+
+Attester devices are allowed a large number of algorithm combinations under the
+SPDM Specification. To improve compatibility, attester devices should follow the
+guidelines in this section. The OCP SPDM Profile requires support for the following
+algorithms:
+
+***NOTE from Jeremy O'Donoghue: "I would prefer to see the requirements on interoperability moved to the verifier - it generally has lower security requirements than RoT and a more performance compute environment. For example: attester must support TPM_ALG_ECDSA_NIST_P384, TPM_ALG_SHA384, AES-256-GCM, TPM_ALG_MLDSA_65 (assuming that's what TCG eventually calls the algorithm). Verifier MAY support other algorithms."***
+
+| Algorithm Type  | Required Algorithm               |
+| :-------------- | :------------------------------- |
+| **Asymmetric**  | TPM\_ALG\_RSASSA\_2048           |
+|                 | TPM\_ALG\_RSAPSS\_2048           |
+|                 | TPM\_ALG\_RSASSA\_3072           |
+|                 | TPM\_ALG\_RSAPSS\_3072           |
+|                 | TPM\_ALG\_ECDSA\_ECC\_NIST\_P256 |
+|                 | TPM\_ALG\_RSASSA\_4096           |
+|                 | TPM\_ALG\_RSAPSS\_4096           |
+|                 | TPM\_ALG\_ECDSA\_ECC\_NIST\_P384 |
+|                 | EdDSA ed25519                    |
+|                 | EdDSA ed448                      |
+|                 | secp256r1                        |
+|                 | secp384r1                        |
+| **Hash**        | TPM\_ALG\_SHA\_384               |
+|                 | TPM\_ALG\_SHA\_512               |
+|                 | TPM\_ALG\_SHA3\_256              |
+|                 | TPM\_ALG\_SHA3\_384              |
+|                 | TPM\_ALG\_SHA3\_512              |
+| **AEAD Cipher** | AES-128-GCM                      |
+|                 | AES-256-GCM                      |
+|                 | CHACHA20\_POLY1305               |
+
+***NOTE from Bryan Kelly: "Is there an ML-DSA yet?"***
+
+### IETF EAT Binding for SPDM
+
+See <https://github.com/opencomputeproject/Security/tree/main/specifications/ietf-eat-profile>.
+
+# Measurement collection and storage
+
+## REQUIREMENTS - What to measure and what not to measure {#sec:requirements-what-to-measure-and-what-not-to-measure}
+
+- *The measurements **MUST** include everything that affects the security of the attester device, such as executable code, headers, security state and configuration data.*
+- *The measurements **MUST** exclude information that will make the measurements brittle, such as run-time configuration data that does not impact the security of the device, and information which is expected to be updated frequently on the device.*
+
+Some measurements may not be obvious, may affect the security of the device, and may or may not make the measurements brittle. For example, many flash devices contain a foundry-installed serial number which could be included in the measurements to detect flash replacement attacks (which can bypass flash read-only protections).
+
+## REQUIREMENTS - Security-relevant configuration data {#sec:requirements-security-relevant-configuration-data}
+
+*In the event that configuration data for the device may lead to compromise of the security of the device (such as fuses or straps that enable JTAG or other test interfaces), this class of configuration data **MUST** be discoverable from the device and/or cause the measurements of the device to be distinguishable from production measurements. The mechanism for detecting/providing this information to the attester device **MUST** be enforced through pure hardware means.*
+
+**Reset state**
+
+*On attester device reset, the measurement registers **MUST** be cleared (reset to 0s) and a measurement indicating an attester device reset event **MUST** be extended to the measurement register.*
+
+*Resetting the attester measurements independently from the system that it measures **MUST NOT** be possible through a purely software mechanism (avoid separate reset and power signals).*
+
+**Security / integrity of the measurement storage**
+
+*The measurement storage **MUST** be integrity protected to prevent malicious or inadvertent modification, but it is not confidential.*
+
+**Measurement logs**
+
+*Measurement storage **MAY** include a structured log of measurements.*
+
+This log is used by the platform to derive and verify extended components or measurements. The log may also contain unprotected metadata associated with the measurements. Desirable properties of measurement logs are:
+
+* Tamper evident
+* Tamper resistant
+* Contains a sufficient number of events to support analysis
+* Indicates the relative time spanned in the log
+
+The platform collects any logs it collects from attester devices. Additionally, the platform may maintain a log which contains an aggregation of the state of the attester devices. One such event log has been standardized by the Trusted Computing Group (TCG). Tooling already exists that supports parsing and verifying TCG event logs. (See section 5 of  [TCG EFI Protocol Specification](https://trustedcomputinggroup.org/wp-content/uploads/EFI-Protocol-Specification-rev13-160330final.pdf))  Although the TCG logs are not a perfect fit, platforms and attester devices may be able to map their events to TCG events and measurement storage to platform configuration registers, in order to produce standardized logs.
+
+**Algorithms for cumulative measurements**
+
+When multiple measurements are accumulated in one register, writes should update the measurement register as follows:
+
+```
+new value ≔ Hash (old value || input provided)
+```
+
+This calculation follows that of Trusted Computing Group’s “Extend” operation as described in [TCG EFI Protocol Specification](https://trustedcomputinggroup.org/wp-content/uploads/EFI-Protocol-Specification-rev13-160330final.pdf). Note that the size of “input provided” is the same as the size of the digest of the hash algorithm. The size also must be constant to avoid length extension attacks as described in [https://en.wikipedia.org/wiki/Length\_extension\_attack](https://en.wikipedia.org/wiki/Length_extension_attack) .
+
+**Security / integrity of object that was measured**
+
+Firmware (data and code) left exposed on external flash is vulnerable to time-of-check time-of-use problems (TOCTOU). The problem is that it may be modified between the time the verification is done, but before it is executed. Therefore, it must be validated on EVERY read.
+
+Devices with limited memory and execute-in-place devices are particularly vulnerable to TOCTOU problems. If firmware must be staged or loaded in pieces, then it must also be verified in stages or pieces, before it is executed.
+
+## REQUIREMENTS - When to Measure {#sec:requirements-when-to-measure}
+
+**Before execution, following a layered approach**
+
+*Before executing or transferring control to mutable code, immutable code **MUST** record measurements of the mutable code and of relevant configuration settings*. For example, a read-only section of secure boot firmware on an attester device, before executing the remainder of the device’s boot firmware stored in writable flash, must record a hash of that writable firmware. It may also record the public key it used to verify the digital signature on the writable firmware.
+
+Next, the mutable code must record measurements and relevant configuration settings of the next layer of mutable code (also *before* executing or transferring control to it).
+
+**Cold vs. warm boot**
+
+Devices should reset any measurement state, and perform a full boot from a hardware root-of-trust whenever the device undergoes a full power-reset.
+
+**Resets and updates**
+
+*If an attester device’s state changes (e.g., reset or chain of trust has become invalidated), the attester **MUST** generate a signal or counter to notify the platform of the change.*
+
+*If the attester device’s state changes, the platform and device **MUST** repeat the complete attestation protocol.*
+
+The device may maintain an optional non-volatile counter that is incremented on each secure boot. This counter can be included in the set of values returned during attestation, and can be used by the verifier to detect any unexpected device resets (which could be indicative of suspicious activity). However, in certain power states, some devices will reboot, thus inflating the counter and making it an unreliable indicator of suspicious activity.
+
+**Dynamic modification of device**
+
+*If a device allows for the runtime modification of any state that can affect the security properties of the device, such modifications **SHOULD** be reflected in the measurements and measurement logs of the device.* Examples of such dynamic modification include loading new firmware without rebooting the device, or enabling debug functionality (that can affect the security state of the device).
+
+**Entry into Debug mode**
+
+If the activation of debug capabilities in the device can have security implications (including ability to read or modify registers or memory, bypass secure boot capabilities, load untrusted firmware, read performance state that can be used to extract side-channel information, etc.), such an activation needs to be reflected in the measurements and measurement logs.
+
+*It **SHOULD NOT** be possible for any debug mode to reset the measurement values, or make arbitrary changes to them.* Only extensions must be permitted.
+
+**Continuous monitoring**
+
+In order to support continuous monitoring by the platform, *it is **RECOMMENDED** that attester devices be able to respond to an attestation request at any time during the device’s normal runtime operation.*
+
+# Policies {#sec:policies}
+
+When putting this specification into practice, there are many decisions that must be left to the implementation. These decisions cover topics such as
+
+* What to measure
+* What authority is authorized to request attestations
+* What to do with devices with certificates that expired while sitting in a warehouse
+* How to handle errors, e.g. ignore, log and keep going, or log and fail
+* Whether to admit devices incapable of attestation
+* Whether to admit immutable devices that cannot be updated (or smart devices that may be masquerading as immutable ones)
+* Whether to admit devices that can reset themselves without the intervention or knowledge of the platform
+* How to handle attested devices where attestation has not succeeded: e.g., admit it with a notice of unsuccessful attestation, repair it, isolate or “fence” it, or disable it.
+
+# Glossary and Abbreviations {#sec:glossary-and-abbreviations}
+
+See [Glossary and Abbreviations](https://docs.google.com/document/d/1NaWTRfXgNTiRzp8EnsYKjudo3z2lrdDK0dPyqer0DgU/edit)
+
+# Relevant standards, guidelines, and documents {#sec:relevant-standards-guidelines-and-documents}
+
+1. [Approved Random Number Generators for FIPS PUB 140-2 Annex C (DRAFT) Security Requirements for Cryptographic Modules](https://csrc.nist.gov/CSRC/media//Publications/fips/140/2/final/documents/fips1402annexc.pdf)
+2. [Automated Proof for Authorization Protocols of TPM 2.0 in Computational Model (full version)](https://eprint.iacr.org/2014/120.pdf)
+3. [Bernstein D.J. et al. (2013) Factoring RSA Keys from Certified Smart Cards: Coppersmith in the Wild. In: Sako K., Sarkar P. (eds) Advances in Cryptology \- ASIACRYPT 2013\. ASIACRYPT 2013\. Lecture Notes in Computer Science, vol 8270\. Springer, Berlin, Heidelberg.](https://doi.org/10.1007/978-3-642-42045-0_18)
+4. [BCP 14 \- Key words for use in RFCs to Indicate Requirement Levels](https://tools.ietf.org/html/bcp14)
+5. [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm)
+6. [Cryptographic Key Length Recommendation](https://www.keylength.com/en/4)
+7. [Device Identifier Composition Engine (DICE) Architectures](https://trustedcomputinggroup.org/work-groups/dice-architectures/)
+8. [IEEE 802.1AR Secure Device Identity](https://1.ieee802.org/security/802-1ar/)
+9. [Implicit Identity Based Device Attestation v1 rev93](https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Arch-Implicit-Identity-Based-Device-Attestation-v1-rev93.pdf)
+10. [Implementing DICE, Trusted Computing Group 3/20/2018](https://develop.trustedcomputinggroup.org/2018/03/20/implementing-dice/)
+11. [Length Extension Attack](https://en.wikipedia.org/wiki/Length_extension_attack)s
+12. [NIST Special Publication 800-57 Part 1 Rev. 5, Recommendation for Key Management, Part 1: General](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-57pt1r5.pdf)
+13. [NIST Special Publication 800-90B, Recommendation for the Entropy Sources Used for Random Bit Generation](https://csrc.nist.gov/publications/detail/sp/800-90b/final)
+14. [NIST Special Publication 800-108 Recommendation for Key Derivation Using Pseudorandom Functions (Revised)](https://doi.org/10.6028/NIST.SP.800-108)
+15. [NIST Special Publication 800-131a Rev. 2, Transitioning the Use of Cryptographic Algorithms and Key Lengths](https://doi.org/10.6028/NIST.SP.800-131Ar2)
+16. [NIST Special Publication 800-133 Recommendation for Cryptographic Key Generation](https://doi.org/10.6028/NIST.SP.800-133r2)
+17. NIST Special Publication 800-155 (DRAFT), [BIOS Integrity Measurement Guidelines](https://csrc.nist.gov/publications/detail/sp/800-155/draft)
+18. NIST Special Publication 800-193, [Platform Firmware Resiliency Guidelines](https://csrc.nist.gov/publications/detail/sp/800-193/final)
+19. [Open Compute Project, Project Cerberus  Firmware Update Specification](https://github.com/opencomputeproject/Project_Olympus/tree/master/Project_Cerberus)
+20. [Project Cerberus Firmware Challenge Specification](https://github.com/opencomputeproject/Project_Olympus/blob/master/Project_Cerberus/Project%20Cerberus%20Challenge%20Protocol.pdf)
+21. [Reference Terminology for Attestation Procedures](https://github.com/henkbirkholz/draft-birkholz-attestation-terminology)
+22. [RFC 2119, Key words for use in RFCs to Indicate Requirement Levels](https://www.ietf.org/rfc/rfc2119.txt)
+23. [RFC 5280, Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, Section 4.2.1.3](https://www.ietf.org/rfc/rfc5280.txt)
+24. [RFC 8174  Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words](https://tools.ietf.org/html/rfc8174)
+25. [Secure Device Manufacturing:  Supply Chain Security Resilience](https://www.nccgroup.trust/uk/our-research/secure-device-manufacturing-supply-chain-security-resilience/)
+26. [Secure Firmware Development Best Practices, July 2019](https://www.opencompute.org/documents/csis-firmware-security-best-practices-position-paper-version-1-0-pdf)
+27. [Security Protocol and Data Model (SPDM) Specification version 1.0.0, 2019-12-11](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf)
+28. [Security Requirements for Cryptographic Modules, FIPS 140-2](https://csrc.nist.gov/publications/detail/fips/140/2/final)
+29. [Security Requirements for Cryptographic Modules, FIPS 140-3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-3.pdf)
+30. [Security Requirements for PMCI Standards and Protocols](https://www.dmtf.org/sites/default/files/PMCI%20Security%20-%20Architecture%2012_17_18.pdf)
+31. [TCG EFI Platform Specification For TPM Family 1.1 or 1.2, Specification Version 1.22 Revision 15, January 27, 2014](https://trustedcomputinggroup.org/wp-content/uploads/TCG_EFI_Platform_1_22_Final_-v15.pdf)
+32. [TCG EFI Protocol Specification, Family“2.0”Level 00 Revision 00.13 March 30, 2016](https://trustedcomputinggroup.org/wp-content/uploads/EFI-Protocol-Specification-rev13-160330final.pdf)
+33. [TCG Infrastructure WG TPM Keys for Platform Identity for TPM 1.2, Specification Version 1.0 Revision 3, August 21 2015](https://trustedcomputinggroup.org/wp-content/uploads/TPM_Keys_for_Platform_Identity_v1_0_r3_Final.pdf)
+34. [TCG TPM 2.0 Provisioning Guidance v1.0 rev 1.0, March 15, 2017](https://trustedcomputinggroup.org/wp-content/uploads/TCG-TPM-v2.0-Provisioning-Guidance-Published-v1r1.pdf)
+35. [TCG Trusted Platform Module Library Part 1: Architecture, Family “2.0” Level 00 Revision 01.59 November 8, 2019](https://trustedcomputinggroup.org/wp-content/uploads/TCG_TPM2_r1p59_Part1_Architecture_pub.pdf)
+36. [USB Authentication Specification Rev. 1.0 with ECN and Errata through January 7, 2019](https://www.usb.org/document-library/usb-authentication-specification-rev-10-ecn-and-errata-through-january-7-2019)
+37. [Universal Serial Bus Revision 3.2 Specification](http://www.usb.org/developers/docs/)
+
+# License {#sec:license}
+
+OCP encourages participants to share their proposals, specifications and designs with the community. This is to promote openness and encourage continuous and open feedback. It is important to remember that by providing feedback for any such documents, whether in written or verbal form, that the contributor or the contributor's organization grants OCP and its members irrevocable right to use this feedback for any purpose without any further obligation.
+
+It is acknowledged that any such documentation and any ancillary materials that are provided to OCP in connection with this document, including without limitation any white papers, articles, photographs, studies, diagrams, contact information (together, “Materials”) are made available under the Creative Commons Attribution-ShareAlike 4.0 International License found here: [https://creativecommons.org/licenses/by-sa/4.0/](https://urldefense.proofpoint.com/v2/url?u=https-3A__creativecommons.org_licenses_by-2Dsa_4.0_&d=DwMFaQ&c=jf_iaSHvJObTbx-siA1ZOg&r=BqFCxDNyAJevHgEgYwZw0rORaVubZcDFycdZwrbjoCM&m=aUYQryq43waZK3h9DIgMN14XrhMhbo_6Ht75yJW-Q8U&s=RhUxk6cjNzY_kGHJDCD2C7NRTSjWqbkWY5_Uw5aOKqs&e=), or any later version, and without limiting the foregoing, OCP may make the Materials available under such terms.
+
+As a contributor to this document, all members represent that they have the authority to grant the rights and licenses herein. They further represent and warrant that the Materials do not and will not violate the copyrights or misappropriate the trade secret rights of any third party, including without limitation rights in intellectual property. The contributor(s) also represent that, to the extent the Materials include materials protected by copyright or trade secret rights that are owned or created by any third-party, they have obtained permission for its use consistent with the foregoing. They will provide OCP evidence of such permission upon OCP’s request. This document and any "Materials" are published on the respective project's wiki page and are open to the public in accordance with OCP's Bylaws and IP Policy. This can be found at
+[http://www.opencompute.org/participate/legal-documents/](https://urldefense.proofpoint.com/v2/url?u=http-3A__www.opencompute.org_participate_legal-2Ddocuments_&d=DwMFaQ&c=jf_iaSHvJObTbx-siA1ZOg&r=BqFCxDNyAJevHgEgYwZw0rORaVubZcDFycdZwrbjoCM&m=aUYQryq43waZK3h9DIgMN14XrhMhbo_6Ht75yJW-Q8U&s=kIIJXCIbpOXyWf1GiaHJEjvGGeIcRyYOVHnjt5fjTXE&e=).
+If you have any questions please contact OCP.
+
+# Appendix
+
+## Summary of Requirements and Recommendations {#sec:summary-of-requirements-and-recommendations}
+
+1. [REQUIREMENTS - Conformance Statement](#sec:requirements-conformance-statement)
+
+   1. *The manufacturer / Provisioner **MUST** provide a statement of conformance describing how the attester device satisfies the critical requirements, follows the recommendations, and selects from the choices allowed by this document.*
+
+2. [REQUIREMENTS - Keys, Entropy, and Random Bits](#sec:requirements-keys-entropy-and-random-bits)
+
+   1. Symmetric keys, asymmetric keys, entropy, and random bits in the key table **MUST***
+
+      1. *Follow recommendations in [NIST Special Publication 800-57 Recommendation for Key Management](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-57pt1r5.pdf)*
+
+      2. *Follow recommendations in [NIST Special Publication 800-90A, Recommendation for Random Number Generation Using Deterministic Random Bit Generators](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf)*
+
+      3. *Follow recommendations in [NIST Special Publication 800-90B, Recommendation for the Entropy Sources Used for Random Bit Generation](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90B.pdf)*
+
+      4. *Follow recommendations in [NIST Special Publication 800-133 Recommendation for Cryptographic Key Generation](https://doi.org/10.6028/NIST.SP.800-133r2)*
+
+      5. *Follow the guidance in the [Commercial National Security Algorithm (CNSA) Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) regarding quantum resistant algorithms and  key sizes.*
+
+      6. *Provide a statement of minimum key strength and cryptoperiods of the values in the key table.*
+
+3. [REQUIREMENTS - Initial Provisioning Environment, Operations, and Equipment](#sec:requirements-initial-provisioning-environment-operations-and-equipment)
+
+   1. *Initial provisioning operations **MUST** be carried out in a trusted facility,  in which a secure channel between the Provisioner and the device is guaranteed.*
+
+   2. *The Provisioner **MUST** report which of the following provisioning methods is used:*
+      	*{attester device self-generates both UDS and DevIKpr ,*
+      	*Provisioner injects UDS and device self-generates DevIKpr , or*
+      	*Provisioner injects both UDS and DevIKpr }.*
+
+   3. *Cryptographic algorithms and deterministic random bit generators **MUST** be validated under the [NIST Cryptographic Algorithm Validation Program (CAVP)](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program)*
+
+   4. *Cryptographic modules, if used, **SHOULD** be validated at overall level 2 or higher under [FIPS 140-2 SECURITY REQUIREMENTS FOR CRYPTOGRAPHIC MODULES](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf) or [Security Requirements for Cryptographic Modules, FIPS 140-3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-3.pdf)*
+
+   5. *Entropy, random bits, symmetric keys, and private asymmetric keys **MUST** be generated within the attester device itself, in a hardware security module, or locally, in a device with the following properties:*
+
+      1. *Follows recommendations in [NIST Special Publication 800-90A Rev 1,  Recommendation for Random Number Generation Using Deterministic Random Bit Generators](http://dx.doi.org/10.6028/NIST.SP.800-90Ar1)*
+
+      2. *Follows recommendations in [NIST Special Publication 800-90B, Recommendation for the Entropy Sources Used for Random Bit Generation](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90B.pdf)*
+
+      3. *Follows recommendations in [NIST Special Publication 800-133 Recommendation for Cryptographic Key Generation](https://doi.org/10.6028/NIST.SP.800-133r2)*
+
+      4. *Complies with [Annex C: Approved Random Number Generators for FIPS PUB 140-2, Security Requirements for Cryptographic Modules](https://csrc.nist.gov/CSRC/media//Publications/fips/140/2/final/documents/fips1402annexc.pdf)*
+
+      5. *Follows the guidance in the [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) regarding quantum resistant algorithms and  key sizes.*
+
+   6. *Each attester device has the following properties:*
+
+      1. *Each attester device **MUST** have a unique, and immutable device ID key pair.*
+
+      2. *Each attester device **MAY** be provisioned with a hash of the first mutable firmware.*
+
+      3. *Each attester device **MUST** prevent exfiltration of device secrets through defined interfaces.*
+
+      4. *The Provisioner **MUST** generate a certificate signed by its pCA private key, which links the unique device identity with its Provisioner.*
+
+      5. *Each attester device **MUST** generate a certificate signed by the device ID private key, which links the attestation public key with the device identity.*
+
+4. [REQUIREMENTS - Device Ownership Provisioning](#sec:requirements-device-ownership-provisioning)
+
+   1. *Each attester device **MUST** be provisioned with a Device Update public key, which is used to verify updates to the device’s critical configuration.*
+
+   2. *The Device Update public key, once provisioned on the attester device, **MUST** only be modified through an authenticated ownership transfer.*
+
+   3. *Each attester device **MAY** be provisioned with a Device Owner’s certificate over the device identity public key.*
+
+   4. *Each attester device **MAY** be provisioned with a hash of the device firmware.*
+
+   5. *Each attester device **MAY** be provisioned with a hash of the Device Owner’s certificate over the device identity public key.*
+
+5. [REQUIREMENTS \- Discovery and Interrogation](#requirements---discovery-and-interrogation)
+
+   1. *Attester devices **MUST** be capable of communicating their authentication and attestation capabilities to the platform.*
+
+   2. *Attester devices **SHOULD** be capable of communicating their capabilities to the platform within 15 seconds of being provided with power, even if their data plane bus (e.g. PCIe) is held in reset by the platform.*
+
+   3. *Platforms **MUST** be capable of interrogating potential attester devices and recording their authentication and attestation capabilities.*
+
+   4. *Platforms **MUST** be capable of interrogating attester devices that do not communicate their capabilities before being taken out of reset, e.g., by interrogating them later in the boot cycle or by having them pre-configured as such, in the platform reference manifest.*
+
+   5. *Platforms **MAY** use the message formats for GET\_CAPABILITIES and NEGOTIATE\_ALGORITHMS as described in* [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf) or *Device Capabilities* *as described in [Project Cerberus Firmware Challenge Specification](https://github.com/opencomputeproject/Project_Olympus/blob/master/Project_Cerberus/Project%20Cerberus%20Challenge%20Protocol.pdf) .* *Where necessary, bridge components may be responsible for translating from the native bus protocol into the GET\_CAPABILITIES/ NEGOTIATE\_ALGORITHMS message formats.*
+
+6. [REQUIREMENTS - Authentication, Attestation, and Enrollment](#sec:requirements-authentication-attestation-and-enrollment)
+
+   1. *Attester devices **MUST** provide certificate digests and certificates when requested by the platform.*
+
+   2. *Attester devices **MUST** build and sign responses to challenges from the platform. Although this step is optional in the SPDM specification, it is required here.*
+
+   3. *Platform verifiers **MUST** request certificate digests and certificates from attester devices.*
+
+   4. *Platform verifiers **MUST** verify ASN.1 DER encoded X.509v3 certificates and certificate chains from attester devices back to each device’s Provisioner root public key.*
+
+   5. *Platform verifiers **MUST** present challenges to attester devices and verify the content in the responses.*
+
+   6. *Platform verifiers **MUST** verify attester device signatures on the challenge responses.*
+
+   7. *Platform verifiers **MAY** build a platform inventory containing authentication status, firmware signing keys, firmware measurements, and Device Owners of attester devices.*
+
+   8. *Platform verifiers **MAY** accept a predefined manifest (an expected inventory of devices) or build it dynamically.*
+
+   9. *Platform verifiers **MAY** compare the platform inventory to a platform manifest containing expected devices and their configurations.*
+
+7. [REQUIREMENTS - SPDM Standards Support](#sec:requirements-spdm-standards-support)
+
+   1. *Attester devices that support the SPDM standard **MUST** conform to the set of capabilities as defined in the table “Required Capabilities for SPDM.”*
+
+   2. *Attester devices that support the SPDM standard **SHOULD** support  the set of algorithms as defined in the table “Recommended Algorithms for SPDM”.*
+
+   3. *Attester devices that support the SPDM standard **MUST** support SPDM version 1.0 or higher.*
+
+   4. *Attester devices that support the SPDM standard **SHOULD**  support the current version.*
+
+8. [REQUIREMENTS - What to measure and what not to measure](#sec:requirements-what-to-measure-and-what-not-to-measure)
+
+   1. *The measurements **MUST** include everything that affects the security of the attester device, such as executable code, headers, security state and configuration data.*
+
+   2. *The measurements **MUST** exclude information that will make the measurements brittle, such as run-time configuration data that does not impact the security of the device, and information which is expected to be updated frequently on the device.*
+
+9. [REQUIREMENTS - Security-relevant configuration data](#sec:requirements---security-relevant-configuration-data)
+
+   1. *In the event that configuration data for the device may lead to compromise of the security of the device (such as fuses or straps that enable JTAG or other test interfaces), this class of configuration data **MUST** be discoverable from the device and/or cause the measurements of the device to be distinguishable from production measurements. The mechanism for detecting/providing this information to the attester device **MUST** be enforced through pure hardware means.*
+
+   2. *On attester device reset, the measurement registers **MUST** be cleared (reset to 0s) and a measurement indicating an attester device reset event **MUST** be extended to the measurement register.*
+
+   3. *Resetting the attester measurements independently from the system that it measures **MUST NOT** be possible through a purely software mechanism (avoid separate reset and power signals).*
+
+   4. *The measurement storage **MUST** be integrity protected to prevent malicious or inadvertent modification, but it is not confidential.*
+
+   5. *Measurement storage **MAY** include a structured log of measurements.*
+
+10. [REQUIREMENTS - When to Measure](#sec:requirements-when-to-measure)
+
+    1. *Before executing or transferring control to mutable code, immutable code **MUST** record measurements of the mutable code and of relevant configuration settings*.
+
+    2. *If an attester device’s state changes (e.g., reset or chain of trust has become invalidated), the attester **MUST** generate a signal or counter to notify the platform of the change.*
+
+    3. *If the attester device’s state changes, the platform and device **MUST** repeat the complete attestation protocol.*
+
+    4. *If a device allows for the runtime modification of any state that can affect the security properties of the device, such modifications **SHOULD** be reflected in the measurements and measurement logs of the device.*
+
+    5. *It **SHOULD NOT** be possible for any debug mode to reset the measurement values, or make arbitrary changes to them.*
+
+    6. *It is **RECOMMENDED** that attester devices be able to respond to an attestation request at any time during the device’s normal runtime operation.*
+
+[^1]:  Establishment of the root of trust is outside the scope of this document.
+
+[^2]:  [Bernstein D.J. et al. (2013) Factoring RSA Keys from Certified Smart Cards: Coppersmith in the Wild. In: Sako K., Sarkar P. (eds) Advances in Cryptology \- ASIACRYPT 2013\. ASIACRYPT 2013\. Lecture Notes in Computer Science, vol 8270\. Springer, Berlin, Heidelberg.](https://doi.org/10.1007/978-3-642-42045-0_18)

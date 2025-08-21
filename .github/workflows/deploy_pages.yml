@@ -25,6 +25,11 @@ jobs:
       inputs: >-
         [
           {
+            "src": "specifications/attestation-of-system-components/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "attestation-of-system-components/HEAD"
+          },
+          {
             "src": "specifications/device-identity-provisioning/spec.ocp",
             "append_git_rev_to_version": true,
             "gh_pages_html": "device-identity-provisioning/HEAD",
