@@ -283,3 +283,119 @@ The following example illustrates a CWT containing claims for three target envir
 ```include {.small}
 TODO: fill in with a diag
 ```
+
+# GET_EAT Command
+
+## Overview
+
+The GET_EAT command enables requesters to obtain attestation evidence from a device in the form of an Entity Attestation Token (EAT) that conforms to this OCP Profile. This command is designed to be transport-agnostic while providing a standardized interface for attestation requests.
+
+## Command Definition
+
+### GET_EAT Request
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 2                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 4                   | Nonce               | 32                  | The Requester shall choose a random          |
+|                     |                     |                     | value to ensure freshness.                   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 36                  | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of the      |
+|                     |                     |                     | Responder certificate chain that shall       |
+|                     |                     |                     | be used for signing the EAT.                 |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+### GET_EAT Response
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandVersion      | 1                   | The version of this response structure.      |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Status              | 1                   | Response status.                             |
+|                     |                     |                     | 0x00 = SUCCESS                               |
+|                     |                     |                     | 0x01 = ERROR                                 |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 3                   | Reserved            | 1                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 4                   | EATLength           | 4                   | Shall be the length of the EATToken          |
+|                     |                     |                     | field in bytes.                              |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 8                   | EATToken            | EATLength           | Shall be the Entity Attestation Token        |
+|                     |                     |                     | conforming to this OCP Profile. This         |
+|                     |                     |                     | field shall be CBOR-encoded                  |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+## EAT Token Requirements
+
+The EATToken returned in the GET_EAT response **MUST** conform to all requirements specified in this profile:
+
+1. The EAT **MUST** be encoded as a signed CWT
+2. The EAT Profile claim (265) **MUST** be present and contain the OCP Profile OID
+3. The Nonce claim (10) **MUST** be present and contain the nonce value from the request
+4. The Measurements claim (273) **MUST** be present and contain concise evidence
+5. The issuer claim (1) **SHALL** be present if binding to a certificate chain
+6. The rim-locators claim (-70001) **MAY** be present to reference CoRIM locations
+
+## Transport Bindings
+
+### SPDM Binding
+
+When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as follows:
+
+The GET_EAT request and response messages are transported as:
+- The Requester **MUST** use the SPDM VENDOR_DEFINED_REQUEST format
+- The Responder **MUST** use the SPDM VENDOR_DEFINED_RESPONSE format
+- The StandardID field **MUST** contain 4 (IANA)
+- The VendorID field **MUST** contain 42623 (OCP)
+- The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 02h to indicate GET_EAT
+- The GET_EAT request and response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in the tables above
+
+For SPDM binding:
+- The SignerSlotID field **SHALL** correspond to SPDM certificate slot numbers
+
+### Native Transport Bindings
+
+TSM engines and other transport mechanisms **MAY** define their own bindings for the GET_EAT command, provided they:
+- Maintain semantic equivalence of request and response structures
+- Preserve all required fields and their meanings
+- Document any transport-specific adaptations
+
+## Security Considerations
+
+### Nonce Requirements
+- Requesters **SHOULD** use cryptographically secure random number generators for nonce generation
+- Nonces **SHOULD** be at least 32 bytes to prevent collision attacks
+- Requesters **MUST** verify that the response nonce matches the request nonce exactly
+
+### Signature Verification
+- Requesters **MUST** validate the COSE_Sign1 signature on the returned EAT
+- Certificate chain validation **MUST** be performed according to the requester's trust policy
+- The x5-chain in the unprotected header **MUST** be validated before trusting the EAT contents
+
+### Replay Protection
+- Requesters **SHOULD** maintain a cache of recently used nonces to detect replay attempts
+- Responses with duplicate nonces **MUST** be rejected
+- Nonce values **SHOULD NOT** be reused within a reasonable time window
+
+## Implementation Notes
+
+1. **Attesters** implementing GET_EAT:
+   - **MUST** support generating EATs for all provisioned attestation keys
+   - **SHOULD** complete GET_EAT requests within a reasonable timeout period
+   - **MAY** implement rate limiting to prevent denial of service
+
+2. **Requesters** using GET_EAT:
+   - **SHOULD** implement appropriate timeout handling
+   - **MUST** be prepared to handle ERROR responses
+   - **SHOULD** validate EAT contents against expected device state

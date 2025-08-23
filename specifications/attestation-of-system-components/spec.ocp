@@ -65,6 +65,7 @@ The Contributors of this Specification would like to acknowledge the following:
 - Wojtek Powiertowski, Facebook, Inc.
 - Eric Spada, Broadcom, Inc.
 - Ben Stoltz, Google
+- Fabrizio D'Amato - AMD
 
 <!---
 Please describe how this Specification complies with the OCP tenets.
@@ -551,6 +552,76 @@ algorithms:
 ### IETF EAT Binding for SPDM
 
 See <https://github.com/opencomputeproject/Security/tree/main/specifications/ietf-eat-profile>.
+
+## OCP Command Registry {#sec:ocp-command-registry}
+
+### Overview
+
+This section establishes a registry for OCP-specific commands that can be transported over various protocols. This registry ensures that command codes are uniquely assigned across all OCP specifications and prevents conflicts between different OCP standards.
+
+### OCP Command Structure
+
+OCP commands are designed to be transport-agnostic. When transported over SPDM, they utilize the VENDOR_DEFINED mechanism with:
+
+- StandardID: 4 (IANA)
+- VendorID: 42623 (Open Compute Project)
+- First byte of payload: OCP Command Code
+
+Other transport protocols may define their own bindings while preserving the same command codes and semantics.
+
+### OCP Command Code Registry
+
+The following table lists all registered OCP command codes:
+
++---------------------+------------------------------+---------------------------------------+----------------------------------------------+
+| Command Code        | Command Name                 | Defining Specification                | Description                                  |
++=====================+==============================+=======================================+==============================================+
+| 0x00                | Reserved                     | -                                     | Reserved for future use                      |
++---------------------+------------------------------+---------------------------------------+----------------------------------------------+
+| 0x01                | GET_ENVELOPE_SIGNED_CSR      | OCP Device Identity                   | Requests a replay-protected CSR that is      |
+|                     |                              | Provisioning                          | envelope-signed by an attestation key to     |
+|                     |                              |                                       | prove authenticity of the identity keypair   |
++---------------------+------------------------------+---------------------------------------+----------------------------------------------+
+| 0x02                | GET_EAT                      | OCP Profile for IETF Entity           | Requests an Entity Attestation Token         |
+|                     |                              | Attestation Token                     | conforming to OCP Profile                    |
++---------------------+------------------------------+---------------------------------------+----------------------------------------------+
+| 0x03-0xFF           | Reserved                     | -                                     | Reserved for future assignment               |
++---------------------+------------------------------+---------------------------------------+----------------------------------------------+
+
+### Command Code Assignment Process
+
+New OCP specifications that require command codes **MUST**:
+
+1. Request command code assignment from the OCP Security Working Group
+2. Provide command name and brief description
+3. Reference the defining specification
+4. Update this registry upon approval
+
+### REQUIREMENTS - OCP Command Usage
+
+*OCP specifications defining new commands **MUST**:*
+
+- *Use command codes assigned in this registry*
+- *Not reuse or conflict with existing command codes*
+
+*When transporting OCP commands over SPDM, implementations **MUST**:*
+
+- *Use StandardID value of 4 (IANA)*
+- *Use VendorID value of 42623 (OCP)*
+- *Place the OCP Command Code as the first byte of VendorDefinedReqPayload/VendorDefinedRespPayload*
+
+### Cross-Specification References
+
+#### GET_ENVELOPE_SIGNED_CSR (0x01)
+- **Defined in:** OCP Device Identity Provisioning Specification
+- **Purpose:** Requests a freshness-protected (replay-resistant) Certificate Signing Request that is envelope-signed by an attestation key to establish trust in a device's identity keypair
+- **Reference:** See Device Identity Provisioning specification for full command definition
+
+#### GET_EAT (0x02)
+- **Defined in:** OCP Profile for IETF Entity Attestation Token
+- **Purpose:** Retrieves attestation evidence in OCP EAT format
+- **Reference:** See OCP EAT Profile specification for full command definition
+
 
 # Measurement collection and storage
 
