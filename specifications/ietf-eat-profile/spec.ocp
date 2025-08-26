@@ -297,10 +297,10 @@ The GET_EAT command enables requesters to obtain attestation evidence from a dev
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | Byte offset         | Field               | Size (bytes)        | Description                                  |
 +=====================+=====================+=====================+==============================================+
-| 0                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
-+---------------------+---------------------+---------------------+----------------------------------------------+
-| 1                   | CommandVersion      | 1                   | The version of this request structure.       |
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
 |                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 2                   | Reserved            | 2                   | Reserved.                                    |
 +---------------------+---------------------+---------------------+----------------------------------------------+
@@ -317,10 +317,10 @@ The GET_EAT command enables requesters to obtain attestation evidence from a dev
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | Byte offset         | Field               | Size (bytes)        | Description                                  |
 +=====================+=====================+=====================+==============================================+
-| 0                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
-+---------------------+---------------------+---------------------+----------------------------------------------+
-| 1                   | CommandVersion      | 1                   | The version of this response structure.      |
+| 0                   | CommandVersion      | 1                   | The version of this response structure.      |
 |                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 2                   | Status              | 1                   | Response status.                             |
 |                     |                     |                     | 0x00 = SUCCESS                               |
@@ -329,11 +329,13 @@ The GET_EAT command enables requesters to obtain attestation evidence from a dev
 | 3                   | Reserved            | 1                   | Reserved.                                    |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 4                   | EATLength           | 4                   | Shall be the length of the EATToken          |
-|                     |                     |                     | field in bytes.                              |
+|                     |                     |                     | field in bytes. Note: For large EAT tokens,  |
+|                     |                     |                     | transport protocols may provide mechanisms   |
+|                     |                     |                     | such as chunking or streaming to manage      |
+|                     |                     |                     | buffer limitations.                          |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 8                   | EATToken            | EATLength           | Shall be the Entity Attestation Token        |
-|                     |                     |                     | conforming to this OCP Profile. This         |
-|                     |                     |                     | field shall be CBOR-encoded                  |
+|                     |                     |                     | conforming to this OCP Profile.              |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 
 ## EAT Token Requirements
