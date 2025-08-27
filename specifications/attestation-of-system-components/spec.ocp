@@ -419,7 +419,7 @@ This protocol is highly dependent on the specific technology of the platform, bu
 
 - *Platforms **MAY** use the message formats for GET\_CAPABILITIES and NEGOTIATE\_ALGORITHMS as described in* [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf) or *Device Capabilities* *as described in [Project Cerberus Firmware Challenge Specification](https://github.com/opencomputeproject/Project_Olympus/blob/master/Project_Cerberus/Project%20Cerberus%20Challenge%20Protocol.pdf) .* *Where necessary, bridge components may be responsible for translating from the native bus protocol into the GET\_CAPABILITIES/ NEGOTIATE\_ALGORITHMS message formats.*
 
-***NOTE from Alberto Munoz: "Should we remove this reference to Cerberus, or are there devices that still support it?"***
+***NOTE from Bryan Kelly: "Replace Cerberus with GET_EAT"***
 
 ## Authentication, Attestation, and Enrollment protocol {#sec:authentication-attestation-and-enrollment-protocol}
 
@@ -467,8 +467,6 @@ Example message formats and content are as described in [Security Protocol and D
 
 To conform to the OCP SPDM profile the following requirements must be met:
 
-***NOTE from Brett Henning: "We should have a command to discover OCP profile support, and presumably a version for the profile. This could be an SPDM vendor defined (we'll have to create a vendor ID for OCP, but we just made that process much simpler)."***
-
 10. *Attester devices that support the SPDM standard **MUST** conform to the set of capabilities as defined in the table “Required Capabilities for SPDM.”*
 
 11. *Attester devices that support the SPDM standard **SHOULD** support  the set of algorithms as defined in the table “Recommended Algorithms for SPDM”.*
@@ -485,18 +483,18 @@ To conform to the OCP SPDM profile the following requirements must be met:
 
 ### Required Capabilities for SPDM
 
-***NOTE from Alberto Munoz: "We need to update (add) capabilities required to support 1.1 and 1.2 commands listed in 8.5.2.2 to this section (e.g., KEY_EX_CAP, CSR_CAP,  CHUNK_CAP)"***
+***NOTE from Bryan Kelly: "Do we need MEAS_CAP if we have GET_EAT support?"***
 
 The following table lists the SPDM capabilities, as defined in the CAPABILITIES response, that are required for attester devices that are compliant with this specification. Note, this table is based on version 1.1.0 of the SPDM specification, and capabilities that are only defined in version 1.1.0 are not required if the attester device does not support version 1.1.0.
 
-| Capability       | Description                                                                          |
-| :--------------- | :----------------------------------------------------------------------------------- |
-| CERT\_CAP        | Supports certificate exchanges                                                       |
-| CHAL\_CAP        | Supports challenge                                                                   |
-| MEAS\_CAP        | Supports MEASUREMENTS and should support signed MEASUREMENTS (SPDM MEAS\_CAP \= 10b) |
-| MEAS\_FRESH\_CAP | 1 (always return fresh measurements)                                                 |
-
-***NOTE from Jeff Andersen: "To discuss, MEAS\_FRESH\_CAP is a bit problematic."***
+| Capability     | Description                                                                          |
+| :------------- | :----------------------------------------------------------------------------------- |
+| CERT_CAP       | Supports certificate exchanges                                                       |
+| CHAL_CAP       | Supports challenge                                                                   |
+| MEAS_CAP       | Supports MEASUREMENTS and should support signed MEASUREMENTS (SPDM MEAS\_CAP \= 10b) |
+| MEAS_FRESH_CAP | 0 (may return cached measurements)                                                   |
+| CHUNK_CAP      | Supports CHUNK_SEND/CHUNK_GET                                                        |
+| CSR_CAP        | Supports GET_CSR                                                                     |
 
 ### Required Commands for SPDM
 
@@ -505,15 +503,15 @@ Attestor devices are allowed to implement a large number of commands under the S
 Table: Required SPDM Commands
 
 | SPDM  Version | Command                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| :------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1.0**       | GET\_CERTIFICATE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-|               | GET\_MEASUREMENTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| **1.2**       | GET\_CSR  Note: the SPDM 1.2 specification states that the key within the CSR is the Device Certificate CA key. To satisfy this OCP specification, the key within the CSR may instead be (directly or indirectly) endorsed by the DeviceID key. The key within the CSR should change infrequently, to avoid triggering frequent re-enrollment flows. The CSR may be null-signed rather than self-signed. The key within the CSR must be endorsed (directly or indirectly) by the vendor’s PKI. See CSR in note below. |
-|               | SET\_CERTIFICATE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-|               | CHUNK\_SEND                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-|               | CHUNK\_GET                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| :------------ | :--------------- |
+| **1.0**       | GET_CERTIFICATE  |
+|               | GET_MEASUREMENTS |
+| **1.2**       | GET_CSR          |
+|               | SET_CERTIFICATE  |
+|               | CHUNK_SEND       |
+|               | CHUNK_GET        |
 
-Note: SPDM GET\_CSR assumes responders have access to the signing key corresponding to the public key in the CSR. For devices where the SPDM responder operates at a locality where the signing key is not accessible, it is acceptable for the end entity to omit the signature from the CSR. In this instance, the burden of verifying the CSRs integrity falls upon the PKI owner. Evidence from the device vendor's certificate chain and endorsement of the CSR may be used in the verification.
+Note: see <https://github.com/opencomputeproject/Security/tree/master/specifications/device-identity-provisioning> for additional requirements around GET_CSR.
 
 ### Recommended Algorithms for SPDM
 
@@ -523,6 +521,16 @@ guidelines in this section. The OCP SPDM Profile requires support for the follow
 algorithms:
 
 ***NOTE from Jeremy O'Donoghue: "I would prefer to see the requirements on interoperability moved to the verifier - it generally has lower security requirements than RoT and a more performance compute environment. For example: attester must support TPM_ALG_ECDSA_NIST_P384, TPM_ALG_SHA384, AES-256-GCM, TPM_ALG_MLDSA_65 (assuming that's what TCG eventually calls the algorithm). Verifier MAY support other algorithms."***
+
+***Aug 26 2025: Let's refine this list, add PQC, and state that devices need to support at least one of a set. Examples:***
+
+- secp384r1
+- AES-256-GCM
+- TPM_ALG_SHA_384
+- [ml-dsa-xxx]
+- [ml-kem-xxx]
+
+May call these "(strongly) recommended"
 
 | Algorithm Type  | Required Algorithm               |
 | :-------------- | :------------------------------- |
@@ -546,8 +554,6 @@ algorithms:
 | **AEAD Cipher** | AES-128-GCM                      |
 |                 | AES-256-GCM                      |
 |                 | CHACHA20\_POLY1305               |
-
-***NOTE from Bryan Kelly: "Is there an ML-DSA yet?"***
 
 ### IETF EAT Binding for SPDM
 
