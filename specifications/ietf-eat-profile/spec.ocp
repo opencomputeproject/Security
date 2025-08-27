@@ -288,7 +288,7 @@ TODO: fill in with a diag
 
 ## Overview
 
-The GET_EAT command enables requesters to obtain attestation evidence from a device in the form of an Entity Attestation Token (EAT) that conforms to this OCP Profile. This command is designed to be transport-agnostic while providing a standardized interface for attestation requests.
+The GET_EAT command enables verifiers to obtain attestation evidence from a device in the form of an Entity Attestation Token (EAT) that conforms to this OCP Profile. This command is designed to be transport-agnostic while providing a standardized interface for attestation requests.
 
 ## Command Definition
 
@@ -304,10 +304,13 @@ The GET_EAT command enables requesters to obtain attestation evidence from a dev
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 2                   | Reserved            | 2                   | Reserved.                                    |
 +---------------------+---------------------+---------------------+----------------------------------------------+
-| 4                   | Nonce               | 32                  | The Requester shall choose a random          |
+| 4                   | NonceLength         | 1                   | Shall be the length of the Nonce field       |
+|                     |                     |                     | in bytes. Shall be between 8 and 64 bytes.   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 5                   | Nonce               | NonceLength         | The Requester shall choose a random          |
 |                     |                     |                     | value to ensure freshness.                   |
 +---------------------+---------------------+---------------------+----------------------------------------------+
-| 36                  | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of the      |
+| 5 + NonceLength     | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of the      |
 |                     |                     |                     | Responder certificate chain that shall       |
 |                     |                     |                     | be used for signing the EAT.                 |
 +---------------------+---------------------+---------------------+----------------------------------------------+
@@ -372,32 +375,3 @@ TSM engines and other transport mechanisms **MAY** define their own bindings for
 - Maintain semantic equivalence of request and response structures
 - Preserve all required fields and their meanings
 - Document any transport-specific adaptations
-
-## Security Considerations
-
-### Nonce Requirements
-- Requesters **SHOULD** use cryptographically secure random number generators for nonce generation
-- Nonces **SHOULD** be at least 32 bytes to prevent collision attacks
-- Requesters **MUST** verify that the response nonce matches the request nonce exactly
-
-### Signature Verification
-- Requesters **MUST** validate the COSE_Sign1 signature on the returned EAT
-- Certificate chain validation **MUST** be performed according to the requester's trust policy
-- The x5-chain in the unprotected header **MUST** be validated before trusting the EAT contents
-
-### Replay Protection
-- Requesters **SHOULD** maintain a cache of recently used nonces to detect replay attempts
-- Responses with duplicate nonces **MUST** be rejected
-- Nonce values **SHOULD NOT** be reused within a reasonable time window
-
-## Implementation Notes
-
-1. **Attesters** implementing GET_EAT:
-   - **MUST** support generating EATs for all provisioned attestation keys
-   - **SHOULD** complete GET_EAT requests within a reasonable timeout period
-   - **MAY** implement rate limiting to prevent denial of service
-
-2. **Requesters** using GET_EAT:
-   - **SHOULD** implement appropriate timeout handling
-   - **MUST** be prepared to handle ERROR responses
-   - **SHOULD** validate EAT contents against expected device state
