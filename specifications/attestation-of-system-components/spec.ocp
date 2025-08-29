@@ -587,7 +587,7 @@ The GET_EAT command is assigned command code 0x02 in the OCP Command Registry.
 | 5                   | Nonce               | NonceLength         | The Requester shall choose a random          |
 |                     |                     |                     | value to ensure freshness.                   |
 +---------------------+---------------------+---------------------+----------------------------------------------+
-| 5 + NonceLength     | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of th e     |
+| 5 + NonceLength     | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of the      |
 |                     |                     |                     | Responder certificate chain that shall       |
 |                     |                     |                     | be used for signing the EAT.                 |
 +---------------------+---------------------+---------------------+----------------------------------------------+
@@ -635,24 +635,18 @@ The EATToken returned in the GET_EAT response **MUST** conform to the OCP EAT Pr
 
 ### SPDM Binding
 
-When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as follows:
-
-#### Success Case
-- Use SPDM VENDOR_DEFINED_REQUEST/VENDOR_DEFINED_RESPONSE format
-- StandardID field **MUST** contain 4 (IANA)
-- VendorID field **MUST** contain 42623 (OCP)
-- First byte of VendorDefinedReqPayload/VendorDefinedRespPayload **MUST** contain the CommandVersion (00h)
-- Second byte of VendorDefinedReqPayload/VendorDefinedRespPayload **MUST** contain the CommandCode (02h)
-- GET_EAT request/response structures form the remainder of the payload
-
-#### Error Case
-- Use SPDM ERROR message format
-- Include OCP error code in SPDM ExtendedErrorData when available
-- Follow SPDM error response procedures
+When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as specified in the OCP Command Registry.
 
 For SPDM binding:
 - The SignerSlotID field **MUST** correspond to SPDM certificate slot numbers
-- The command follows the same pattern as GET_ENVELOPE_SIGNED_CSR defined in the Device Identity Provisioning specification
+
+For detailed SPDM transport binding requirements including:
+- VENDOR_DEFINED message structure
+- Success and error case handling
+- ExtendedErrorData usage
+- Command framing specifications
+
+Please refer to the OCP Command Registry specification.
 
 ### Native Transport Bindings
 
