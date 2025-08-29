@@ -559,21 +559,109 @@ May call these "(strongly) recommended"
 
 See <https://github.com/opencomputeproject/Security/tree/main/specifications/ietf-eat-profile>.
 
-## OCP Command Registry {#sec:ocp-command-registry}
+# GET_EAT Command
 
-### Overview
+## Overview
 
-This section establishes a registry for OCP-specific commands that can be transported over various protocols. This registry ensures that command codes are uniquely assigned across all OCP specifications and prevents conflicts between different OCP standards.
+The GET_EAT command enables verifiers to obtain attestation evidence from a device in the form of an Entity Attestation Token (EAT) that conforms to the OCP EAT Profile. This command is defined in the OCP Command Registry and is designed to be transport-agnostic while providing a standardized interface for attestation requests.
 
-### OCP Command Structure
+## Command Definition
 
-OCP commands are designed to be transport-agnostic. When transported over SPDM, they utilize the VENDOR_DEFINED mechanism with:
+The GET_EAT command is assigned command code 0x02 in the OCP Command Registry.
 
-- StandardID: 4 (IANA)
-- VendorID: 42623 (Open Compute Project)
-- First byte of payload: OCP Command Code
+### GET_EAT Request
 
-Other transport protocols may define their own bindings while preserving the same command codes and semantics.
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 2                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 4                   | NonceLength         | 1                   | Shall be the length of the Nonce field       |
+|                     |                     |                     | in bytes. Shall be between 8 and 64 bytes.   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 5                   | Nonce               | NonceLength         | The Requester shall choose a random          |
+|                     |                     |                     | value to ensure freshness.                   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 5 + NonceLength     | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of th e     |
+|                     |                     |                     | Responder certificate chain that shall       |
+|                     |                     |                     | be used for signing the EAT.                 |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+### GET_EAT Response
+
+For successful responses, the following structure is returned:
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this response structure.      |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 2                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 4                   | EATLength           | 4                   | Shall be the length of the EATToken          |
+|                     |                     |                     | field in bytes. Note: For large EAT tokens,  |
+|                     |                     |                     | transport protocols may provide mechanisms   |
+|                     |                     |                     | such as chunking or streaming to manage      |
+|                     |                     |                     | buffer limitations.                          |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 8                   | EATToken            | EATLength           | Shall be the Entity Attestation Token        |
+|                     |                     |                     | conforming to the OCP EAT Profile.           |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+**Note**: Error conditions are reported using transport-specific error mechanisms with error codes from the OCP Error Registry.
+
+## EAT Token Requirements
+
+The EATToken returned in the GET_EAT response **MUST** conform to the OCP EAT Profile specification, which includes:
+
+1. The EAT **MUST** be encoded as a signed CWT (CBOR Web Token)
+2. The EAT Profile claim (265) **MUST** be present and contain the OCP Profile OID
+3. The Nonce claim (10) **MUST** be present and contain the exact nonce value from the request (matching both value and length)
+4. The Measurements claim (273) **MUST** be present and contain concise evidence as defined in the OCP EAT Profile
+5. The issuer claim (1) **MUST** be present to bind the EAT to the certificate chain that issued it
+6. The rim-locators claim (-70001) **MAY** be present to reference CoRIM locations
+
+**Note:** The nonce claim in the EAT response must preserve both the value and length of the nonce provided in the GET_EAT request to ensure proper freshness verification.
+
+## Transport Bindings
+
+### SPDM Binding
+
+When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as follows:
+
+#### Success Case
+- Use SPDM VENDOR_DEFINED_REQUEST/VENDOR_DEFINED_RESPONSE format
+- StandardID field **MUST** contain 4 (IANA)
+- VendorID field **MUST** contain 42623 (OCP)
+- First byte of VendorDefinedReqPayload/VendorDefinedRespPayload **MUST** contain the CommandVersion (00h)
+- Second byte of VendorDefinedReqPayload/VendorDefinedRespPayload **MUST** contain the CommandCode (02h)
+- GET_EAT request/response structures form the remainder of the payload
+
+#### Error Case
+- Use SPDM ERROR message format
+- Include OCP error code in SPDM ExtendedErrorData when available
+- Follow SPDM error response procedures
+
+For SPDM binding:
+- The SignerSlotID field **MUST** correspond to SPDM certificate slot numbers
+- The command follows the same pattern as GET_ENVELOPE_SIGNED_CSR defined in the Device Identity Provisioning specification
+
+### Native Transport Bindings
+
+TSM engines and other transport mechanisms **MAY** define their own bindings for the GET_EAT command, provided they:
+
+- Maintain semantic equivalence of request and response structures
+- Preserve all required fields and their meanings
+- Implement appropriate error reporting using transport-native mechanisms
+- Document any transport-specific adaptations
 
 # Measurement collection and storage
 
