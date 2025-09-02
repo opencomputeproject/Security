@@ -65,6 +65,7 @@ The Contributors of this Specification would like to acknowledge the following:
 - Wojtek Powiertowski, Facebook, Inc.
 - Eric Spada, Broadcom, Inc.
 - Ben Stoltz, Google
+- Fabrizio D'Amato - AMD
 
 <!---
 Please describe how this Specification complies with the OCP tenets.
@@ -557,6 +558,106 @@ May call these "(strongly) recommended"
 ### IETF EAT Binding for SPDM
 
 See <https://github.com/opencomputeproject/Security/tree/main/specifications/ietf-eat-profile>.
+
+# GET_EAT Command
+
+## Overview
+
+The GET_EAT command enables verifiers to obtain attestation evidence from a device in the form of an Entity Attestation Token (EAT) that conforms to the OCP EAT Profile. This command is allocated in the [@{ocp-command-registry}] and is designed to be transport-agnostic while providing a standardized interface for attestation requests.
+
+## Command Definition
+
+The GET_EAT command is assigned command code 0x02 in the [@{ocp-command-registry}].
+
+### GET_EAT Request
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 2                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 4                   | NonceLength         | 1                   | Shall be the length of the Nonce field       |
+|                     |                     |                     | in bytes. Shall be between 8 and 64 bytes.   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 5                   | Nonce               | NonceLength         | The Verifier shall choose a random           |
+|                     |                     |                     | value to ensure freshness.                   |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 5 + NonceLength     | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of the      |
+|                     |                     |                     | Attester certificate chain that shall        |
+|                     |                     |                     | be used for signing the EAT.                 |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+### GET_EAT Response
+
+For successful responses, the following structure is returned:
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this response structure.      |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 02h to indicate GET_EAT.            |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 2                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 4                   | EATLength           | 4                   | Shall be the length of the EATToken          |
+|                     |                     |                     | field in bytes. Note: For large EAT tokens,  |
+|                     |                     |                     | transport protocols may provide mechanisms   |
+|                     |                     |                     | such as chunking or streaming to manage      |
+|                     |                     |                     | buffer limitations.                          |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 8                   | EATToken            | EATLength           | Shall be the Entity Attestation Token        |
+|                     |                     |                     | conforming to the OCP EAT Profile.           |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+**Note**: Error conditions are reported using transport-specific error mechanisms with error codes from [@{ocp-command-registry}].
+
+## EAT Token Requirements
+
+The EATToken returned in the GET_EAT response **MUST** conform to the OCP EAT Profile specification, which includes:
+
+1. The EAT **MUST** be encoded as a signed CWT (CBOR Web Token)
+2. The EAT Profile claim (265) **MUST** be present and contain the OCP Profile OID
+3. The Nonce claim (10) **MUST** be present and contain the exact nonce value from the request (matching both value and length)
+4. The Measurements claim (273) **MUST** be present and contain concise evidence as defined in the OCP EAT Profile
+5. The issuer claim (1) **MUST** be present to bind the EAT to the certificate chain that issued it
+6. The rim-locators claim (-70001) **MAY** be present to reference CoRIM locations
+
+**Note:** The nonce claim in the EAT response must preserve both the value and length of the nonce provided in the GET_EAT request to ensure proper freshness verification.
+
+## Transport Bindings
+
+### SPDM Binding
+
+When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as specified in the [@{ocp-command-registry}].
+
+For SPDM binding:
+
+- The SignerSlotID field **MUST** correspond to SPDM certificate slot numbers
+
+For detailed SPDM transport binding requirements including:
+
+- VENDOR_DEFINED message structure
+- Success and error case handling
+- ExtendedErrorData usage
+- Command framing specifications
+
+Please refer to the [@{ocp-command-registry}] specification.
+
+### Native Transport Bindings
+
+TSM engines and other transport mechanisms **MAY** define their own bindings for the GET_EAT command, provided they:
+
+- Maintain semantic equivalence of request and response structures
+- Preserve all required fields and their meanings
+- Implement appropriate error reporting using transport-native mechanisms
+- Document any transport-specific adaptations
 
 # Measurement collection and storage
 

@@ -209,11 +209,11 @@ Table: GET_ENVELOPE_SIGNED_CSR VendorDefinedReqPayload {#tbl:ecsr-req}
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | Byte offset         | Field               | Size (bytes)        | Description                                  |
 +=====================+=====================+=====================+==============================================+
-| 0                   | CommandCode         | 1                   | Shall be 01h to indicate                     |
-|                     |                     |                     | GET_ENVELOPE_SIGNED_CSR.                     |
-+---------------------+---------------------+---------------------+----------------------------------------------+
-| 1                   | CommandVersion      | 1                   | The version of this request structure.       |
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
 |                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 01h to indicate                     |
+|                     |                     |                     | GET_ENVELOPE_SIGNED_CSR.                     |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 2                   | Reserved            | 4                   | Reserved.                                    |
 +---------------------+---------------------+---------------------+----------------------------------------------+
@@ -281,11 +281,11 @@ Table: ENVELOPE_SIGNED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
 | Byte   | Field                   | Size (bytes)            | Description                              |
 | offset |                         |                         |                                          |
 +========+=========================+=========================+==========================================+
-| 0      | CommandCode             | 1                       | Shall be 01h to indicate                 |
-|        |                         |                         | ENVELOPE_SIGNED_CSR.                     |
-+--------+-------------------------+-------------------------+------------------------------------------+
-| 1      | CommandVersion          | 1                       | The version of this request structure.   |
+| 0      | CommandVersion          | 1                       | The version of this request structure.   |
 |        |                         |                         | Shall be zero.                           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 1      | CommandCode             | 1                       | Shall be 01h to indicate                 |
+|        |                         |                         | ENVELOPE_SIGNED_CSR.                     |
 +--------+-------------------------+-------------------------+------------------------------------------+
 | 2      | Reserved                | 4                       | Reserved.                                |
 +--------+-------------------------+-------------------------+------------------------------------------+
