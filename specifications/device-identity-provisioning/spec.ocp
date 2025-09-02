@@ -334,11 +334,15 @@ Subsequent versions of this specification may be expanded with additional key de
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
-TODO: fill in
+This will be accomplished via the `SET_CERTIFICATE` SPDM command.
+
+TODO: fill in additional details.
 
 ## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
 
-TODO: fill in
+This will be accomplished by selecting the correct `SlotIDParam` when invoking SPDM commands.
+
+TODO: fill in additional details.
 
 ## Confidential compute considerations
 
