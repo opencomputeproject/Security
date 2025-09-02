@@ -616,7 +616,7 @@ For successful responses, the following structure is returned:
 |                     |                     |                     | conforming to the OCP EAT Profile.           |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 
-**Note**: Error conditions are reported using transport-specific error mechanisms with error codes from the [@{ocp-command-registry}].
+**Note**: Error conditions are reported using transport-specific error mechanisms with error codes from [@{ocp-command-registry}].
 
 ## EAT Token Requirements
 
@@ -638,9 +638,11 @@ The EATToken returned in the GET_EAT response **MUST** conform to the OCP EAT Pr
 When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as specified in the [@{ocp-command-registry}].
 
 For SPDM binding:
+
 - The SignerSlotID field **MUST** correspond to SPDM certificate slot numbers
 
 For detailed SPDM transport binding requirements including:
+
 - VENDOR_DEFINED message structure
 - Success and error case handling
 - ExtendedErrorData usage
