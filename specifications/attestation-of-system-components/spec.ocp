@@ -584,11 +584,11 @@ The GET_EAT command is assigned command code 0x02 in the OCP Command Registry.
 | 4                   | NonceLength         | 1                   | Shall be the length of the Nonce field       |
 |                     |                     |                     | in bytes. Shall be between 8 and 64 bytes.   |
 +---------------------+---------------------+---------------------+----------------------------------------------+
-| 5                   | Nonce               | NonceLength         | The Requester shall choose a random          |
+| 5                   | Nonce               | NonceLength         | The Verifier shall choose a random           |
 |                     |                     |                     | value to ensure freshness.                   |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | 5 + NonceLength     | SignerSlotID        | 1                   | Shall be the SlotID. Slot number of the      |
-|                     |                     |                     | Responder certificate chain that shall       |
+|                     |                     |                     | Attester certificate chain that shall        |
 |                     |                     |                     | be used for signing the EAT.                 |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 
