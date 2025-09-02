@@ -563,11 +563,11 @@ See <https://github.com/opencomputeproject/Security/tree/main/specifications/iet
 
 ## Overview
 
-The GET_EAT command enables verifiers to obtain attestation evidence from a device in the form of an Entity Attestation Token (EAT) that conforms to the OCP EAT Profile. This command is defined in the OCP Command Registry and is designed to be transport-agnostic while providing a standardized interface for attestation requests.
+The GET_EAT command enables verifiers to obtain attestation evidence from a device in the form of an Entity Attestation Token (EAT) that conforms to the OCP EAT Profile. This command is allocated in the [@{ocp-command-registry}] and is designed to be transport-agnostic while providing a standardized interface for attestation requests.
 
 ## Command Definition
 
-The GET_EAT command is assigned command code 0x02 in the OCP Command Registry.
+The GET_EAT command is assigned command code 0x02 in the [@{ocp-command-registry}].
 
 ### GET_EAT Request
 
@@ -616,7 +616,7 @@ For successful responses, the following structure is returned:
 |                     |                     |                     | conforming to the OCP EAT Profile.           |
 +---------------------+---------------------+---------------------+----------------------------------------------+
 
-**Note**: Error conditions are reported using transport-specific error mechanisms with error codes from the OCP Error Registry.
+**Note**: Error conditions are reported using transport-specific error mechanisms with error codes from the [@{ocp-command-registry}].
 
 ## EAT Token Requirements
 
@@ -635,7 +635,7 @@ The EATToken returned in the GET_EAT response **MUST** conform to the OCP EAT Pr
 
 ### SPDM Binding
 
-When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as specified in the OCP Command Registry.
+When transported over SPDM, the GET_EAT command utilizes the VENDOR_DEFINED mechanism as specified in the [@{ocp-command-registry}].
 
 For SPDM binding:
 - The SignerSlotID field **MUST** correspond to SPDM certificate slot numbers
@@ -646,7 +646,7 @@ For detailed SPDM transport binding requirements including:
 - ExtendedErrorData usage
 - Command framing specifications
 
-Please refer to the OCP Command Registry specification.
+Please refer to the [@{ocp-command-registry}] specification.
 
 ### Native Transport Bindings
 
