@@ -33,13 +33,14 @@ bibliography: bibliography.yaml
 The Contributors of this Specification would like to acknowledge the following:
 
 - Fabrizio Damato (AMD)
+- Giridhar Mandyam (AMD)
 - Piotr Kwidzinski (AMD)
 - Jason Young (Google)
 - Jeff Andersen (Google)
 - Ned Smith (Intel)
 - Roksana Golizadeh Mojarad (Microsoft)
-- Steven Bellock (NVIDIA)
 - Raghu Krishnamurthy (NVIDIA)
+- Steven Bellock (NVIDIA)
 
 # Compliance with OCP Tenets
 
