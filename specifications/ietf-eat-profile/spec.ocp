@@ -154,20 +154,99 @@ in the unsigned section of the COSE_Sign1 header.
 ## CWT Claim Set
 
 The CWT claim set is intentionally minimalistic, serving primarily as an
-integrity-protected wrapper for concise evidence.
+integrity-protected wrapper for concise evidence. The claims are divided into
+mandatory and optional categories to balance attestation requirements with
+implementation flexibility.
 
-1. **EAT Profile**
+**Claim Ordering**: To ensure consistent CBOR serialization and maximize
+interoperability across different implementations, **all claims MUST** 
+be reported following the CBOR deterministic encoding requirements as specified 
+in [@{ietf-rfc8949}]. 
+Specifically, the keys in the CWT map **MUST** be sorted in the bytewise 
+lexicographic order of their deterministic encodings. This ordering convention 
+applies to mandatory claims, optional claims, and private claims when present.
+
+**Mandatory Claims (1-6)**: These claims are **REQUIRED** for all attestations
+and provide the minimum necessary information for verifier appraisal policies:
+
+1. **issuer**  (claim key: 1, encoded as 0x01)
+    * This claim is used by the attester to bind the EAT to the certificate chain that issued it. It **SHALL** match the SUBJECT Common Name of the Attestation Key (AK) Certificate.
+
+2. **cti**  (claim key: 7, encoded as 0x07)
+    * This claim is used by the attester to determine the uniqueness of the token. Refer to [@{ietf-rfc8392}] for acceptable values for this claim
+
+3. **Nonce**  (claim key: 10, encoded as 0x0a)
+    * This claim is used by the attester to ensure the freshness of the response. Refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+4. **dbgstat** (claim key: 263, encoded as 0x190107)
+    * This claim is used by the attester to determine whether the attester is in Debug mode. Refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+5. **EAT Profile** (claim key: 265, encoded as 0x190109)
     * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID assigned to the OCP Profile. **TODO: OCP to assign OID Value**
-2. **issuer**
-    * This claim is optionally used by the attester to bind the EAT to the certificate chain that issued it. If present, **SHALL** match the SUBJECT Common Name of the Attestation Key (AK) Certificate.
-3. **Nonce**
-    * This claim is used by the attester to ensure the freshness of the response. It **MUST** be present and **SHALL** be a string or an array of strings. It **SHALL** contain as minimum the nonce value passed by the requester.
-4. **Measurements**
-    * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a “concise-evidence” using the appropriate IANA media type.
-5. **rim-locators**
-    * This claim is used by the attester to point the verifier to the rim repository. If present, **SHALL** be an array of corim-locator-map (as defined by the IETF CoRIM Draft).
 
-The cwt-eat statement is defined as follows:
+6. **Measurements** (claim key: 273, encoded as 0x190111)
+    * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a "concise-evidence" as a serialized CBOR byte string using the appropriate IANA media type. The serialized concise-evidence **SHALL NOT** exceed 128kB in size.
+
+**Optional Claims (7-14)**: These claims are **OPTIONAL** and provide additional
+platform information that may be useful for audit purposes but are not strictly
+necessary for appraisal policies. These claims are typically non-verifiable and
+serve informational purposes:
+
+7. **ueid** (claim key: 256, encoded as 0x190100)
+    * This claim is used by the attester to identify the attester. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+8. **oemid** (claim key: 258, encoded as 0x190102)
+    * This claim is used by the attester to identify the Original Equipment Manufacturer (OEM) of the hardware. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+9. **hwmodel** (claim key: 259, encoded as 0x190103)
+    * This claim is used by the attester to differentiate hardware models, products, and variants manufactured by a particular OEM. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+10. **uptime** (claim key: 261, encoded as 0x190105)
+    * This claim is used by the attester to indicate the number of seconds elapsed since boot. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+11. **bootcount** (claim key: 267, encoded as 0x19010b)
+    * This claim is used by the attester to indicate the number of times the attester has booted. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+12. **bootseed** (claim key: 268, encoded as 0x19010c)
+    * This claim is used by the attester to differentiate boot sessions. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+13. **dloas** (claim key: 269, encoded as 0x19010d)
+    * This claim is used by the attester to point the verifier to the endorsement repository (one example, OCP SAFE). If present, refer to [@{ietf-rfc9711}] for the claim structure.
+
+14. **rim-locators** (claim key: -70001, encoded as 0x3a00011170)
+    * This claim is used by the attester to point the verifier to the rim repository. If present, **SHALL** be an array of corim-locator-map (refer to [@{ietf-rats-corim}]).
+
+
+**Private Claims**: In addition to the standard claims defined above, this
+profile allows for up to 5 implementor-specific private claims. These claims
+are **OPTIONAL** and **MAY** be included to address vendor-specific requirements 
+or unique platform characteristics. Private claims **MUST** use claim keys less 
+than -65536 per RFC 8392. When present, private claims follow the deterministic 
+encoding order and appear after all standard claims. Each private claim **SHOULD** 
+be limited to 100 bytes in size to ensure efficient transmission and processing.
+
+The following private claim keys are reserved for implementor use:
+- **Private claim 1** (claim key: -70002, encoded as 0x3a00011171, optional)
+- **Private claim 2** (claim key: -70003, encoded as 0x3a00011172, optional)  
+- **Private claim 3** (claim key: -70004, encoded as 0x3a00011173, optional)
+- **Private claim 4** (claim key: -70005, encoded as 0x3a00011174, optional)
+- **Private claim 5** (claim key: -70006, encoded as 0x3a00011175, optional)
+
+**Size Limitations**: To maintain efficiency and interoperability, the following
+size constraints apply:
+
+* The complete CWT token (including the certificate chain in the unprotected header) **SHALL NOT** exceed 64kB. This limitation aligns with the SPDM Measurement block size limit, as most OCP Attesters are expected to rely on SPDM for EAT conveyance.
+* Each vendor-specific private claim **SHOULD NOT** exceed 100 bytes
+* Each URI value in any claim **SHOULD NOT** exceed 100 bytes
+* Each text string value in any claim **SHOULD NOT** exceed 100 bytes
+
+**Appraisal Policy Considerations**: For verifier appraisal policies, the
+mandatory claims (1-6) **SHALL** be sufficient to establish the security
+posture of the attesting platform. Optional claims provide supplementary
+information that enhances visibility into platform state and configuration but
+are not critical for basic attestation verification. Verifiers **MAY** choose
+to incorporate optional claims into their policies based on specific security
+requirements or audit needs.
 
 ## CWT Integrity Protection
 
@@ -214,7 +293,6 @@ Each Target Environment **SHOULD** comprehensively describe three key components
 * Vendor ID
 * Product ID
 * Digest of FW journey to reflect impactless update since last cold reboot
-* List of FW version since last cold reboot
 * Flags Attributes that indicate specific firmware states or configurations like debug mode or production mode, anti-roll back enable or disable
 
 The table below maps the above entries with the reference-triple dictionary structure:

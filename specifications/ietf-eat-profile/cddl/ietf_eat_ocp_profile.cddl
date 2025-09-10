@@ -1,20 +1,52 @@
 cwt-eat = {
-  ; The EAT Profile for OCP OID
-  &(EAT Profile : 265 ) => ~oid ; TODO: OCP Security to assign a value - note: `~` strips CBOR tag #6.111(oid) from `oid`
+  ; Mandatory Claims
 
-  ; Issuer claim is StringOrURI (tstr)
+  ; Issuer claim is StringOrURI (tstr) (Mandatory)
   &(iss : 1) => tstr
 
-  ; Nonce claim is nonce-type = bstr .size (8..64)
-  &(Nonce : 10) => bstr
+  ; CTI claim for token uniqueness (Mandatory)
+  &(cti : 7) => bstr .size (8..64)
 
-  ; EAT measurements claim is defined in section-4.2.16
+  ; Nonce claim is nonce-type = bstr .size (8..64) (Mandatory)
+  &(Nonce : 10) => bstr .size (8..64)
+
+  ; Debug status claim (Mandatory) // dbgstat-type is defined in https://datatracker.ietf.org/doc/rfc9711/
+  &(dbgstat : 263) => dbgstat-type
+
+    ; The EAT Profile for OCP OID (Mandatory) // eat-profile is defined in https://datatracker.ietf.org/doc/rfc9711/
+  &(EAT Profile : 265 ) => ~oid ; TODO: OCP Security to assign a value - note: `~` strips CBOR tag #6.111(oid) from `oid`
+
+  ; EAT measurements (Mandatory)
   &(Measurements : 273) => measurements-type
 
-  ; Private Claims (they have to be < -65536 for rfc8392) per RFC 8392
+  ; Optional Claims
 
-  ; CoRIM Locator Map (Optional)
+  ; CoRIM Locator Map (Optional) // corim-locator-map is defined in https://datatracker.ietf.org/doc/draft-ietf-rats-corim/
   ? &(rim-locators : -70001) => [ + corim-locator-map]
+  
+  ; DLOA claim (Optional) // dloa-type is defined in https://datatracker.ietf.org/doc/rfc9711/
+  ? &(dloas : 269) => [ + dloa-type ]
+
+  ; UEID claim (Optional)
+  ? &(ueid : 256) => bstr .size (7..33)
+
+  ; OEM ID claim (Optional) // oemid-type is defined in https://datatracker.ietf.org/doc/rfc9711/
+  ? &(oemid : 258) => oemid-type
+
+  ; Hardware model claim (Optional)
+  ? &(hwmodel : 259) => bytes .size (1..32)
+
+  ; Uptime claim (Optional)
+  ? &(uptime : 261) => uint
+
+  ; Boot count claim (Optional)
+  ? &(bootcount : 267) => uint
+
+  ; Boot seed claim (Optional)
+  ? &(bootseed : 268) => bstr .size (32..64)
+
+  ; Private Claims (up to 5, must be < -65536 per RFC 8392)
+  * $$private-claims => any
 }
 
 ; The concise-evidence-map CDDL is defined in

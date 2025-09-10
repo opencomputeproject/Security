@@ -34,4 +34,24 @@ references:
       year: 2020
       month: 11
     url: "https://datatracker.ietf.org/doc/html/rfc9360"
-
+  - id: "ietf-rfc9711"
+    title: "The Entity Attestation Token (EAT)"
+    publisher: "IETF"
+    issued:
+      year: 2025
+      month: 4
+    url: "https://datatracker.ietf.org/doc/rfc9711/"
+  - id: "ietf-rfc8392"
+    title: "CBOR Web Token (CWT)"
+    publisher: "IETF"
+    issued:
+      year: 2018
+      month: 5
+    url: "https://datatracker.ietf.org/doc/html/rfc8392/"
+  - id: "ietf-rfc8949"
+    title: "Concise Binary Object Representation (CBOR)"
+    publisher: "IETF"
+    issued:
+      year: 2020
+      month: 12
+    url: "https://datatracker.ietf.org/doc/html/rfc8949"
