@@ -334,9 +334,131 @@ Subsequent versions of this specification may be expanded with additional key de
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
-This will be accomplished via the `SET_CERTIFICATE` SPDM command.
+Once the PKI owner has established trust in a selected identity keypair through the envelope-signed CSR process described in @sec:establishing-trust-in-identity, the PKI owner can proceed to issue and provision an identity certificate for that key.
 
-TODO: fill in additional details.
+### Certificate Issuance Process
+
+The PKI owner endorses the selected public key with its own PKI by creating a certificate that contains:
+
+- **Subject Public Key**: 
+
+  The public key from the selected identity keypair
+
+- **Subject**: 
+
+  Distinguished name identifying the device or its role
+
+- **Extensions**: 
+
+  Any certificate extensions that was included in the CSR (e.g., key usage, subject alternative names, TCBInfo)
+
+- **Issuer**: 
+
+  The PKI owner's distinguished name (unique to the endorsing PKI)
+
+- **Digital Signature**: 
+
+  Signed with the PKI owner's private key
+
+This creates an identity certificate that chains back to the PKI owner's root CA rather than the original vendor PKI, enabling the benefits described in the Introduction section.
+
+### Certificate Provisioning
+
+The PKI owner provisions the issued identity certificate to the device using one of two mechanisms:
+
+#### SPDM-based Provisioning
+
+For SPDM-capable devices, the identity certificate is provisioned using the native **SET_CERTIFICATE** command defined in SPDM 1.3. This command accepts:
+
+- **SlotID**: 
+
+  Identifies the certificate slot (valid range 1-7 for SPDM)
+
+- **Certificate Data**: 
+
+  The DER-encoded identity certificate
+
+#### Non-SPDM Provisioning
+
+For non-SPDM attesters, an **OCP_SET_CERTIFICATE** command is defined to provide equivalent functionality.
+
+TODO: 
+
+Define OCP_SET_CERTIFICATE command structure and parameters for non-SPDM devices.
+
+### Certificate Storage and Slot Allocation
+
+The provisioned identity certificate is stored in the device's volatile memory (SRAM) and will be wiped at the next power cycle. This temporary storage model ensures that:
+
+- Certificates do not persist beyond the current operational session
+- Fresh certificate provisioning occurs with each device initialization
+- Memory constraints are managed effectively
+
+#### Recommended Slot Allocation
+
+OCP recommends the following slot allocation strategy:
+
+- **Slot 2**: 
+
+  Platform Owner Endorser certificate
+
+- **Slot 3**: 
+
+  Tenant Endorser certificate
+
+This allocation provides a consistent framework for different deployment scenarios while maintaining clear separation between platform owner and tenant identity certificates.
+
+#### Single Tenant Constraint
+
+Devices can only accommodate storage for a single tenant certificate at a time due to SRAM limitations. For multi-tenant scenarios, the device is not responsible for certificate provisioning coordination, and tenant certificate management must be handled at a higher layer in the system architecture.
+
+### Confidential Virtual Machine (CVM) Considerations
+
+For Confidential Virtual Machine deployments, it is recommended that the endorsed certificate be stored outside of the device (e.g., in the hypervisor or management layer) rather than in the device's volatile memory. This approach:
+
+- Reduces memory pressure on the device
+- Enables more flexible certificate management
+- Supports CVM-specific attestation workflows
+
+### Certificate Chain Management
+
+The device is responsible only for storing the single endorsed identity certificate, **not** the complete certificate chain up to the endorser's root CA. This design decision is based on several factors:
+
+- **Variable Chain Length**: 
+
+  Certificate chain lengths can vary significantly between different endorsers
+
+- **Memory Constraints**: 
+
+  Devices have limited SRAM capacity for certificate storage
+
+- **Endorser Responsibility**: 
+
+  It is the endorser's responsibility to provide the complete certificate chain to verifiers during attestation verification
+
+The endorser must ensure that verifiers have access to any intermediate certificates required to validate the certificate chain from the device's identity certificate to the endorser's trusted root CA. This chain distribution is typically handled out-of-band from the device provisioning process.
+
+### Provisioning Workflow
+
+The complete certificate provisioning workflow follows these steps:
+
+1. **Trust Establishment**: 
+
+   PKI owner obtains envelope-signed CSR for selected identity key
+
+2. **Certificate Generation**: 
+
+   PKI owner creates identity certificate using established trust
+
+3. **Certificate Provisioning**: 
+
+   PKI owner deploys certificate to device using SET_CERTIFICATE or OCP_SET_CERTIFICATE
+
+4. **Slot Configuration**: 
+
+   Certificate is stored in designated slot (2 for platform owner, 3 for tenant)
+
+This workflow enables PKI owners to efficiently deploy their identity certificates while maintaining the security and operational benefits described throughout this specification.
 
 ## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
 
