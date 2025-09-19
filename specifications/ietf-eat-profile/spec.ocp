@@ -275,95 +275,49 @@ levels for data center environments.
 
 ### Supported Algorithms
 
-Implementations of this profile **SHALL** support **one** of the
-following COSE algorithms for the COSE_Sign1 signature:
+Implementations of this profile **SHALL** support the following COSE
+algorithm for the COSE_Sign1 signature:
 
-1. **ECDSA with P-384 and SHA-384** (COSE Algorithm ID: -35)
-    * **Algorithm**: ES384 as defined in [@{ietf-rfc9052}]
-    * **Curve**: NIST P-384
-    * **Hash**: SHA-384
-    * **Key Size**: 384 bits
-    * **Security Level**: 192-bit classical security
-    * **Signature Size**: ~96 bytes
-    * **Public Key Size**: 97 bytes (uncompressed point)
-    * **Private Key Size**: 48 bytes
-    * **Profile OID**: **TODO: OCP to assign OID for ECDSA-P384 profile**
-
-2. **ML-DSA-87** (COSE Algorithm ID: -50)
-    * **Algorithm**: ML-DSA-87 (FIPS 204) as defined in
-      [@{ietf-cose-dilithium}]
-    * **Security Level**: Category 5 (256-bit classical, 128-bit quantum) as defined in [@{nist-fips-204}]
-    * **Signature Size**: ~4,627 bytes
-    * **Public Key Size**: 2,592 bytes
-    * **Private Key Size**: 4,896 bytes
-    * **Hash**: SHAKE256
-    * **Profile OID**: **TODO: OCP to assign OID for ML-DSA-87 profile**
-    * **Note: Algorithm ID: -50 is a temporary allocation. However, it is expected to become permanent
-
-### Profile OID Usage
-
-The **EAT Profile** claim (claim key: 265) **MUST** contain the OID
-corresponding to the algorithm used for signing the CWT:
-
-* When signed with ECDSA-P384, use the ECDSA-P384 profile OID
-* When signed with ML-DSA-87, use the ML-DSA-87 profile OID
-
-This allows verifiers to immediately identify both the profile version and
-the expected signature algorithm without parsing the COSE headers.
-
-### Algorithm Selection Guidelines
-
-The choice of algorithm **SHALL** be determined by:
-
-1. Attester capabilities
-2. Deployment security requirements (classical vs. post-quantum)
-3. Size constraints and bandwidth considerations
-4. Certificate chain algorithm consistency
-
-**Certificate Chain Consistency**: The algorithm used for CWT signing
-**SHOULD** be consistent with the algorithm used in the Attestation Key
-certificate chain, though this is not strictly required.
+**ECDSA with P-384 and SHA-384** (COSE Algorithm ID: -51)
+* **Algorithm**: ES384 as defined in [@{ietf-rfc9052}]
+* **Curve**: NIST P-384
+* **Hash**: SHA-384
+* **Key Size**: 384 bits
+* **Security Level**: 192-bit classical security
+* **Signature Size**: 96 bytes
+* **Public Key Size**: 97 bytes (uncompressed point)
+* **Private Key Size**: 48 bytes
+* **Profile OID**: **TODO: OCP to assign OID for ECDSA-P384 profile**
 
 ### Size Implications
 
 Implementations **MUST** account for the following signature size
 implications when calculating total CWT size against the 64kB limit:
 
-* **ECDSA-P384**: ~96 bytes signature size
-* **ML-DSA-87**: ~4,627 bytes signature size
-
-**Note**: When using ML-DSA-87, implementors should carefully consider the
-available space for claims and certificate chains within the 64kB total
-size limit. The large signature size may necessitate more compact
-certificate chains or reduced optional claims.
+* **ECDSA-P384**: 96 bytes signature size
 
 ### COSE Header Requirements
 
 The COSE_Sign1 protected header **MUST** include:
 
-* **alg** (label 1): The COSE algorithm identifier (-35 for ES384 or -50
-  for ML-DSA-87)
-* Additional algorithm-specific parameters as required by the chosen
-  algorithm
+* **alg** (label 1): The COSE algorithm identifier (-35 for ES384)
+* Additional algorithm-specific parameters as required by the algorithm
 
 The COSE_Sign1 unprotected header **MUST** include:
 
 * **x5chain** (label 33): Certificate chain as specified in the main
   specification
 
-### Implementation Notes
-
-**Migration Path**: The dual algorithm support provides a clear migration
-path from classical to post-quantum cryptography while maintaining current
-security levels during the transition period.
-
 ### Future Algorithm Support
 
-This profile may be updated to include additional COSE algorithms as they
-become standardized and relevant for data center attestation use cases.
-When new algorithms are added, a new profile OID will be assigned to
-support each additional algorithm, maintaining clear identification and
-backward compatibility with existing implementations.
+This profile serves as the base for ECDSA-based attestation. Additional
+profiles will be derived from this specification when post-quantum
+cryptography algorithms become standardized. For example, when
+[@{ietf-cose-dilithium}] becomes an RFC, a new profile with a distinct
+OID will be assigned to support ML-DSA algorithms. Each new algorithm
+profile will maintain the same claim structure and overall architecture
+while specifying the appropriate cryptographic parameters for that
+algorithm.
 
 ## Concise Evidence
 
