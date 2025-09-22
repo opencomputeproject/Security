@@ -55,3 +55,17 @@ references:
       year: 2020
       month: 12
     url: "https://datatracker.ietf.org/doc/html/rfc8949"
+  - id: "ietf-cose-dilithium"
+    title: "ML-DSA for JOSE and COSE"
+    publisher: "IETF"
+    issued:
+      year: 2025
+      month: 9
+    url: "https://datatracker.ietf.org/doc/draft-ietf-cose-dilithium/"
+  - id: "nist-fips-204"
+    title: "Module-Lattice-Based Digital Signature Standard"
+    publisher: "NIST"
+    issued:
+      year: 2024
+      month: 8
+    url: "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf"

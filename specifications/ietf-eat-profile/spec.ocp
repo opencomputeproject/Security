@@ -185,7 +185,7 @@ and provide the minimum necessary information for verifier appraisal policies:
     * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID assigned to the OCP Profile. **TODO: OCP to assign OID Value**
 
 6. **Measurements** (claim key: 273, encoded as 0x190111)
-    * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a "concise-evidence" as a serialized CBOR byte string using the appropriate IANA media type. The serialized concise-evidence **SHALL NOT** exceed 128kB in size.
+    * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a "concise-evidence" as a serialized CBOR byte string using the appropriate IANA media type.
 
 **Optional Claims (7-14)**: These claims are **OPTIONAL** and provide additional
 platform information that may be useful for audit purposes but are not strictly
@@ -267,7 +267,57 @@ Additionally, an Attester has the option to include a complete certificate path
 within the x5-chain, extending from a recognized Trusted Anchor (such as a
 Vendor Root CA) or up to the Initial Device Identity (IDEVID).
 
-The signed-cwt CDDL is defined in the following manner:
+## COSE Algorithm Requirements
+
+This profile defines specific cryptographic algorithms that **MUST** be
+supported for CWT signing to ensure interoperability and appropriate security
+levels for data center environments.
+
+### Supported Algorithms
+
+Implementations of this profile **SHALL** support the following COSE
+algorithm for the COSE_Sign1 signature:
+
+**ECDSA with P-384 and SHA-384** (COSE Algorithm ID: -51)
+* **Algorithm**: ES384 as defined in [@{ietf-rfc9052}]
+* **Curve**: NIST P-384
+* **Hash**: SHA-384
+* **Key Size**: 384 bits
+* **Security Level**: 192-bit classical security
+* **Signature Size**: 96 bytes
+* **Public Key Size**: 97 bytes (uncompressed point)
+* **Private Key Size**: 48 bytes
+* **Profile OID**: **TODO: OCP to assign OID for ECDSA-P384 profile**
+
+### Size Implications
+
+Implementations **MUST** account for the following signature size
+implications when calculating total CWT size against the 64kB limit:
+
+* **ECDSA-P384**: 96 bytes signature size
+
+### COSE Header Requirements
+
+The COSE_Sign1 protected header **MUST** include:
+
+* **alg** (label 1): The COSE algorithm identifier (-35 for ES384)
+* Additional algorithm-specific parameters as required by the algorithm
+
+The COSE_Sign1 unprotected header **MUST** include:
+
+* **x5chain** (label 33): Certificate chain as specified in the main
+  specification
+
+### Future Algorithm Support
+
+This profile serves as the base for ECDSA-based attestation. Additional
+profiles will be derived from this specification when post-quantum
+cryptography algorithms become standardized. For example, when
+[@{ietf-cose-dilithium}] becomes an RFC, a new profile with a distinct
+OID will be assigned to support ML-DSA algorithms. Each new algorithm
+profile will maintain the same claim structure and overall architecture
+while specifying the appropriate cryptographic parameters for that
+algorithm.
 
 ## Concise Evidence
 
