@@ -71,24 +71,24 @@ This specification is sustainable.
 
 # Overview
 
-This profile builds on the **Concise Evidence Binding for SPDM**
+This profile builds on the **Concise Evidence (CoEv) Binding for SPDM**
 [@{tcg-dice-concise-evidence-binding-for-spdm}] by defining a dedicated
 profile. This profile utilizes a **CBOR Web Token (CWT)** that includes claims
 as defined by **Entity Attestation Token (EAT)** to ensure the integrity of
 CoEv through the implementation of a **COSE_Sign1** data structure.
 
 The document details the binding between the **Security Protocol and Data Model
-(SPDM)** and the CWT Data Structure profile tailored for Data Center devices.
+(SPDM)** and the CWT Data Structure profile tailored for datacenter devices.
 Importantly, while the profile is designed to integrate seamlessly with SPDM as
 the message exchange protocol, its usage is not restricted solely to SPDM and
 can be applied with other protocols as well.
 
 The primary objective of this specification is to establish a standardized
 method for representing evidence that is scalable across a diverse range of
-attesters, including **Systems on Chips (SoCs)**, hard drives, and AI
+attesters, including **Systems on Chips (SoCs)**, hard drives, and
 accelerators. By providing a unified approach, the specification aims to
-simplify and streamline the attestation process within complex and
-heterogeneous environments.
+simplify and streamline the attestation and verification process within complex
+and heterogeneous environments.
 
 ## Terms and Definitions
 
@@ -103,23 +103,19 @@ heterogeneous environments.
 ## Introduction
 
 This specification details how an attester should represent its evidence within
-a CBOR Web Token (CWT) Profile. Specifically, the CWT serves as the CBOR
-(Concise Binary Object Representation) encoding of an IETF
-Entity Attestation Token (EAT), in accordance with the CDDL
-(Concise Declarative Data Language) semantics. The specification delineates the
-essential set of claims required within the CWT to form a coherent and
+a CBOR Web Token profile. Specifically, the CWT serves as the CBOR encoding of an
+IETF Entity Attestation Token, in accordance with the CDDL semantics. The specification
+delineates the essential set of claims required within the CWT to form a coherent and
 interoperable profile.
 
 Moreover, the specification elaborates on the method for transmitting the CWT
-via SPDM (Security Protocol and Data Model), as outlined in the "Concise
-Evidence Binding for SPDM" [@{tcg-dice-concise-evidence-binding-for-spdm}]. It
-is crucial to note that while the profile is designed to work effectively with
-SPDM, it is not limited to this protocol and can be employed with alternative
-transmission methods as needed.
+via SPDM, as outlined in the "Concise Evidence Binding for SPDM" [@{tcg-dice-concise-evidence-binding-for-spdm}].
+While the profile is designed to work effectively with SPDM, it is not limited to this
+protocol and can be employed with alternative transmission methods as needed.
 
 ## Motivation
 
-Data centers are becoming increasingly complex due to the growing number of
+Datacenters are becoming increasingly complex due to the growing number of
 integrated devices. For Cloud Service Providers (CSPs) and their tenants,
 evaluating the security posture of these intricate configurations is vital.
 This specification aims to simplify the attestation process by providing a
@@ -143,7 +139,7 @@ verifiers on the recommended claims and appraisal policy methodologies. It is
 important to note that this profile does not extend any CDDL, as it uses CDDL
 already defined by the IETF CoRIM Draft and DICE Concise Evidence.
 
-The evidence is expressed as a CBOR Web Token (CWT). This profile describes the
+The evidence is expressed as a CBOR Web Token. This profile describes the
 list of claims that must be included in the CWT and how they should be used.
 Additionally, the profile outlines how the COSE_Sign1 fields must be populated
 and asserts that the certificate path of the Attestation Key must be included
@@ -159,21 +155,21 @@ mandatory and optional categories to balance attestation requirements with
 implementation flexibility.
 
 **Claim Ordering**: To ensure consistent CBOR serialization and maximize
-interoperability across different implementations, **all claims MUST** 
-be reported following the CBOR deterministic encoding requirements as specified 
-in [@{ietf-rfc8949}]. 
-Specifically, the keys in the CWT map **MUST** be sorted in the bytewise 
-lexicographic order of their deterministic encodings. This ordering convention 
+interoperability across different implementations, **all claims MUST**
+be reported following the CBOR deterministic encoding requirements as specified
+in [@{ietf-rfc8949}].
+Specifically, the keys in the CWT map **MUST** be sorted in the bytewise
+lexicographic order of their deterministic encodings. This ordering convention
 applies to mandatory claims, optional claims, and private claims when present.
 
 **Mandatory Claims (1-6)**: These claims are **REQUIRED** for all attestations
 and provide the minimum necessary information for verifier appraisal policies:
 
 1. **issuer**  (claim key: 1, encoded as 0x01)
-    * This claim is used by the attester to bind the EAT to the certificate chain that issued it. It **SHALL** match the SUBJECT Common Name of the Attestation Key (AK) Certificate.
+    * This claim is used by the attester to bind the EAT to the certificate chain that issued it. It **SHALL** match the SUBJECT Common Name of the Attestation Key Certificate.
 
 2. **cti**  (claim key: 7, encoded as 0x07)
-    * This claim is used by the attester to determine the uniqueness of the token. Refer to [@{ietf-rfc8392}] for acceptable values for this claim
+    * This claim is used by the attester to establish uniqueness of the token. Refer to [@{ietf-rfc8392}] for acceptable values for this claim
 
 3. **Nonce**  (claim key: 10, encoded as 0x0a)
     * This claim is used by the attester to ensure the freshness of the response. Refer to [@{ietf-rfc9711}] for acceptable values for this claim
@@ -219,15 +215,15 @@ serve informational purposes:
 
 **Private Claims**: In addition to the standard claims defined above, this
 profile allows for up to 5 implementor-specific private claims. These claims
-are **OPTIONAL** and **MAY** be included to address vendor-specific requirements 
-or unique platform characteristics. Private claims **MUST** use claim keys less 
-than -65536 per RFC 8392. When present, private claims follow the deterministic 
-encoding order and appear after all standard claims. Each private claim **SHOULD** 
+are **OPTIONAL** and **MAY** be included to address vendor-specific requirements
+or unique platform characteristics. Private claims **MUST** use claim keys less
+than -65536 per RFC 8392. When present, private claims follow the deterministic
+encoding order and appear after all standard claims. Each private claim **SHOULD**
 be limited to 100 bytes in size to ensure efficient transmission and processing.
 
 The following private claim keys are reserved for implementor use:
 - **Private claim 1** (claim key: -70002, encoded as 0x3a00011171, optional)
-- **Private claim 2** (claim key: -70003, encoded as 0x3a00011172, optional)  
+- **Private claim 2** (claim key: -70003, encoded as 0x3a00011172, optional)
 - **Private claim 3** (claim key: -70004, encoded as 0x3a00011173, optional)
 - **Private claim 4** (claim key: -70005, encoded as 0x3a00011174, optional)
 - **Private claim 5** (claim key: -70006, encoded as 0x3a00011175, optional)
@@ -251,7 +247,7 @@ requirements or audit needs.
 ## CWT Integrity Protection
 
 The CWT is protected against integrity breaches and can be cryptographically
-authenticated. An **Attestation Key (AK)**, which is managed by the Attester’s
+authenticated. An **Attestation Key**, which is managed by the Attester’s
 **Root of Trust (RoT)**, is used to sign the **COSE_Sign1** [@{ietf-rfc8152}]
 data structure that ensures the integrity of the token.
 
@@ -271,7 +267,7 @@ Vendor Root CA) or up to the Initial Device Identity (IDEVID).
 
 This profile defines specific cryptographic algorithms that **MUST** be
 supported for CWT signing to ensure interoperability and appropriate security
-levels for data center environments.
+levels for datacenter environments.
 
 ### Supported Algorithms
 
