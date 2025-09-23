@@ -3,9 +3,9 @@ references:
     title: "DICE Concise Evidence Binding for SPDM"
     publisher: "Trusted Computing Group"
     issued:
-      year: 2020
-      month: 11
-    url: "https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Concise-Evidence-Binding-for-SPDM-Version-1.0-Revision-54_pub.pdf"
+      year: 2025
+      month: 9
+    url: "https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Concise-Evidence-Binding-for-SPDM-V1.1_pub.pdf"
   - id: "ietf-rats-corim"
     title: "Concise Reference Integrity Manifest"
     publisher: "IETF"
@@ -17,8 +17,8 @@ references:
     title: "Security Protocol and Data Model (SPDM) Specification"
     publisher: "DMTF"
     issued:
-      year: 2020
-      month: 11
+      year: 2024
+      month: 9
     url: "https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.3.2.pdf"
   - id: "ietf-rfc8152"
     title: "CBOR Object Signing and Encryption (COSE)"
