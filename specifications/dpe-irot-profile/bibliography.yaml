@@ -1,4 +1,10 @@
 references:
+  - id: "fips204"
+    title: "FIPS 204: Module-Lattice-Based Digital Signature Standard"
+    publisher: "NIST"
+    issued:
+      year: 2024
+      month: 8
   - id: "ietf-rfc2986"
     title: "PKCS #10: Certification Request Syntax Specification"
     publisher: "IETF"
