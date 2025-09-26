@@ -327,7 +327,8 @@ to report the target environment claims is to converge on the
 “reference-triple” [@{tcg-dice-concise-evidence-binding-for-spdm}] data
 structure used by the CoRIM to represent reference values, simplifying the
 appraisal policy for the verifier.
-
+Note: The ce.evidence-triples field is the only mandatory field that this profile
+must implement for the "ev-triples-map" CDDL."
 
 Each Target Environment **SHOULD** comprehensively describe three key components:
 

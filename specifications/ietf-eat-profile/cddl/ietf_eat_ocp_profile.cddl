@@ -50,7 +50,8 @@ cwt-eat = {
 }
 
 ; The concise-evidence-map CDDL is defined in
-; https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Concise-Evidence-Binding-for-SPDM-Version-1.0-Revision-54_pub.pdf
+; https://github.com/TrustedComputingGroup/dice-coev/blob/main/concise-evidence.cddl
+;
 $measurements-body-cbor /= bytes .cbor concise-evidence-map
 oid = tagged-oid-type
 
