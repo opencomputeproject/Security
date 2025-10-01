@@ -330,11 +330,350 @@ The following OIDs are defined for key derivation attributes:
 
 These OIDs indicate which inputs contribute to the derivation of the identity key for which the CSR is being requested.
 
-Subsequent versions of this specification may be expanded with additional key derivation attribute OIDs.
+**Key Provisioning Entity OID Branch**: `ocp-security-dip-kpe OBJECT IDENTIFIER ::= {ocp-security 4}`
+
+The following OIDs are defined for key provisioning entities:
+
+- **Vendor Provisioning Entity**: `ocp-security-dip-kpe-vendor ::= {ocp-security-dip-kpe 1}`
+  - Used to identify vendor-provisioned endorsements (typically pre-installed in slot 0)
+
+- **Platform Owner Provisioning Entity**: `ocp-security-dip-kpe-owner ::= {ocp-security-dip-kpe 2}`
+  - Used to identify platform owner-provisioned endorsements
+
+- **Tenant Provisioning Entity**: `ocp-security-dip-kpe-tenant ::= {ocp-security-dip-kpe 3}`
+  - Used to identify tenant-provisioned endorsements in bare metal scenarios
+
+These OIDs are returned by the `OCP_GET_SLOT_ID_MAPPING` command to indicate which entity's endorsement is associated with each slot.
+
+Subsequent versions of this specification may be expanded with additional key derivation attribute OIDs and provisioning entity OIDs.
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
-This will be accomplished via the `SET_CERTIFICATE` SPDM command.
+After establishing trust in a device's identity keypair through the envelope-signed CSR mechanism, a PKI owner can issue and provision an identity certificate to the device. This specification defines a standardized approach using OCP-specific extensions transported via SPDM's VENDOR_DEFINED_REQUEST mechanism.
+
+### Certificate provisioning overview
+
+Identity certificates are provisioned to devices using the OCP-specific `OCP_SET_ENDORSEMENT` command. The PKI owner provisions their endorsement chain (excluding the LEAF certificate) to a specific slot on the device.
+
+**Important**: This specification mandates that LEAF certificates (the identity certificates themselves) are NOT included in the provisioned certificate chains. The separation between endorsement chains and LEAF certificates ensures:
+
+- Multiple use cases (attestation, secure sessions) can use different LEAF certificates while sharing the same endorsement point
+- The endorsement chain remains stable even as LEAF certificates may change based on key derivation inputs
+
+### Slot allocation and management
+
+Devices implementing this specification SHALL support certificate slot allocation with the following requirements:
+
+- **Minimum requirement**: Devices MUST reserve at least 2 slots for OCP provisioning (one for platform owner, one for tenant)
+- **Vendor flexibility**: The specific slot numbers are determined by the device vendor and discovered via `OCP_GET_SLOT_ID_MAPPING`
+- **Total slots**: SPDM supports up to 8 slots (0-7), with the allocation between vendor and OCP use defined by the vendor
+
+Example allocation (vendor-specific):
+- Slot 0: Vendor endorsement (pre-provisioned)
+- Slot 2: Platform owner endorsement
+- Slot 4: Tenant endorsement
+- Other slots: Available for additional use cases or vendor-specific purposes
+
+**Important**: The actual slot mapping is vendor-defined and discovered at runtime. The device SHALL return an error if attempts are made to provision more slots than physically supported
+
+### OCP extensions for certificate management
+
+To address the needs of heterogeneous environments where devices may support both SPDM and non-SPDM attestation paths, this specification defines OCP-specific commands transported via SPDM's VENDOR_DEFINED_REQUEST mechanism.
+
+#### OCP_GET_SLOT_ID_MAPPING command
+
+GET_SLOT_ID_MAPPING request and SLOT_ID_MAPPING response messages are transported as follows:
+
+- The Requester must use the SPDM VENDOR_DEFINED_REQUEST format
+- The Responder must use the SPDM VENDOR_DEFINED_RESPONSE format
+- The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 4 (the value assigned in SPDM to identify IANA).
+- The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 42623 (the value assigned in IANA to identify Open Compute Project).
+- The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 03h to indicate GET_SLOT_ID_MAPPING / SLOT_ID_MAPPING.
+- The GET_SLOT_ID_MAPPING request and SLOT_ID_MAPPING response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:slot-mapping-req] and [-@tbl:slot-mapping-resp].
+
+Table: GET_SLOT_ID_MAPPING VendorDefinedReqPayload {#tbl:slot-mapping-req}
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 03h to indicate                     |
+|                     |                     |                     | GET_SLOT_ID_MAPPING.                         |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 4                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+Table: SLOT_ID_MAPPING VendorDefinedRespPayload {#tbl:slot-mapping-resp}
+
++--------+-------------------------+-------------------------+------------------------------------------+
+| Byte   | Field                   | Size (bytes)            | Description                              |
+| offset |                         |                         |                                          |
++========+=========================+=========================+==========================================+
+| 0      | CommandVersion          | 1                       | The version of this response structure.  |
+|        |                         |                         | Shall be zero.                           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 1      | CommandCode             | 1                       | Shall be 03h to indicate                 |
+|        |                         |                         | SLOT_ID_MAPPING.                         |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 2      | Reserved                | 4                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 6      | MappingCount            | 1                       | Number of slot mappings returned.        |
+|        |                         |                         | Shall not exceed 8.                      |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 7      | Reserved                | 1                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 8      | MappingTable            | MappingCount * 16       | Array of slot mappings. Each entry       |
+|        |                         |                         | consists of:                             |
+|        |                         |                         | - SlotID (1 byte)                        |
+|        |                         |                         | - Reserved (3 bytes)                     |
+|        |                         |                         | - OID Length (2 bytes)                   |
+|        |                         |                         | - Reserved (2 bytes)                     |
+|        |                         |                         | - OID (8 bytes, zero-padded)             |
++--------+-------------------------+-------------------------+------------------------------------------+
+
+#### OCP_SET_ENDORSEMENT command
+
+SET_ENDORSEMENT request and SET_ENDORSEMENT response messages are transported as follows:
+
+- The Requester must use the SPDM VENDOR_DEFINED_REQUEST format
+- The Responder must use the SPDM VENDOR_DEFINED_RESPONSE format
+- The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 4 (the value assigned in SPDM to identify IANA).
+- The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 42623 (the value assigned in IANA to identify Open Compute Project).
+- The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 04h to indicate SET_ENDORSEMENT.
+- The SET_ENDORSEMENT request and SET_ENDORSEMENT response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:set-endorsement-req] and [-@tbl:set-endorsement-resp].
+
+Table: SET_ENDORSEMENT VendorDefinedReqPayload {#tbl:set-endorsement-req}
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 04h to indicate                     |
+|                     |                     |                     | SET_ENDORSEMENT.                             |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 4                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 6                   | SlotID              | 1                   | Target slot for the endorsement chain.       |
+|                     |                     |                     | Shall be a valid slot as indicated by        |
+|                     |                     |                     | GET_SLOT_ID_MAPPING.                         |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 7                   | Flags               | 1                   | - Bit [7:1]: Reserved.                       |
+|                     |                     |                     | - Bit [0]: FORCE flag.                       |
+|                     |                     |                     |   If set to 1, allows overwriting an         |
+|                     |                     |                     |   existing endorsement in the slot.          |
+|                     |                     |                     |   If set to 0, returns error if slot         |
+|                     |                     |                     |   is already occupied.                       |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 8                   | KeyID               | 1                   | Key identifier for certificate selection.    |
+|                     |                     |                     | Usage is vendor-specific.                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 9                   | Reserved            | 1                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 10                  | CertChainLength     | 2                   | Length of the certificate chain in bytes.    |
+|                     |                     |                     | Shall not exceed device capabilities.        |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 12                  | CertChain           | CertChainLength     | DER-encoded certificate chain.               |
+|                     |                     |                     | Shall NOT include LEAF certificate.          |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+Table: SET_ENDORSEMENT VendorDefinedRespPayload {#tbl:set-endorsement-resp}
+
++--------+-------------------------+-------------------------+------------------------------------------+
+| Byte   | Field                   | Size (bytes)            | Description                              |
+| offset |                         |                         |                                          |
++========+=========================+=========================+==========================================+
+| 0      | CommandVersion          | 1                       | The version of this response structure.  |
+|        |                         |                         | Shall be zero.                           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 1      | CommandCode             | 1                       | Shall be 04h to indicate                 |
+|        |                         |                         | SET_ENDORSEMENT.                         |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 2      | Reserved                | 4                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 6      | Status                  | 1                       | Status code:                             |
+|        |                         |                         | - 00h: Success                           |
+|        |                         |                         | - 01h: Slot occupied                     |
+|        |                         |                         | - 02h: Invalid slot                      |
+|        |                         |                         | - 03h: Invalid chain                     |
+|        |                         |                         | - 04h: Chain too long                    |
+|        |                         |                         | - 05h: Insufficient resources            |
+|        |                         |                         | - FFh: General failure                   |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 7      | Reserved                | 1                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+
+
+#### OCP_GET_ENDORSEMENT command
+
+GET_ENDORSEMENT request and GET_ENDORSEMENT response messages are transported as follows:
+
+- The Requester must use the SPDM VENDOR_DEFINED_REQUEST format
+- The Responder must use the SPDM VENDOR_DEFINED_RESPONSE format
+- The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 4 (the value assigned in SPDM to identify IANA).
+- The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 42623 (the value assigned in IANA to identify Open Compute Project).
+- The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 04h to indicate GET_ENDORSEMENT.
+- The GET_ENDORSEMENT request and GET_ENDORSEMENT response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:get-endorsement-req] and [-@tbl:get-endorsement-resp].
+
+Table: GET_ENDORSEMENT VendorDefinedReqPayload {#tbl:get-endorsement-req}
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 04h to indicate                     |
+|                     |                     |                     | GET_ENDORSEMENT.                             |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 4                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 6                   | SlotID              | 1                   | Slot from which to retrieve the              |
+|                     |                     |                     | endorsement chain.                           |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 7                   | Reserved            | 1                       | Reserved.                                |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+Table: GET_ENDORSEMENT VendorDefinedRespPayload {#tbl:get-endorsement-resp}
+
++--------+-------------------------+-------------------------+------------------------------------------+
+| Byte   | Field                   | Size (bytes)            | Description                              |
+| offset |                         |                         |                                          |
++========+=========================+=========================+==========================================+
+| 0      | CommandVersion          | 1                       | The version of this response structure.  |
+|        |                         |                         | Shall be zero.                           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 1      | CommandCode             | 1                       | Shall be 04h to indicate                 |
+|        |                         |                         | GET_ENDORSEMENT.                         |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 2      | Reserved                | 4                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 6      | Status                  | 1                       | Status code:                             |
+|        |                         |                         | - 00h: Success                           |
+|        |                         |                         | - 02h: Invalid slot                      |
+|        |                         |                         | - 06h: Slot not provisioned              |
+|        |                         |                         | - FFh: General failure                   |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 7      | Reserved                | 1                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 8      | CertChainLength         | 2                       | Length of the certificate chain.         |
+|        |                         |                         | Zero if status is not success.           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 10     | CertChain               | CertChainLength         | DER-encoded certificate chain.           |
+|        |                         |                         | Does NOT include LEAF certificate.       |
+|        |                         |                         | Present only if status is success.       |
++--------+-------------------------+-------------------------+------------------------------------------+
+
+### Provisioning workflow
+
+A typical provisioning workflow follows these steps:
+
+1. **Discovery**: The PKI owner queries `OCP_GET_SLOT_ID_MAPPING` to understand the device's slot allocation
+2. **CSR Generation**: The PKI owner requests an envelope-signed CSR for their chosen identity key using `GET_ENVELOPE_SIGNED_CSR`
+3. **Certificate Issuance**: The PKI owner validates the CSR and issues an identity certificate
+4. **Chain Provisioning**: The PKI owner provisions their endorsement chain (excluding the newly issued LEAF certificate) using `OCP_SET_ENDORSEMENT`
+5. **Verification**: The PKI owner can verify successful provisioning by retrieving the chain using `OCP_GET_ENDORSEMENT`
+
+### Compatibility considerations
+
+For devices that support both SPDM and OCP attestation paths:
+
+- The same SlotID namespace is shared between SPDM and OCP commands
+- `OCP_SET_ENDORSEMENT` provisions to the same underlying storage accessed by SPDM
+- `GET_CERTIFICATE` (SPDM) returns the endorsement chain plus any associated LEAF certificate
+- `OCP_GET_ENDORSEMENT` returns only the endorsement chain
+
+This unified approach ensures consistent certificate management regardless of the attestation path used.
+
+### Certificate chain validation
+
+When provisioning certificate chains, devices SHALL validate:
+
+- The certificate chain is properly formed and each certificate correctly signs the next
+- The chain terminates at a self-signed root or a certificate that can be verified against pre-existing trust anchors
+- All certificates in the chain are within their validity periods
+- The certificate chain length does not exceed device storage capabilities
+
+### Error handling
+
+The following error conditions SHALL be reported:
+
+- **SLOT_OCCUPIED**: Attempting to provision a slot that already contains a certificate chain when FORCE flag is not set
+- **INVALID_SLOT**: Specified slot ID is outside the valid range
+- **CHAIN_TOO_LONG**: Certificate chain exceeds device storage capacity
+- **INVALID_CHAIN**: Certificate chain validation failed
+- **INSUFFICIENT_RESOURCES**: Device lacks resources to complete the operation
+
+### Security considerations
+
+#### Protection of provisioning operations
+
+Certificate provisioning operations SHOULD be performed over authenticated and encrypted channels:
+
+- For SPDM paths: Use SPDM secured messages when available
+- For out-of-band provisioning: Use platform-specific secure channels
+
+#### Slot update policy
+
+To prevent unauthorized certificate replacement:
+
+- Devices MAY implement policies restricting certificate updates based on:
+  - Physical presence assertions
+  - Platform ownership state
+  - Secure boot state
+- Once provisioned, slots SHALL NOT be overwritable without the FORCE flag being explicitly set
+- When FORCE flag is used to overwrite an existing endorsement, devices SHOULD log this as a security-relevant event
+
+#### Certificate lifecycle management
+
+PKI owners are responsible for:
+
+- Tracking certificate expiration dates
+- Implementing certificate renewal procedures before expiration
+- Maintaining certificate revocation lists (CRLs) for compromised certificates
+- Ensuring time synchronization for certificate validity checking
+
+### Implementation notes
+
+#### Storage optimization
+
+Given the limited storage available on many devices:
+
+- Redundant certificates (e.g., those appearing in multiple chains) MAY be stored once and referenced multiple times
+
+#### Backwards compatibility
+
+For devices that only support SPDM without OCP extensions:
+
+- Standard SPDM `SET_CERTIFICATE` commands remain fully functional
+
+### Example provisioning sequence
+
+Here's a complete example of a platform owner provisioning their endorsement chain:
+
+1. **BMC → Device**: `OCP_GET_SLOT_ID_MAPPING()`
+
+   **Device → BMC**: `{0: OID_VENDOR, 2: OID_OWNER, 4: OID_TENANT}`
+
+2. **BMC → Device**: `GET_ENVELOPE_SIGNED_CSR(KeyPairID=LDevID, SlotID=0, Nonce)`
+
+   **Device → BMC**: `EAT{CSR for LDevID}`
+
+3. **BMC validates CSR and issues certificate for LDevID**
+
+4. **BMC → Device**: `OCP_SET_ENDORSEMENT(SlotID=2, KeyID, OwnerEndorsementChain)`
+
+   **Device → BMC**: `SUCCESS`
+
+5. **TENANT → Device**: `OCP_GET_ENDORSEMENT(SlotID=2)`
+
+   **Device → TENANT**: `OwnerEndorsementChain` (confirming successful provisioning)
+
+After this sequence, attestations from the device can reference the owner's endorsement chain.
+
 
 TODO: fill in additional details.
 
