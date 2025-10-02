@@ -407,5 +407,5 @@ The following example illustrates a CWT containing claims for three target envir
 * **Software (SW) Configuration**: RAW Value (e.g., Debug State)
 
 ```include {.small}
-TODO: fill in with a diag
+!include diag/ocp-profile-eat-example.diag
 ```

@@ -69,3 +69,10 @@ references:
       year: 2024
       month: 8
     url: "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf"
+  - id: "ietf-rfc9052"
+    title: "CBOR Object Signing and Encryption (COSE): Structures and Process"
+    publisher: "IETF"
+    issued:
+      year: 2022
+      month: 8
+    url: "https://datatracker.ietf.org/doc/html/rfc9052"
