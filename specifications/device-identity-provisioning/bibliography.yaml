@@ -45,3 +45,10 @@ references:
       year: 2000
       month: 11
     url: "https://datatracker.ietf.org/doc/html/rfc2986"
+  - id: "ocp-command-registry"
+    title: "OCP Command Registry"
+    publisher: "Open Compute Project"
+    issued:
+      year: 2025
+      month: 9
+    url: "https://github.com/opencomputeproject/ocp-registry/blob/main/command-registry.md"
