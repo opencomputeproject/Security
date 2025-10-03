@@ -191,6 +191,9 @@ serve informational purposes:
 7. **ueid** (claim key: 256, encoded as 0x190100)
     * This claim is used by the attester to identify the attester. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
+7. **sueid** (claim key: 257, encoded as 0x190101)
+    * This claim is used by the attester to identify the attester at the different lifecycle stages. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
 8. **oemid** (claim key: 258, encoded as 0x190102)
     * This claim is used by the attester to identify the Original Equipment Manufacturer (OEM) of the hardware. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 

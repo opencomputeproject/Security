@@ -8,8 +8,8 @@
       << {
         / alg: ECDSA P-384 /
         1: -51,
-        / content-type: application/cwt /
-        3: 61
+        / content-type: application/eat+cwt
+        3: 263
       } >>,
       
       / Unprotected header /
@@ -44,7 +44,7 @@
             10571,
             
             / Concise evidence as CBOR bytestring /
-            << 571({
+            <<({
               / ce.ev-triples /
               0: {
                 / ce.evidence-triples /

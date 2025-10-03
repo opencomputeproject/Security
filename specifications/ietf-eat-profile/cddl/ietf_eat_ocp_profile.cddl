@@ -30,6 +30,9 @@ cwt-eat = {
   ; UEID claim (Optional)
   ? &(ueid : 256) => bstr .size (7..33)
 
+  ; SUEID claim (Optional)
+  ? &(sueid : 257) => bstr .size (7..33)
+
   ; OEM ID claim (Optional) // oemid-type is defined in https://datatracker.ietf.org/doc/rfc9711/
   ? &(oemid : 258) => oemid-type
 
