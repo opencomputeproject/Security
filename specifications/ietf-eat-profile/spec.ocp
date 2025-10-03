@@ -191,25 +191,28 @@ serve informational purposes:
 7. **ueid** (claim key: 256, encoded as 0x190100)
     * This claim is used by the attester to identify the attester. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-8. **oemid** (claim key: 258, encoded as 0x190102)
+8. **sueid** (claim key: 257, encoded as 0x190101)
+    * This claim is used by the attester to identify the attester at the different lifecycle stages. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+9. **oemid** (claim key: 258, encoded as 0x190102)
     * This claim is used by the attester to identify the Original Equipment Manufacturer (OEM) of the hardware. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-9. **hwmodel** (claim key: 259, encoded as 0x190103)
+10. **hwmodel** (claim key: 259, encoded as 0x190103)
     * This claim is used by the attester to differentiate hardware models, products, and variants manufactured by a particular OEM. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-10. **uptime** (claim key: 261, encoded as 0x190105)
+11. **uptime** (claim key: 261, encoded as 0x190105)
     * This claim is used by the attester to indicate the number of seconds elapsed since boot. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-11. **bootcount** (claim key: 267, encoded as 0x19010b)
+12. **bootcount** (claim key: 267, encoded as 0x19010b)
     * This claim is used by the attester to indicate the number of times the attester has booted. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-12. **bootseed** (claim key: 268, encoded as 0x19010c)
+13. **bootseed** (claim key: 268, encoded as 0x19010c)
     * This claim is used by the attester to differentiate boot sessions. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-13. **dloas** (claim key: 269, encoded as 0x19010d)
+14. **dloas** (claim key: 269, encoded as 0x19010d)
     * This claim is used by the attester to point the verifier to the endorsement repository (one example, OCP SAFE). If present, refer to [@{ietf-rfc9711}] for the claim structure.
 
-14. **rim-locators** (claim key: -70001, encoded as 0x3a00011170)
+15. **rim-locators** (claim key: -70001, encoded as 0x3a00011170)
     * This claim is used by the attester to point the verifier to the rim repository. If present, **SHALL** be an array of corim-locator-map (refer to [@{ietf-rats-corim}]).
 
 
@@ -407,5 +410,5 @@ The following example illustrates a CWT containing claims for three target envir
 * **Software (SW) Configuration**: RAW Value (e.g., Debug State)
 
 ```include {.small}
-TODO: fill in with a diag
+!include diag/ocp-profile-eat-example.diag
 ```
