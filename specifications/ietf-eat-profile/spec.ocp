@@ -157,13 +157,14 @@ implementation flexibility.
 **Claim Ordering**: To ensure consistent CBOR serialization and maximize
 interoperability across different implementations, **all claims MUST**
 be reported following the CBOR deterministic encoding requirements as specified
-in [@{ietf-rfc8949}].
+in Section 4.2 of [@{ietf-rfc8949}].
 Specifically, the keys in the CWT map **MUST** be sorted in the bytewise
 lexicographic order of their deterministic encodings. This ordering convention
 applies to mandatory claims, optional claims, and private claims when present.
 
 **Mandatory Claims (1-6)**: These claims are **REQUIRED** for all attestations
-and provide the minimum necessary information for verifier appraisal policies:
+and provide the minimum necessary information for verifier appraisal policies.  The verifier
+can expect at a minimum these claims in a compliant attestation:
 
 1. **issuer**  (claim key: 1, encoded as 0x01)
     * This claim is used by the attester to bind the EAT to the certificate chain that issued it. It **SHALL** match the SUBJECT Common Name of the Attestation Key Certificate.
@@ -291,7 +292,7 @@ algorithm for the COSE_Sign1 signature:
 ### Size Implications
 
 Implementations **MUST** account for the following signature size
-implications when calculating total CWT size against the 64kB limit:
+implications when calculating total (post-encoding) CWT size against the 64kB limit:
 
 * **ECDSA-P384**: 96 bytes signature size
 
@@ -307,6 +308,12 @@ The COSE_Sign1 unprotected header **MUST** include:
 * **x5chain** (label 33): Certificate chain as specified in the main
   specification
 
+### Key Identification
+
+The leaf certificate in the certificate chain of the COSE_Sign1 header identifies
+the public key associated with the signing keypair.  No other methods to identify
+the keypair must be included in the token (e.g. kid).
+
 ### Future Algorithm Support
 
 This profile serves as the base for ECDSA-based attestation. Additional
@@ -317,6 +324,13 @@ OID will be assigned to support ML-DSA algorithms. Each new algorithm
 profile will maintain the same claim structure and overall architecture
 while specifying the appropriate cryptographic parameters for that
 algorithm.
+
+## Use of CBOR Tags
+
+CBOR tags as described in this specification **MUST** be included in the attestation.
+The required tags are the registered self-described CBOR tag, EAT tag, COSE_Sign1 tag
+and the concise evidence tag.
+
 
 ## Concise Evidence
 
