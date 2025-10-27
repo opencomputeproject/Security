@@ -292,7 +292,7 @@ algorithm for the COSE_Sign1 signature:
 ### Size Implications
 
 Implementations **MUST** account for the following signature size
-implications when calculating total (post-encoding) CWT size against the 64kB limit:
+implications when calculating total CWT size against the 64kB limit:
 
 * **ECDSA-P384**: 96 bytes signature size
 
