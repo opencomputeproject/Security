@@ -193,16 +193,11 @@ Some devices may not support the generation of self-signed CSRs for certain keys
 
 ![Envelope-signed Non-self-signed CSR](./diagrams/envelope_signed_csr_non_self_signed.drawio.svg){#fig:envelope-signed-csr-non-self-signed}
 
-This specification provides a definition for a vendor-defined SPDM command, utilizing VENDOR_DEFINED_REQUEST from SPDM 1.3, which can be used to surface these envelope-signed CSRs.
+**Transport**: These commands follow the transport bindings defined in [@{ocp-command-registry}].
 
-GET_ENVELOPE_SIGNED_CSR request and ENVELOPE_SIGNED_CSR response messages are transported as follows:
+### GET_ENVELOPE_SIGNED_CSR command
 
-- The Requester must use the SPDM VENDOR_DEFINED_REQUEST format
-- The Responder must use the SPDM VENDOR_DEFINED_RESPONSE format
-- The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 4 (the value assigned in SPDM to identify IANA).
-- The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 42623 (the value assigned in IANA to identify Open Compute Project).
-- The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 01h to indicate GET_ENVELOPE_SIGNED_CSR / ENVELOPE_SIGNED_CSR.
-- The GET_ENVELOPE_SIGNED_CSR request and ENVELOPE_SIGNED_CSR response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:ecsr-req] and [-@tbl:ecsr-resp].
+This command returns an envelope-signed Certificate Signing Request (CSR) that conveys the key derivation properties of the requested identity key, enabling PKI owners to make informed decisions when issuing certificates based on how the key was derived.
 
 Table: GET_ENVELOPE_SIGNED_CSR VendorDefinedReqPayload {#tbl:ecsr-req}
 
@@ -281,7 +276,7 @@ Table: ENVELOPE_SIGNED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
 | Byte   | Field                   | Size (bytes)            | Description                              |
 | offset |                         |                         |                                          |
 +========+=========================+=========================+==========================================+
-| 0      | CommandVersion          | 1                       | The version of this request structure.   |
+| 0      | CommandVersion          | 1                       | The version of this response structure.  |
 |        |                         |                         | Shall be zero.                           |
 +--------+-------------------------+-------------------------+------------------------------------------+
 | 1      | CommandCode             | 1                       | Shall be 01h to indicate                 |
@@ -289,13 +284,18 @@ Table: ENVELOPE_SIGNED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
 +--------+-------------------------+-------------------------+------------------------------------------+
 | 2      | Reserved                | 4                       | Reserved.                                |
 +--------+-------------------------+-------------------------+------------------------------------------+
-| 6      | EnvelopeSignedCSRLength | 2                       | Shall be the length of the               |
+| 6      | Reserved                | 1                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 7      | EnvelopeSignedCSRLength | 2                       | Shall be the length of the               |
 |        |                         |                         | EnvelopeSignedCSRdata in bytes.          |
+|        |                         |                         | Zero if status is not success.           |
 +--------+-------------------------+-------------------------+------------------------------------------+
-| 8      | EnvelopeSignedCSRdata   | EnvelopeSignedCSRLength | Shall be the requested contents of the   |
+| 9      | EnvelopeSignedCSRdata   | EnvelopeSignedCSRLength | Shall be the requested contents of the   |
 |        |                         |                         | envelope-signed CSR. This field shall be |
-|        |                         |                         | CBOR-encoded.                            |
+|        |                         |                         | CBOR-encoded. Present only if status     |
+|        |                         |                         | is success.                              |
 +--------+-------------------------+-------------------------+------------------------------------------+
+
 
 The EnvelopeSignedCSRdata shall adhere to the following requirements:
 
@@ -334,7 +334,362 @@ Subsequent versions of this specification may be expanded with additional key de
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
-This will be accomplished via the `SET_CERTIFICATE` SPDM command.
+After establishing trust in a device's identity keypair through the envelope-signed CSR mechanism, a PKI owner can issue and provision an identity certificate to the device. This specification defines OCP-specific commands for certificate provisioning.
+
+### Certificate provisioning overview
+
+When a PKI owner issues an identity certificate for a device key (such as IDevID or LDevID), they provision a certificate chain to the device that includes the PKI-issued identity certificate for the device key.
+
+**Important**: While devices may expose CSRs for various keys in their hierarchy, endorsement chains provisioned via `OCP_SET_ENDORSEMENT` SHALL NOT include LEAF certificates. This ensures that endorsements work across different use cases (e.g., attestation, secure sessions) since each use case may have different LEAF certificates while sharing the same endorsement chain.
+
+**Certificate chain composition**: When provisioning via `OCP_SET_ENDORSEMENT`, the certificate chain SHALL include:
+- The PKI-issued identity certificate for the device key (e.g., the LDevID certificate issued by the owner's PKI)
+- Optionally, any intermediate CA certificates
+- Optionally, the root CA certificate
+
+### Understanding slots
+
+In this specification, a "slot" refers to a storage location within the device that holds a certificate chain. This concept directly maps to SPDM's certificate slot mechanism:
+
+- **SPDM context**: SPDM defines 8 possible slots (0-7) where certificate chains can be stored. When an SPDM requester invokes `GET_CERTIFICATE`, they specify which slot's certificate chain they want to retrieve.
+
+- **Attestation context**: During attestation, the device uses these certificate chains to establish trust. For example, when generating an EAT, the device may include a LEAF certificate that chains to one of the certificates stored in these slots. The verifier can then retrieve the appropriate certificate chain to validate the complete trust path.
+
+- **OCP abstraction**: While SPDM uses numeric slot IDs (0-7), the OCP commands abstract this using Key Provisioning Entity identifiers (VENDOR, OWNER, TENANT). The device internally maps these entities to specific slot numbers, which can be discovered via `OCP_GET_SLOT_ID_MAPPING`.
+
+This abstraction allows:
+- Consistent semantics across different device implementations
+- Devices to optimize their internal slot allocation
+- Compatibility with both SPDM and non-SPDM attestation flows
+
+### Slot allocation and management
+
+Devices implementing this specification SHALL support certificate slot allocation with the following requirements:
+
+- **Minimum requirement**: Devices MUST present at least three slots for attestation (vendor, owner, tenant), and MUST support in-field provisioning of certificates for the latter two (owner, tenant).
+- **Vendor flexibility**: The specific slot numbers are determined by the device vendor and discovered via `OCP_GET_SLOT_ID_MAPPING`
+- **Total slots**: SPDM supports up to 8 slots (0-7), with the allocation between vendor and OCP use defined by the vendor
+
+Example allocation (vendor-specific):
+- Slot 0: Vendor endorsement (pre-provisioned)
+- Slot 2: Platform owner endorsement
+- Slot 4: Tenant endorsement
+- Other slots: Available for additional use cases or vendor-specific purposes
+
+**Important**: The actual slot mapping is vendor-defined and discovered at runtime. The device SHALL return an error if attempts are made to provision more slots than physically supported
+
+#### Key Provisioning Entity Registry
+
+The following Key Provisioning Entity values are defined and SHALL be used consistently across all OCP certificate management commands:
+
+Table: Key Provisioning Entity Values {#tbl:key-provisioning-entity}
+
++--------+----------+--------------------------------------------------+
+| Value  | Name     | Description                                      |
++========+==========+==================================================+
+| 0x00   | VENDOR   | Vendor-provisioned endorsements                  |
+|        |          | (typically pre-installed)                        |
++--------+----------+--------------------------------------------------+
+| 0x01   | OWNER    | Platform owner-provisioned endorsements          |
++--------+----------+--------------------------------------------------+
+| 0x02   | TENANT   | Tenant-provisioned endorsements                  |
+|        |          | in bare metal scenarios                          |
++--------+----------+--------------------------------------------------+
+| 0x03-  | Reserved | Reserved for future use                          |
+| 0xFF   |          |                                                  |
++--------+----------+--------------------------------------------------+
+
+Future versions of this specification may define additional entity values.
+
+#### OCP_GET_SLOT_ID_MAPPING command
+
+This is an informational command that returns the mapping between Key Provisioning Entities (VENDOR, OWNER, TENANT) and SPDM slot numbers. It enables interoperability between OCP entity-based commands and SPDM slot-based commands on devices that support both SPDM and non-SPDM attesters.
+
+Table: GET_SLOT_ID_MAPPING VendorDefinedReqPayload {#tbl:slot-mapping-req}
+
++---------------------+---------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field               | Size (bytes)        | Description                                  |
++=====================+=====================+=====================+==============================================+
+| 0                   | CommandVersion      | 1                   | The version of this request structure.       |
+|                     |                     |                     | Shall be zero.                               |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode         | 1                   | Shall be 03h to indicate                     |
+|                     |                     |                     | GET_SLOT_ID_MAPPING.                         |
++---------------------+---------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved            | 4                   | Reserved.                                    |
++---------------------+---------------------+---------------------+----------------------------------------------+
+
+Table: SLOT_ID_MAPPING VendorDefinedRespPayload {#tbl:slot-mapping-resp}
+
++--------+-------------------------+-------------------------+------------------------------------------+
+| Byte   | Field                   | Size (bytes)            | Description                              |
+| offset |                         |                         |                                          |
++========+=========================+=========================+==========================================+
+| 0      | CommandVersion          | 1                       | The version of this response structure.  |
+|        |                         |                         | Shall be zero.                           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 1      | CommandCode             | 1                       | Shall be 03h to indicate                 |
+|        |                         |                         | SLOT_ID_MAPPING.                         |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 2      | Reserved                | 4                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 6      | MappingCount            | 1                       | Number of mappings returned.             |
+|        |                         |                         | Shall not exceed 8.                      |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 7      | Reserved                | 1                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 8      | MappingTable            | MappingCount * 2        | Array of mappings. Each entry            |
+|        |                         |                         | consists of:                             |
+|        |                         |                         | - KeyProvisioningEntity (1 byte)         |
+|        |                         |                         | - SlotID (1 byte)                        |
++--------+-------------------------+-------------------------+------------------------------------------+
+
+#### OCP_SET_ENDORSEMENT command
+
+Table: SET_ENDORSEMENT VendorDefinedReqPayload {#tbl:set-endorsement-req}
+
++---------------------+----------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field                | Size (bytes)        | Description                                  |
++=====================+======================+=====================+==============================================+
+| 0                   | CommandVersion       | 1                   | The version of this request structure.       |
+|                     |                      |                     | Shall be zero.                               |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode          | 1                   | Shall be 04h to indicate                     |
+|                     |                      |                     | SET_ENDORSEMENT.                             |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved             | 4                   | Reserved.                                    |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 6                   | KeyProvisioningEntity| 1                   | Entity from which to get endorsement.        |
+|                     |                      |                     | See @tbl:key-provisioning-entity.            |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 7                   | Flags                | 1                   | - Bit [7:1]: Reserved.                       |
+|                     |                      |                     | - Bit [0]: FORCE flag.                       |
+|                     |                      |                     |   If set to 1, allows overwriting an         |
+|                     |                      |                     |   existing endorsement.                      |
+|                     |                      |                     |   If set to 0, returns error if              |
+|                     |                      |                     |   already provisioned.                       |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 8                   | KeyPairID            | 1                   | Key identifier for certificate selection.    |
+|                     |                      |                     | Usage is vendor-specific.                    |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 9                   | Reserved             | 1                   | Reserved.                                    |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 10                  | CertChainLength      | 2                   | Length of the certificate chain in bytes.    |
+|                     |                      |                     | Shall not exceed device capabilities.        |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 12                  | CertChain            | CertChainLength     | DER-encoded certificate chain.               |
+|                     |                      |                     | SHALL NOT include LEAF certificates.         |
+|                     |                      |                     | Device SHALL return POLICY_VIOLATION if      |
+|                     |                      |                     | LEAF certificate is detected in chain.       |
++---------------------+----------------------+---------------------+----------------------------------------------+
+
+Table: SET_ENDORSEMENT VendorDefinedRespPayload {#tbl:set-endorsement-resp}
+
++--------+-------------------------+-------------------------+------------------------------------------+
+| Byte   | Field                   | Size (bytes)            | Description                              |
+| offset |                         |                         |                                          |
++========+=========================+=========================+==========================================+
+| 0      | CommandVersion          | 1                       | The version of this response structure.  |
+|        |                         |                         | Shall be zero.                           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 1      | CommandCode             | 1                       | Shall be 04h to indicate                 |
+|        |                         |                         | SET_ENDORSEMENT.                         |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 2      | Reserved                | 2                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+
+
+#### OCP_GET_ENDORSEMENT command
+
+Table: GET_ENDORSEMENT VendorDefinedReqPayload {#tbl:get-endorsement-req}
+
++---------------------+----------------------+---------------------+----------------------------------------------+
+| Byte offset         | Field                | Size (bytes)        | Description                                  |
++=====================+======================+=====================+==============================================+
+| 0                   | CommandVersion       | 1                   | The version of this request structure.       |
+|                     |                      |                     | Shall be zero.                               |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 1                   | CommandCode          | 1                   | Shall be 05h to indicate                     |
+|                     |                      |                     | GET_ENDORSEMENT.                             |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 2                   | Reserved             | 4                   | Reserved.                                    |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 6                   | KeyProvisioningEntity| 1                   | Entity from which to get endorsement.        |
+|                     |                      |                     | See @tbl:key-provisioning-entity.            |
++---------------------+----------------------+---------------------+----------------------------------------------+
+| 7                   | Reserved             | 1                   | Reserved.                                    |
++---------------------+----------------------+---------------------+----------------------------------------------+
+
+Table: GET_ENDORSEMENT VendorDefinedRespPayload {#tbl:get-endorsement-resp}
+
++--------+-------------------------+-------------------------+------------------------------------------+
+| Byte   | Field                   | Size (bytes)            | Description                              |
+| offset |                         |                         |                                          |
++========+=========================+=========================+==========================================+
+| 0      | CommandVersion          | 1                       | The version of this response structure.  |
+|        |                         |                         | Shall be zero.                           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 1      | CommandCode             | 1                       | Shall be 05h to indicate                 |
+|        |                         |                         | GET_ENDORSEMENT.                         |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 2      | Reserved                | 4                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 6      | Reserved                | 1                       | Reserved.                                |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 7      | CertChainLength         | 2                       | Length of the certificate chain.         |
+|        |                         |                         | Zero if status is not success.           |
++--------+-------------------------+-------------------------+------------------------------------------+
+| 9      | CertChain               | CertChainLength         | DER-encoded certificate chain.           |
+|        |                         |                         | Does NOT include LEAF certificate.       |
+|        |                         |                         | Present only if status is success.       |
++--------+-------------------------+-------------------------+------------------------------------------+
+
+### Provisioning workflow
+
+A typical provisioning workflow follows these steps:
+
+1. **CSR Generation**: The PKI owner requests an envelope-signed CSR for their chosen identity key using `GET_ENVELOPE_SIGNED_CSR`
+2. **Certificate Issuance**: The PKI owner validates the CSR and issues an identity certificate
+3. **Chain Provisioning**: The PKI owner provisions their endorsement chain using `OCP_SET_ENDORSEMENT` with the appropriate KeyProvisioningEntity value
+4. **Verification**: The PKI owner can verify successful provisioning by retrieving the chain using `OCP_GET_ENDORSEMENT`
+
+For SPDM-aware implementations:
+
+5. **Optional Mapping Discovery**: Query `OCP_GET_SLOT_ID_MAPPING` to understand which SPDM slots are affected by OCP operations
+
+### Compatibility considerations
+
+For devices that support both SPDM and OCP attestation paths:
+
+- `OCP_SET_ENDORSEMENT` internally manages slot allocation based on the KeyProvisioningEntity
+- `OCP_GET_ENDORSEMENT` retrieves endorsements by entity rather than slot number
+- `GET_CERTIFICATE` (SPDM) can still be used with the slot numbers reported by `OCP_GET_SLOT_ID_MAPPING`
+- The device ensures consistency between OCP entity-based and SPDM slot-based access
+
+This approach simplifies the interface by abstracting slot management while maintaining full compatibility with SPDM.
+
+### Certificate chain validation
+
+When provisioning certificate chains, devices SHALL validate:
+
+- The certificate chain is properly formed and each certificate correctly signs the next
+- The chain terminates at a self-signed root or a certificate that can be verified against pre-existing trust anchors
+- All certificates in the chain are within their validity periods
+- The certificate chain length does not exceed device storage capabilities
+
+Devices MAY additionally validate:
+
+- Certificate revocation status if CRL or OCSP information is available
+- Certificate policy OIDs match expected values for the entity being provisioned
+
+### Error handling
+
+This specification uses error codes defined in the [@{ocp-command-registry}]. The following error conditions are specifically relevant to certificate provisioning operations:
+
+#### GET_ENVELOPE_SIGNED_CSR errors
+
+- **INVALID_PARAMETER (0x02)**: Invalid KeyPairID format, malformed SignerSlotIDParam, or invalid Request Attributes
+- **INVALID_LENGTH (0x03)**: RequesterInfoLength or OpaqueDataLength exceeds limits
+- **INVALID_IDENTIFIER (0x04)**: Requested KeyPairID not found, or SignerSlotIDParam references a non-existent or unprovisioned slot
+- **DEVICE_NOT_READY (0x08)**: Device cannot generate CSR in current state
+
+#### Certificate provisioning errors (SET_ENDORSEMENT)
+
+- **INVALID_PARAMETER (0x02)**: Invalid KeyProvisioningEntity value
+- **INVALID_LENGTH (0x03)**: Certificate chain exceeds device storage capacity  
+- **INSUFFICIENT_RESOURCES (0x06)**: Device lacks resources to complete the operation
+- **POLICY_VIOLATION (0x0E)**: 
+  - Attempting to provision an entity that already has an endorsement when FORCE flag is not set
+  - Certificate chain includes a LEAF certificate
+- **INVALID_STATE (0x0F)**: Certificate chain validation failed
+
+#### Certificate retrieval errors (GET_ENDORSEMENT)
+
+- **INVALID_PARAMETER (0x02)**: Invalid KeyProvisioningEntity value
+- **RESOURCE_UNAVAILABLE (0x0D)**: Attempting to retrieve endorsement for an entity that has not been provisioned
+
+Implementations SHALL use these standardized error codes to ensure consistent error reporting across different devices.
+
+
+### Security considerations
+
+#### Protection of provisioning operations
+
+Certificate provisioning operations SHOULD be performed over authenticated and encrypted channels:
+
+- For SPDM paths: Use SPDM secured messages when available
+- For out-of-band provisioning: Use platform-specific secure channels
+
+#### Entity update policy
+
+To prevent unauthorized certificate replacement:
+
+- Devices MAY implement policies restricting certificate updates based on:
+  - Physical presence assertions
+  - Platform ownership state
+  - Secure boot state
+- Once provisioned, entities SHALL NOT be overwritable without the FORCE flag being explicitly set
+- When FORCE flag is used to overwrite an existing endorsement, devices SHOULD log this as a security-relevant event
+
+#### Certificate lifecycle management
+
+PKI owners are responsible for:
+
+- Tracking certificate expiration dates
+- Implementing certificate renewal procedures before expiration
+- Maintaining certificate revocation lists (CRLs) for compromised certificates
+- Ensuring time synchronization for certificate validity checking
+
+### Implementation notes
+
+#### Internal slot management
+
+Devices implementing these OCP commands:
+
+- SHALL internally manage the mapping between KeyProvisioningEntity values and storage slots
+- MAY use any slot allocation strategy as long as it supports the minimum required entities
+- SHOULD use consistent slot assignments across device resets for predictability
+
+#### Storage optimization
+
+Given the limited storage available on many devices:
+
+- Redundant certificates (e.g., those appearing in multiple chains) MAY be stored once and referenced multiple times
+
+#### Minimal implementation
+
+Devices that only support OCP commands (not SPDM):
+
+- MAY omit implementation of `OCP_GET_SLOT_ID_MAPPING`
+- SHALL still support all KeyProvisioningEntity values defined in this specification
+- Focus on entity-based access without exposing slot details
+
+### Example provisioning sequence
+
+Here's a complete example of a platform owner provisioning their endorsement chain:
+
+1. **BMC → Device**: `GET_ENVELOPE_SIGNED_CSR(KeyPairID=LDevID, SlotID=0, Nonce)`
+   
+   **Device → BMC**: `EAT{CSR for LDevID, LDEVID Key Derivation Attributes(OIDs), Nonce}`
+
+2. **BMC validates CSR and issues certificate for LDevID**
+
+3. **BMC → Device**: `OCP_SET_ENDORSEMENT(KeyProvisioningEntity=OWNER, Flags=0, KeyPairID=LDevID, OwnerEndorsementChain)`
+   
+   **Device → BMC**: `Status=SUCCESS`
+
+4. **BMC → Device**: `OCP_GET_ENDORSEMENT(KeyProvisioningEntity=OWNER)`
+   
+   **Device → BMC**: `Status=SUCCESS, OwnerEndorsementChain` (confirming successful provisioning)
+
+5. **Optional - BMC → Device**: `OCP_GET_SLOT_ID_MAPPING()`
+   
+   **Device → BMC**: `[{VENDOR: 0}, {OWNER: 2}, {TENANT: 4}]`
+   
+   (BMC now knows that the OWNER endorsement was stored in SPDM slot 2)
+
+After this sequence, attestations from the device can reference the owner's endorsement chain
+
 
 TODO: fill in additional details.
 
