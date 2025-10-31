@@ -38,6 +38,7 @@ The Contributors of this Specification would like to acknowledge the following:
 - Jason Young (Google)
 - Jeff Andersen (Google)
 - Ned Smith (Intel)
+- Parvathi Bhogaraju (Microsoft)
 - Roksana Golizadeh Mojarad (Microsoft)
 - Raghu Krishnamurthy (NVIDIA)
 - Steven Bellock (NVIDIA)
@@ -89,6 +90,13 @@ attesters, including **Systems on Chips (SoCs)**, hard drives, and
 accelerators. By providing a unified approach, the specification aims to
 simplify and streamline the attestation and verification process within complex
 and heterogeneous environments.
+
+## Profile Identifier
+
+**OID: 1.3.6.1.4.1.42623.1.3**
+
+This Object Identifier (OID) uniquely identifies this OCP Profile for IETF Entity Attestation Token. The OID **MUST** be included in the **eat_profile** claim (claim key 265, encoded as `0x190109`) within every CWT that conforms to this specification.
+
 
 ## Terms and Definitions
 
@@ -162,32 +170,32 @@ Specifically, the keys in the CWT map **MUST** be sorted in the bytewise
 lexicographic order of their deterministic encodings. This ordering convention
 applies to mandatory claims, optional claims, and private claims when present.
 
-**Mandatory Claims (1-6)**: These claims are **REQUIRED** for all attestations
+**Mandatory Claims (1-4)**: These claims are **REQUIRED** for all attestations
 and provide the minimum necessary information for verifier appraisal policies.  The verifier
 can expect at a minimum these claims in a compliant attestation:
 
-1. **issuer**  (claim key: 1, encoded as 0x01)
-    * This claim is used by the attester to bind the EAT to the certificate chain that issued it. It **SHALL** match the SUBJECT Common Name of the Attestation Key Certificate.
-
-2. **cti**  (claim key: 7, encoded as 0x07)
-    * This claim is used by the attester to establish uniqueness of the token. Refer to [@{ietf-rfc8392}] for acceptable values for this claim
-
-3. **Nonce**  (claim key: 10, encoded as 0x0a)
+1. **Nonce**  (claim key: 10, encoded as 0x0a)
     * This claim is used by the attester to ensure the freshness of the response. Refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-4. **dbgstat** (claim key: 263, encoded as 0x190107)
+2. **dbgstat** (claim key: 263, encoded as 0x190107)
     * This claim is used by the attester to determine whether the attester is in Debug mode. Refer to [@{ietf-rfc9711}] for acceptable values for this claim
 
-5. **EAT Profile** (claim key: 265, encoded as 0x190109)
-    * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID assigned to the OCP Profile. **TODO: OCP to assign OID Value**
+3. **EAT Profile** (claim key: 265, encoded as 0x190109)
+    * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID `1.3.6.1.4.1.42623.1.3` assigned to the OCP Profile.
 
-6. **Measurements** (claim key: 273, encoded as 0x190111)
+4. **Measurements** (claim key: 273, encoded as 0x190111)
     * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a "concise-evidence" as a serialized CBOR byte string using the appropriate IANA media type.
 
-**Optional Claims (7-14)**: These claims are **OPTIONAL** and provide additional
+**Optional Claims (5-15)**: These claims are **OPTIONAL** and provide additional
 platform information that may be useful for audit purposes but are not strictly
 necessary for appraisal policies. These claims are typically non-verifiable and
 serve informational purposes:
+
+5. **issuer**  (claim key: 1, encoded as 0x01)
+    * This claim is used by the attester to bind the EAT to the certificate chain that issued it. It **SHALL** match the SUBJECT Common Name of the Attestation Key Certificate.
+
+6. **cti**  (claim key: 7, encoded as 0x07)
+    * This claim is used by the attester to establish uniqueness of the token. Refer to [@{ietf-rfc8392}] for acceptable values for this claim
 
 7. **ueid** (claim key: 256, encoded as 0x190100)
     * This claim is used by the attester to identify the attester. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
@@ -241,7 +249,7 @@ size constraints apply:
 * Each text string value in any claim **SHOULD NOT** exceed 100 bytes
 
 **Appraisal Policy Considerations**: For verifier appraisal policies, the
-mandatory claims (1-6) **SHALL** be sufficient to establish the security
+mandatory claims (1-4) **SHALL** be sufficient to establish the security
 posture of the attesting platform. Optional claims provide supplementary
 information that enhances visibility into platform state and configuration but
 are not critical for basic attestation verification. Verifiers **MAY** choose
@@ -287,7 +295,7 @@ algorithm for the COSE_Sign1 signature:
 * **Signature Size**: 96 bytes
 * **Public Key Size**: 97 bytes (uncompressed point)
 * **Private Key Size**: 48 bytes
-* **Profile OID**: **TODO: OCP to assign OID for ECDSA-P384 profile**
+* **Profile OID**: 1.3.6.1.4.1.42623.1.3
 
 ### Size Implications
 
