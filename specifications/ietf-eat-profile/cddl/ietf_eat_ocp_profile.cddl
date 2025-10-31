@@ -1,12 +1,6 @@
 cwt-eat = {
   ; Mandatory Claims
 
-  ; Issuer claim is StringOrURI (tstr) (Mandatory)
-  &(iss : 1) => tstr
-
-  ; CTI claim for token uniqueness (Mandatory)
-  &(cti : 7) => bstr .size (8..64)
-
   ; Nonce claim is nonce-type = bstr .size (8..64) (Mandatory)
   &(Nonce : 10) => bstr .size (8..64)
 
@@ -14,19 +8,19 @@ cwt-eat = {
   &(dbgstat : 263) => dbgstat-type
 
     ; The EAT Profile for OCP OID (Mandatory) // eat-profile is defined in https://datatracker.ietf.org/doc/rfc9711/
-  &(EAT Profile : 265 ) => ~oid ; TODO: OCP Security to assign a value - note: `~` strips CBOR tag #6.111(oid) from `oid`
+  &(EAT Profile : 265 ) => ~oid ; 1.3.6.1.4.1.42623.1.3 - note: `~` strips CBOR tag #6.111(oid) from `oid`
 
   ; EAT measurements (Mandatory)
   &(Measurements : 273) => measurements-type
 
   ; Optional Claims
 
-  ; CoRIM Locator Map (Optional) // corim-locator-map is defined in https://datatracker.ietf.org/doc/draft-ietf-rats-corim/
-  ? &(rim-locators : -70001) => [ + corim-locator-map]
-  
-  ; DLOA claim (Optional) // dloa-type is defined in https://datatracker.ietf.org/doc/rfc9711/
-  ? &(dloas : 269) => [ + dloa-type ]
+  ; Issuer claim is StringOrURI (tstr) (Optional)
+  &(iss : 1) => tstr
 
+  ; CTI claim for token uniqueness (Optional)
+  &(cti : 7) => bstr .size (8..64)
+ 
   ; UEID claim (Optional)
   ? &(ueid : 256) => bstr .size (7..33)
 
@@ -48,6 +42,12 @@ cwt-eat = {
   ; Boot seed claim (Optional)
   ? &(bootseed : 268) => bstr .size (32..64)
 
+  ; DLOA claim (Optional) // dloa-type is defined in https://datatracker.ietf.org/doc/rfc9711/
+  ? &(dloas : 269) => [ + dloa-type ]
+
+  ; CoRIM Locator Map (Optional) // corim-locator-map is defined in https://datatracker.ietf.org/doc/draft-ietf-rats-corim/
+  ? &(rim-locators : -70001) => [ + corim-locator-map]
+
   ; Private Claims (up to 5, must be < -65536 per RFC 8392)
   * $$private-claims => any
 }
@@ -66,9 +66,9 @@ measurements-format = [
 ]
 coap-content-format = uint .le 65535
 
-signed-cwt = #6.18(COSE-Sign1-concise-evidence)
+signed-cwt = #6.18(COSE-Sign1-cwt-eat)
 
-COSE-Sign1-concise-evidence = [
+COSE-Sign1-cwt-eat = [
   protected: bstr .cbor protected-ce-header-map
   unprotected: unprotected-ce-header-map
   payload: bstr .cbor cwt-eat
