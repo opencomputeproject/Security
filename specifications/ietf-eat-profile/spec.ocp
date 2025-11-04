@@ -134,8 +134,8 @@ accommodate.
 ## Scope
 
 This profile defines the evidence format for an Attester Endpoint Application.
-With respect to RFC 9711, it is a partial profile, as it allows the integrator
-to choose the algorithm to use for signing the statement. It is application
+With respect to RFC 9711, it is a full profile, as it specifies the mandatory
+cryptographic algorithm that must be used for signing the statement. It is application
 layer agnostic, supporting implementations such as an SPDM Responder or any
 other custom solution. The profile focuses solely on the evidence related to
 the claims gathered by the Attester Application. Consequently, it does not
