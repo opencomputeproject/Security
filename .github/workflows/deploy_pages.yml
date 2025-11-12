@@ -36,6 +36,11 @@ jobs:
             "gh_pages_pdf": "device-identity-provisioning/HEAD/pdf"
           },
           {
+            "src": "specifications/device-ownership-transfer/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "device-ownership-transfer/HEAD",
+          },
+          {
             "src": "specifications/dpe-irot-profile/spec.ocp",
             "append_git_rev_to_version": true,
             "gh_pages_html": "dpe-irot-profile/HEAD"

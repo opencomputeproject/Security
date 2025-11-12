@@ -1,0 +1,572 @@
+---
+title: "Device Ownership Transfer"
+version: "1.0"
+type: BASE
+project: Security
+authors: Contributed by Nvidia
+bibliography: bibliography.yaml
+...
+---
+
+\currenttemplateversion
+
+---
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+---
+
+<!-- Will bring this in when its an actual contribution
+
+# License
+
+## Open Web Foundation (OWF) CLA
+
+-->
+
+# Revision History
+
++---------+------------------------+--------------------------------------------------+
+| Version | Author(s)              | Changes                                          |
++=========+========================+==================================================+
+| 0.7     | Chris Hillier (NVIDIA) | First Draft                                      |
++---------+------------------------+--------------------------------------------------+
+| 1.0     | James Zhang (NVIDIA)   | Removed Edit/Non-Edit definition                 |
+|         |                        |                                                  |
+|         |                        | Define DOT as second stage (owner) signature     |
+|         |                        |                                                  |
+|         |                        | Define DOT Command Structure                     |
+|         |                        |                                                  |
+|         |                        | Define DOT implementation example using Caliptra |
++---------+------------------------+--------------------------------------------------+
+
+---
+
+# Introduction
+
+This document provides a high-level overview of a proposed Device Ownership Transfer (DOT) architecture, to be discussed within the OCP - Security Project with the eventual goal of publishing an OCP specification for Device Ownership Transfer, based upon the architecture outlined in this document.
+
+## Audience
+
+The audience for this document includes, but is not limited to, the following:
+
+* Device Vendors who want to design and manufacture secure devices and systems that comply with OCP Device Ownership Transfer
+* Device Owners who want to perform OCP Device Ownership Transfer
+
+## Terminology and Definitions
+
+Table: Terminology and Definitions {#tbl:terminology}
+
++-----------------------+------------------------------------------------------------+
+| Term/Acronym          | Definition                                                 |
++=======================+============================================================+
+| **Authorized Unlock** | Set of operations that require authorization to perform,   |
+|                       | where authorization is provided via a signed nonce that    |
+|                       | is validated by the device.                                |
++-----------------------+------------------------------------------------------------+
+| **CAK**               | Code Authentication Key. Refers to as the public key of    |
+|                       | an asymmetric keypair where the private key was used to    |
+|                       | produce the signature to be verified during boot.          |
++-----------------------+------------------------------------------------------------+
+| **Device Vendor**     | Entity who manufactures a specific device. Primary signer  |
+|                       | of device firmware, as delivered to Device Owner.          |
++-----------------------+------------------------------------------------------------+
+| **Device Owner**      | Entity who has purchased a device and now wishes to take   |
+|                       | ownership of said device.                                  |
++-----------------------+------------------------------------------------------------+
+| **DOT**               | Device Ownership Transfer. Process by which a Device Owner |
+|                       | can take ownership of a device.                            |
++-----------------------+------------------------------------------------------------+
+| **LAK**               | Locking Authorization Key. Public key of the asymmetric    |
+|                       | keypair where the private key was used to lock CAK to      |
+|                       | device via installation of public key. Private key used    |
+|                       | to unlock device via signed nonce, where the signature is  |
+|                       | validated using the LAK public key.                        |
++-----------------------+------------------------------------------------------------+
+| **Platform Vendor**   | Entity who manufactures platforms or systems composed of   |
+|                       | multiple devices. May also be considered a Device Owner.   |
++-----------------------+------------------------------------------------------------+
+| **RoT**               | Root of Trust.                                             |
++-----------------------+------------------------------------------------------------+
+
+## Necessity of DOT
+
+Fundamentally, the industry requires a mechanism by which a Device Owner can be provided with a strong assurance that only device firmware that they have explicitly authorized is allowed to install and execute on their device. Practically speaking, and using common industry terminology, this results in the requirement for a mechanism by which a device owner can install a public key that they own in the RoT of the device, where the key is subsequently used for signature validation during both boot and firmware update of the device in question. This assumes the RoT mediates modifications to firmware non-volatile storage, thus ensuring that only firmware that has been signed by the Device Owner can be installed and executed.
+
+## Scope
+
+In addition to the use case described above, there are several other use cases for Device Ownership Transfer. These include concepts such as Debug Authorization, Device Configuration, and more. The architecture proposed in this document is focused on validation of firmware, but can be extended to cover other additional use cases in the future, as desired and needed by the broader OCP community.
+
+The firmware validation/authentication discussed here is only to cover Owner Signature. Any Vendor Signing or Validation is not covered. Owner signing is applied on top of Vendor Signing if Vendor Signing is used.
+
+---
+
+# Problem Statement
+
+## Prior Solutions
+
+While a number of possible DOT models have been proposed and discussed at OCP, they each present unique challenges and complexities that prevent them from being viable in the real world. For example, at hyperscale, authenticated ownership transfer presents significant operational and logistical challenges for both Device Vendors and Device Owners - especially during initial deployment and decommission. Similarly, volatile ownership transfer is not a suitable option for Device Owners who do not have robust attestation capabilities and a PA-RoT that can be used for streaming DOT keys upon every device power cycle.
+
+---
+
+# Proposed Solution
+
+## Summary
+
+We propose a Device Ownership Transfer architecture that consists of three distinct DOT archetypes: **Volatile**, **Mutable Locking**, and **DOT Disabled**. We do not differentiate between firmware archetypes where the owner either can or can not edit the firmware on the device because of vendor enforced signing, the ownership assertion from Device Ownership Transfer can be an extra layer of authority on top of that. We believe that the three proposed DOT archetypes, in combination with a minimized scope of the problem we are solving for, provide the foundation for a flexible DOT architecture that can be applied to multiple device types, while avoiding the challenges and complexities associated with prior solutions.
+
+## DOT Archetypes
+
+The three proposed DOT archetypes are **Volatile**, **Mutable Locking**, and **DOT Disabled**.
+
+### Volatile DOT
+
+With Volatile DOT, the DOT Code Authentication Key (CAKpub) is stored in volatile storage, such that the DOT CAKpub is erased from the device upon power cycle. After installation, the DOT CAKpub is used for signature validation during firmware update and, potentially, secure boot. A LAKpub will also be provided for Volatile DOT to facilitate key rotation capabilities.
+
+### Mutable Locking
+
+With Mutable Locking, the DOT CAKpub is locked to the device via a second key, the Locking Authorization Key (LAKpub), with both keys stored in non-volatile storage and persistent across device power cycle. With Mutable Locking, any changes to the DOT CAKpub require authorization via an Authorized Unlock operation using the LAKpriv. After installation, the DOT CAKpub is used for signature validation during firmware update and secure boot.
+
+### DOT Disabled
+
+With DOT Disabled, the Locking Authorization Key (LAKpub) is installed without a DOT CAKpub also being installed. When this is performed, the device is locked to a default state where Device Vendor keys are used for signature validation during boot and firmware update. While in this state, installation of a DOT CAKpub is not permitted without first performing an Authorized Unlock operation using the LAKpriv. Note that from a security perspective, DOT Disabled is generally not advertised to be used unless the device firmware and configuration is completely signed and not-modifiable by the owner.
+
+Security sensitive information such as MIN_SVN, which is used to indicate the minimal Security Version Number (SVN) of the firmware that is allowed to be executed on the device, can also be present in Ownership Transfer scenarios. We view MIN_SVN as an owner controlled property of the device so that when ownership is transferred, it shall be reset to the device manufacturer/vendor's base line definition of MIN_SVN for the device. This would help different owners have different policies and help facilitate RMA uniformity for the vendor/manufacturer.
+
+Additional details about the proposed DOT archetypes are provided in @tbl:dot-archetypes, below.
+
+Table: DOT Archetypes {#tbl:dot-archetypes}
+
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Archetype           | Salient Details                                                                                                                                                                                                                                 |
++=====================+=================================================================================================================================================================================================================================================+
+| **Volatile**        | * DOT CAKpub is stored in volatile storage and erased upon device power cycle                                                                                                                                                                   |
+|                     | * First install of DOT CAKpub (per device power cycle) does not require AuthN/AuthZ                                                                                                                                                             |
+|                     | * Subsequent install attempts of DOT CAKpub (per device power cycle) are blocked                                                                                                                                                                |
+|                     | * DOT CAKpub used for signature validation during subsequent device firmware updates                                                                                                                                                            |
+|                     | * DOT CAKpub potentially used for signature validation during secure boot, depending on device RoT implementation and reset domains                                                                                                             |
+|                     | * Requires delivery of DOT CAKpub upon every device power cycle                                                                                                                                                                                 |
+|                     | * Device returns to default state upon power cycle, owner based signature validation is no longer available until the next install command.                                                                                                     |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Mutable Locking** | * DOT CAKpub and LAKpub are stored in non-volatile storage and are persistent across device power cycles. The non-volatile storage shall be secure, examples of usable storage are:                                                             |
+|                     |   - In-silicon non-volatile storage (not OTP)                                                                                                                                                                                                   |
+|                     |   - In-package non-volatile storage (in package flash)                                                                                                                                                                                          |
+|                     |   - External non-volatile storage with per device unique cryptographic binding of ownership                                                                                                                                                     |
+|                     | * First install of DOT CAKpub does not require Authentication/Authorization                                                                                                                                                                     |
+|                     | * DOT CAKpub locked to device via installation of second public key, Locking Authorization Key (LAKpub)                                                                                                                                         |
+|                     | * LAKpub install performed on unlocked shall prove access to LAKpriv                                                                                                                                                                            |
+|                     | * DOT CAKpub used for signature validation during subsequent device firmware updates                                                                                                                                                            |
+|                     | * DOT CAKpub used for signature validation during subsequent device secure boots                                                                                                                                                                |
+|                     | * Subsequent rotation of DOT CAKpub or LAKpub requires authorization via signing operation using LAKpriv, validated by device using LAKpub (Authorized Unlock)                                                                                  |
+|                     | * Authorized Unlock requires device to generate nonce and/or a per device unique identifier, which is signed offline by LAKpriv before being installed back in device and validated with LAKpub                                                 |
+|                     | * In a scenario where access to LAKpriv is lost by the owner. RMA process to device vendor can be utilized where device vendor has the capability to override current locked ownership and transition the device back to uninitialized state.   |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **DOT Disabled**    | * Generally only applicable to device firmware that is fully signed by vendor                                                                                                                                                                   |
+|                     | * LAKpub install performed on unlocked shall prove access to LAKpriv                                                                                                                                                                            |
+|                     | * LAKpub storage should match property for non-volatile storage for Mutable Locking                                                                                                                                                             |
+|                     | * DOT CAKpub installation not permitted when device has LAKpub installed                                                                                                                                                                        |
+|                     | * Rotation or removal of LAKpub requires authorization via signing operation using LAKpriv, validated by device using LAKpub (Authorized Unlock)                                                                                                |
+|                     | * Authorized Unlock requires device to generate nonce and/or a per device uni, which is signed offline by LAKpriv, before being installed back in device and validated with LAKpub                                                              |
+|                     | * In a scenario where access to LAKpriv is lost by the owner. RMA process to device vendor can be utilized where device vendor has the capability to override current DOT Disabled state and transition the device back to uninitialized state. |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+## State Diagram
+
+@fig:dot-state-diagram, below, presents a high-level state diagram outlining the four main device states, the transition paths between device states, and the keys associated with each device state.
+
+![DOT State Diagram](diagrams/dot_states.svg){#fig:dot-state-diagram}
+
+**State Transitions:**
+
+- **Uninitialized → Volatile**: DOT_INSTALL (Install CAKpub)
+- **Uninitialized → Disabled**: DOT_DISABLE (Install LAKpub)
+- **Volatile → Locked**: DOT_LOCK (Install LAKpub)
+- **Locked → Volatile**: DOT_UNLOCK (Remove LAKpub)
+- **Locked → Locked**: DOT_ROTATE (Change CAKpub without unlocking)
+- **Volatile → Uninitialized**: Device Power Cycle (Loss of CAKpub)
+- **Disabled → Uninitialized**: DOT_ENABLE (Remove LAKpub)
+- **Locked/Disabled → Uninitialized**: DOT_OVERRIDE (Vendor removes LAKpub/CAKpub during RMA)
+
+**Note:** The diagram shows the primary state transitions. The Locked state supports DOT_ROTATE for changing the CAKpub without requiring an unlock operation. Both Locked and Disabled states can be returned to Uninitialized via DOT_OVERRIDE by the device vendor during RMA/repair processes.
+
+---
+
+# Usage Models
+
+While it is ultimately up to the Device Owner to choose the DOT archetype that best fits their requirements, we believe that the usage models for the three DOT archetypes can largely be summarized as below, in @tbl:usage-models.
+
+Table: Usage Models {#tbl:usage-models}
+
++---------------------+----------------------------------------------------------------+
+| DOT Archetype       | Usage Model                                                    |
++=====================+================================================================+
+| **Volatile**        | Device Owners with a verifier that provides robust attestation |
+|                     | capabilities, such that a strong assurance can be provided     |
+|                     | that a device is only admitted to serving state when the       |
+|                     | appropriate ownership transfer has been performed and the      |
+|                     | correct DOT CAKpub and device firmware are installed.          |
++---------------------+----------------------------------------------------------------+
+| **Mutable Locking** | Device Owners who require authorization for DOT CAKpub         |
+|                     | rotation or ownership transfer back to the Device Vendor.      |
+|                     | Similarly suitable for Device Owners who require ownership     |
+|                     | transfer persistence over device power cycle or power          |
+|                     | loss. Also suitable for Platform Vendors who will be           |
+|                     | shipping discrete systems into potentially hostile             |
+|                     | locations after ownership transfer is performed.               |
++---------------------+----------------------------------------------------------------+
+| **DOT Disabled**    | For devices where all firmware and configuration are signed by |
+|                     | the device vendor, and for Device Owners of such devices who   |
+|                     | are not interested in dual-signing of device firmware but also |
+|                     | want to have an assurance that a bad actor cannot perform      |
+|                     | ownership install.                                             |
++---------------------+----------------------------------------------------------------+
+
+## Attestation
+
+Providing a robust set of attestation data is critical for the overall DOT ecosystem - and especially so with implementations that make use of Volatile DOT. If the appropriate attestation data is not available, Device Owners will not be enabled to make platform security policy decisions and actually use DOT at-scale. As such, we recommend that Device Vendors extend their device attestation data to include items such as:
+
+* DOT key measurements (DOT CAKpub, LAKpub)
+* Current DOT status
+* CAK(s) used for authenticating firmware currently executing
+* Firmware measurements, including DOT Device Owner signatures
+
+Please note that it is expected that the list of critical measurements is extended and refined as DOT discussions progress at OCP, and the above list is only intended to be a starting point.
+
+## Trust On First Use (TOFU)
+
+By adopting a model of Trust On First Use (TOFU) with the proposed DOT architecture, we have been able to eliminate much of the complexity associated with prior proposed solutions. Specifically, we have eliminated the need for explicit and specific authorization from device vendor to the first device owner, or from current device vendor to the next device owner. Non-Volatile transfer satisfies this by having ownership information reset every power cycle and Mutable Locking allows the function of removing ownership without needing information of the next owner. Vendor having capability to overwrite locked ownership also helps with the scenario where ownership unlocking asset is lost.
+
+By using a combination of temporal controls, Lock/Authorized Unlock, and default device state, we are able to provide required assurances and capabilities while minimizing operational complexity through the device lifecycle.
+
+While this approach does result in increased risk associated with bad actors performing the 'first use', we believe that by leaning heavily into attestation and providing robust recovery mechanisms, we can adequately mitigate the risks associated with adopting a TOFU model. It is also worth noting that the TOFU model is not novel or new, as it has been used extensively in the industry for similar scenarios where a Device Owner or Platform Vendor is required to provision key material to a device upon receipt.
+
+## Default Device State
+
+A critical requirement of our proposed solution is that the device must have a default state where Device Vendor keys are used by the device RoT for firmware signature validation during both secure boot and firmware update. By having a default uninitialized state that relies on Device Vendor keys for firmware signature validation if applicable, we are able to have a known-good state that can be used as the intermediate state between ownership transfers, rather than building an architecture where ownership transfers must occur directly between Device Owners. This results in reduced complexity, especially for overall architecture and operations.
+
+## Authorized Unlock
+
+A central concept to the proposed DOT architecture is the concept of Authorized Unlock operations, as used with both Mutable Locking and DOT Disabled. These Authorized Unlock operations use keys owned and installed by the Device Owner to provide authorization for returning the device to the default device state. A potentially useful way to think of Authorized Unlock operations is that, instead of authorizing the ownership transfer from Device Vendor to Device Owner and from Device Owner to Device Owner, we instead authorize the ownership transfer from Device Owner back to the uninitialized state.
+
+In order to support Authorized Unlock operations, a device generally needs to support the following:
+
+* Cryptographic usage of of LAKpub
+* Generation of nonce and/or per device unique identifier
+* Installation of signed nonce and/or per device unique identifier
+* Validation of signed nonce using LAKpub
+
+As an example, let's assume a device that is using Mutable Locking DOT, where a DOT CAKpub and LAKpub have been installed. In order to rotate the DOT CAKpub, the following steps would be required:
+
+1. Nonce and/or per device unique identifier is requested from the device, ostensibly by BMC or PA-RoT
+2. Nonce and/or per device unique identifier is signed offline using LAKpriv
+   * Note: Device Vendors will likely need to provide details and example tooling for supporting the signing process
+3. Signed nonce and/or per device unique identifier is returned to device
+4. Signed nonce and/or per device unique identifier is validated by device, using LAKpub
+5. Upon successful validation of signed nonce and/or per device unique identifier, device unlocks and erases LAKpub. CAKpub is also moved to volatile storage and erased from non-volatile storage, such that the device is now in Volatile state.
+6. Power cycling at this point would cause the device to lose the CAKpub and go back to the uninitialized state
+
+## Tenancy Transfer
+
+While tenancy transfer is still under formative discussion, we believe the proposed DOT architecture can be extended to provide tenancy transfer capabilities. Critically, we believe this can be accomplished without adding additional tenant signatures to firmware components.
+
+For example, if we assume that the multi-party agreement regarding the allowed firmware to be signed by the DOT CAKpriv can be handled via the signing service, as referenced during OCP auditing framework discussions, we can allow tenancy transfer as follows:
+
+* Volatile DOT where the DOT CAK keypair is owned by the tenant
+  * Note: PA-RoT delivering the DOT CAKpub is controlled by the Device Owner, thus providing mechanism for reclaiming system from tenant
+* Mutable Locking DOT where the DOT CAK keypair is owned by the tenant, but the LAK keypair is owned by the Device Owner
+  * In this scenario, the firmware component that handles DOT commands shall be signed by vendor also instead of just the owner
+
+Note that with both scenarios, the Device Owner is still in control of the firmware that is being signed, installed, and executed on the device, while simultaneously providing the assurances desired by the tenant. By extension, it is worth noting and recognizing the heavy reliance on attestation that is mandated by tenancy transfer.
+
+If the Device Owner still needs to retain control of certain firmware on a device that is only signed by the owner to ensure the proper operation of the device that is outside of the tenant's responsibility. Then a 3rd layer of signature for Tenant needs to be considered. That is currently outside of the scope of this version of the specification.
+
+## Device RMA/Repair
+
+As a result of both Mutable Locking and DOT Disabled, it is likely that devices will be returned to Device Vendors for RMA and Repair with DOT key material still provisioned. Additionally, it is highly desirable that the RMA and Repair process does not require authorization from the current Device Owner to return to the default device state, especially due to scenarios where operator error has occurred and it isn't possible to successfully perform an Authorized Unlock. Given the above, we propose an additional Authorized Unlock operation, to be used only during RMA and Repair, that permits an ownership transfer from Device Owner back to Device Vendor. This Authorized Unlock operation functions identically to the operations outlined in Authorized Unlock, but the keypair used for signing and validating the nonce is owned by the Device Vendor, with the public key embedded in the device RoT. This process was mentioned as DOT Override in this documentation.
+
+In an effort to mitigate risks associated with the above proposed Authorized Unlock operation, we also propose that Device Vendor can optionally design the capability where the Device Owner can specifically disable this DOT Override capability upon installation of the LAKpub. Note that, while outside the scope of OCP, such a feature could result in increased burden on the Device Owner due to subsequent RMA/Repair costs associated with inoperable devices that cannot be unlocked. Device Vendors can choose not to implement such an option.
+
+## Device Decommission
+
+When decommissioning a device, it is desired for the device to be returned to a state wherein no key material belonging to the Device Owner remains in the device. Specific to the DOT architecture outlined in this document, this means that the following will be erased during decommission:
+
+* DOT CAKpub
+* LAKpub
+
+@tbl:device-decom-steps, below, outlines the required steps to decommission a device based upon the DOT archetype being used.
+
+Table: Device Decommission Steps {#tbl:device-decom-steps}
+
++---------------------+-------------------------------+
+| DOT Archetype       | Decommission Steps            |
++=====================+===============================+
+| **Volatile**        | 1. Device Power Cycle         |
++---------------------+-------------------------------+
+| **Mutable Locking** | 1. Authorized Unlock (LAKpub) |
+|                     | 2. Device Power Cycle         |
+|                     |                               |
+|                     | **Or:**                       |
+|                     |                               |
+|                     | 1. DOT Override by vendor     |
++---------------------+-------------------------------+
+| **DOT Disabled**    | 1. Authorized Unlock (LAKpub) |
+|                     | 2. Device Power Cycle         |
+|                     |                               |
+|                     | **Or:**                       |
+|                     |                               |
+|                     | 1. DOT Override by vendor     |
++---------------------+-------------------------------+
+
+---
+
+# Advantages Over Prior Solutions
+
+The proposed solution provides the following advantages over prior solutions, not exhaustive:
+
+* Three distinct DOT archetypes provide solutions for a variety of DOT usage models and Device Owners, rather than trying to force a compromised one-size-fits-all approach.
+* Eliminates authenticated ownership transfer from Device Vendor to Device Owner, thereby eliminating significant operational complexity and burden associated with authenticated ownership transfer models.
+* Eliminates authenticated ownership transfer from Device Owner to Device Owner, thereby eliminating significant operational complexity and burden associated with authenticated ownership transfer models.
+* Authorized Unlock operations to perform authorized ownership transfer from Device Owner to Device Vendor requires no operation or action on the part of the Device Vendor, thereby eliminating significant operational complexity and burden.
+* Allow Device Vendor to recover the device through the RMA process if Authorized Unlock capability is lost by the Owner.
+
+---
+
+# DOT Command Structure
+
+The goal for defining DOT Command Structure is to create an outline of command and their argument for an entity communicating with a Root of Trust IP that manages DOT state transition. This section does not assume any transport protocol or exact message structure being used.
+
+## DOT_GET_INFO
+
+* **State Transition:** None
+* **Input:** N/A
+* **Output:**
+  * DOT Spec Version
+  * DOT Implementation Version (Optional)
+  * DOT State - Unitialized, Volatile, Locked, Disabled
+  * CAKpub_Digest
+  * LAKpub_Digest
+  * Other implementation info (Optional)
+
+## DOT_INSTALL
+
+* **State Transition:** Uninitialized → Volatile
+* **Input:**
+  * CAKpub - CAK public key to be installed
+  * MIN_SVN - MIN_SVN(s) for the minimal SVN that this install of volatile ownership would use to boot up the system. This MIN_SVN is also applicable to reboots that do not clear volatile DOT and hitless update scenarios.
+* **Output:**
+  * Status - Indicating success or failure reason
+
+## DOT_UNLOCK_CHALLENGE
+
+* **State Transition:** None (Locked → Locked)
+* **Input:**
+  * Unlock_Type - two type of possible unlock type
+    * Owner_Unlock - which indicates it's an owner that's calling either DOT_UNLOCK or DOT_ENABLE
+    * Vendor_Unlock - which indicates it's a vendor that's calling DOT_OVERRIDE
+* **Output:**
+  * Challenge used for unlocking - the value returned is based on DOT_LOCK's Unlock_Method input
+    * Owner_Unlock - result depends on Unlock_Method
+    * Vendor_Unlock - always a randomly generated Nonce
+
+## DOT_LOCK
+
+* **State Transition:** Volatile → Locked
+* **Input:**
+  * CAKpub - check to ensure CAKpub to be locked is equivalent to CAKpub that's currently in use for Volatile
+  * LAKpub - LAK public key that will be used to authenticate DOT_UNLOCK and DOT_ROTATE commands
+  * Unlock_Method - This determines if the challenge provided by DOT_UNLOCK_CHALLENGE command is either one of the following. The owner can decide how much operational complexity / security is needed for unlocking.
+    * Randomly generated Nonce
+    * Static Per Device Unique Identifier
+    * Static Value
+  * Signature - Signature generated by LAKpriv covering the other input to ensure access to LAKpriv matching LAKpub
+* **Output:**
+  * Status - Indicating success or failure reason
+
+## DOT_ROTATE
+
+* **State Transition:** None (Locked → Locked)
+* **Input:**
+  * NEW_CAKpub - new CAK to rotate to
+  * Signature - Signature generated by LAKpriv covering the NEW_CAKpub used as authentication of the rotation of CAK
+* **Output:**
+  * Status - Indicating success or failure reason
+
+## DOT_DISABLE
+
+* **State Transition:** Uninitialized → Disabled
+* **Input:**
+  * LAKpub - LAK public key that will be used to authenticate DOT_ENABLE commands
+  * Unlock_Method - This determines if the challenge provided by DOT_UNLOCK_CHALLENGE command is either one of the following. The owner can decide how much operational complexity / security is needed for unlocking.
+    * Randomly generated Nonce
+    * Static Per Device Unique Identifier
+    * Static Value
+  * Signature - Signature generated by LAKpriv covering the other input to ensure access to LAKpriv matching LAKpub
+* **Output:**
+  * Status - Indicating success or failure reason
+
+## DOT_UNLOCK
+
+* **State Transition:**
+  * Locked → Volatile
+  * Disabled → Uninitialized
+* **Input:**
+  * Signature - Signature generated by LAKpriv covering challenge value from DOT_UNLOCK_CHALLENGE.
+* **Output:**
+  * Status - Indicating success or failure reason
+
+## DOT_RECOVERY
+
+* **State Transition:** N/A (corruption recovery)
+* **Input:**
+  * DOT_Blob - a valid DOT blob for the silicon with the current DOT FUSE Array State to recover the system after DOT_Blob loss
+* **Output:**
+  * Status - indicating success or failure reasons
+
+## DOT_OVERRIDE
+
+* **State Transition:**
+  * Locked → Uninitialized
+  * Disabled → Uninitialized
+* **Input:**
+  * Signature - Signature generated by VENDOR_KEYpriv covering challenge value from DOT_UNLOCK_CHALLENGE.
+* **Output:**
+  * Status - Indicating success or failure reason
+
+---
+
+# Threat Model
+
+## Definitions
+
+@tbl:types-of-access, below, outlines the types of access available to an attacker.
+
+Table: Types of Access {#tbl:types-of-access}
+
++----------------+------------------------------------------------------+-----------------------------------+
+| Type of Access | Levels of Access                                     | Attack Paths Available            |
++================+======================================================+===================================+
+| **Physical**   | Unrestricted access for physical and logical attacks | Invasive and non-invasive attacks |
++----------------+------------------------------------------------------+-----------------------------------+
+| **Remote**     | Limited access for attacks with both privileged and  | Non-Invasive and network attacks  |
+|                | unprivileged access rights                           |                                   |
++----------------+------------------------------------------------------+-----------------------------------+
+
+@tbl:definition-of-expertise, below, outlines the definitions of expertise and proficiency levels.
+
+Table: Definition of Expertise {#tbl:definition-of-expertise}
+
++-------------------+----------------------------------------------+-----------------------------------------------+
+| Proficiency Level | Definition                                   | Detailed Definition                           |
++===================+==============================================+===============================================+
+| **Expert**        | Understands hardware and software in depth.  | Developer-level knowledge of algorithms,      |
+|                   | Familiar with implementation of:             | protocols, hardware structures, and           |
+|                   |                                              | principles. Understands techniques and        |
+|                   | * Algorithms                                 | tools for attacks.                            |
+|                   | * Protocols                                  |                                               |
+|                   | * Hardware structures                        |                                               |
+|                   | * Security concepts and principles           |                                               |
++-------------------+----------------------------------------------+-----------------------------------------------+
+| **Proficient**    | Has reasonable understanding of hardware and | Familiar with security behavior and classical |
+|                   | software. Familiar with security behavior.   | attacks.                                      |
++-------------------+----------------------------------------------+-----------------------------------------------+
+| **Layperson**     | No particular expertise.                     | No particular expertise.                      |
++-------------------+----------------------------------------------+-----------------------------------------------+
+
+## Types of Attacks
+
+### Physical Attacks
+
+A physical attacker has full access to the electrical and physical components. A threat model that includes physical attacks is out-scope for this specification, because this specification does not define specific hardware elements that would inform a threat model covering physical attacks.
+
+### Logical Attacks
+
+Table: Logical Attacks {#tbl:logical-attacks}
+
++-------------------------+------------------------------------------+------------------------------------------------+
+| Attack                  | Description                              | Threat Model Scope                             |
++=========================+==========================================+================================================+
+| **Software Interfaces** | Attacker invokes software interfaces for | Includes all externally exposed software       |
+|                         | DOT operations that are exposed by RoT   | interfaces. Note that this specification does  |
+|                         | to external components.                  | not specifically define interfaces, protocols, |
+|                         |                                          | or a commandset.                               |
++-------------------------+------------------------------------------+------------------------------------------------+
+
+## Trust Boundaries
+
+Table: Trust Boundaries {#tbl:trust-boundaries}
+
++----------------------------+-------------------------------------------------------------------------------+
+| DOT State                  | Trust Boundary                                                                |
++============================+===============================================================================+
+| **Default / Unintialized** | Initiator for DOT operations (e.g., BMC, PA-RoT) is within the trust boundary |
+|                            | for initial CAK/LAK installation.                                             |
++----------------------------+-------------------------------------------------------------------------------+
+| **Volatile**               | Initiator for DOT operations (e.g., BMC, PA-RoT) is within the trust boundary |
+|                            | for first CAK Install. After initial CAK Install, subsequent CAK Installs are |
+|                            | disallowed until the device has been reset to Default State.                  |
++----------------------------+-------------------------------------------------------------------------------+
+| **Mutable Locking**        | Trust boundary aligned with RoT architecture. Initiator for DOT operations    |
+|                            | (e.g., BMC, PA-RoT) not within trust boundary. Authorized Unlock required for |
+|                            | subsequent key install/rotation operations.                                   |
++----------------------------+-------------------------------------------------------------------------------+
+| **Disabled**               | Trust boundary aligned with RoT architecture. Initiator for DOT operations    |
+|                            | (e.g., BMC, PA-RoT) not within trust boundary. Authorized Unlock required     |
+|                            | for subsequent key install/rotation operations.                               |
++----------------------------+-------------------------------------------------------------------------------+
+
+## DOT Assets and Threats
+
+Table: DOT Threat Model {#tbl:dot-threat-model}
+
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| Threat                         | Vulnerability                                     | Consequence                                     | Mitigation(s)                                      |
++================================+===================================================+=================================================+====================================================+
+| **Compromised BMC**            | Compromised BMC can send DOT commands to install  | DoS, PDoS                                       | * PA-RoT vs BMC                                    |
+|                                | replacement CAK, Disable DOT, Lock CAK, etc.      |                                                 | * Appropriate BMC security                         |
+|                                |                                                   |                                                 | * Appropriate key management/protection strategy   |
+|                                |                                                   |                                                 | * Appropriate separation of privilege              |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Compromised CAK**            | Compromised DOT CAK private key                   | Attacker can sign arbitrary firmware that would | * Appropriate key management/protection strategy   |
+|                                |                                                   | be successfully authenticated                   | * Detected via Attestation                         |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Compromised LAK**            | Compromised DOT LAK private key                   | Attacker can perform CAK Unlock and replace CAK | * Appropriate key management/protection strategy   |
+|                                |                                                   |                                                 | * Detected via Attestation                         |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Compromised DOT Enable Key** | Compromised DOT Enable Private Key                | Attacker can perform DOT Enable and revert to   | * Appropriate key management/protection strategy   |
+|                                |                                                   | vendor fusing, or install arbitrary CAK/LAK     | * Detected via Attestation                         |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Supply Chain Attack**        | Attacker intercepts parts in transit and can      | DoS, PDoS, as firmware cannot be installed and  | * Tamper proof/evident packaging                   |
+|                                | perform CAK Install and Lock with arbitrary       | device will not boot                            | * Detected via Attestation                         |
+|                                | attacker-owned keys                               |                                                 | * Recovery via device repair/RMA                   |
+|                                |                                                   |                                                 |                                                    |
+|                                |                                                   |                                                 | **Note:** Similar threat exists for any parts that |
+|                                |                                                   |                                                 | can be fused by device owner                       |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Supply Chain Attack**        | Attacker intercepts parts in transit, performs    | Potential for DoS, PDoS, attacker persistence   | * Tamper proof/evident packaging                   |
+|                                | CAK Install and Lock, installs attacker-signed    |                                                 | * Detected via Attestation                         |
+|                                | firmware                                          |                                                 | * Recovery via device repair/RMA                   |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Host Attacks**               | Malicious tenant or host performs CAK Install     | DoS, PDoS, installation of arbitrary firmware   | * When applicable, only allow DOT operations via   |
+|                                | and Lock                                          |                                                 |   OOB interfaces.                                  |
+|                                |                                                   |                                                 | * DOT state and current keys can be attested       |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Volatile**                   | Malicious DOT CAK Install: Attacker-owned DOT     | DoS, firmware signed by malicious entity        | * PA-RoT vs BMC                                    |
+|                                | CAK is installed before PA-RoT can stream legit   |                                                 | * Detectable via attestation                       |
+|                                | CAK                                               |                                                 | * Secure system arch/principles                    |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+| **Mutable Locking / Disabled** | Malicious DOT_LOCK or DOT_DISABLE Command:        | DoS, firmware signed by malicious entity,       | * Detectable via attestation                       |
+|                                | Attacker-owned DOT_LOCK or DOT_DISABLE installed  | inability for owner to recover                  | * RMA to silicon vendor for vendor based override  |
+|                                | without Owner consent cause cryptographic binding |                                                 |                                                    |
+|                                | of ownership not over-writable by owner           |                                                 |                                                    |
++--------------------------------+---------------------------------------------------+-------------------------------------------------+----------------------------------------------------+
+
+---
+
+# Example Using Caliptra
+
+Caliptra design and implementation of Device Ownership Transfer can be found at [@{caliptra-dot}].
+
