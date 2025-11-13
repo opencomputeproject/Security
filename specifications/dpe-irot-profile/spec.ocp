@@ -103,6 +103,13 @@ This document defines multiple variants of the DPE iRoT profile:
 * `DPE_PROFILE_IROT_P384_SHA384`
 * `DPE_PROFILE_IROT_MIN_P256_SHA256`
 * `DPE_PROFILE_IROT_MIN_P384_SHA384`
+* `DPE_PROFILE_IROT_MLDSA_87_SHA384`
+
+Names follow the format:
+
+`DPE_PROFILE_IROT{_OPTIONAL_VARIANT}_{SIGNING_ALGORITHM}_{MEASUREMENT_DIGEST_ALGORITHM}`
+
+Currently, the only supported optional variant is "MIN", which supports a smaller subset of the DPE commands.
 
 The profile name will be embedded as ASCII within the version field of the TCBInfo(s), enabling a verifier to confirm that the evidence originates from this profile.
 
@@ -447,6 +454,13 @@ cryptographic algorithms:
 *   ECDSA P-384
 *   SHA2-384
 
+Profile `DPE_PROFILE_IROT_MLDSA87_SHA384` requires support for the following
+cryptographic algorithms:
+
+*   ML-DSA-87
+*   SHAKE256
+*   SHA2-384
+
 
 This profile defines the following derivation schemes for use in Profile
 Attributes.
@@ -532,17 +546,30 @@ follows:
 *   Outputs
     *   48-byte key
 
-### ocp.key-format.p256.raw
+### ocp.derive.kdf-asymmetric-mldsa87
 
-The concatenation of the 32-byte X value and 32-byte Y value of the ECDSA public key.
+The asymmetric key derivation scheme “ocp.derive.kdf-asymmetric-mldsa87” is defined as
+follows:
 
-Both the X and Y value SHALL be big-endian and left-padded with zeros.
+*   The asymmetric key type is ML-DSA-87
+*   Signature scheme is ML-DSA
+*   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
+*   Inputs
+    *   CDI
+    *   `LABEL`
+    *   ASCII Bytes "MLDSA"
+*   Outputs
+    *   48-byte key
 
 ### ocp.key-format.p384.raw
 
 The concatenation of the 48-byte X value and 48-byte Y value of the ECDSA public key.
 
 Both the X and Y value SHALL be big-endian and left-padded with zeros.
+
+### ocp.key-format.mldsa87.raw
+
+A raw ML-DSA-87 key, encoded as using the pkEncode function in FIPS 204
 
 ## Sign Format
 
@@ -562,6 +589,15 @@ The format “ocp.tbs-format.digest-sha384” is defined as
     additional processing. The size of the value SHALL be a SHA2-384 digest of
     size 48 bytes.
 
+### ocp.tbs-format.mldsa87-external-mu
+
+The format “ocp.tbs-format.mldsa87-external-mu” is defined as
+
+The mu parameter as described in FIPS 204.
+
+*   tr = SHAKE256(public_key, 64)
+*   mu = SHAKE256(tr || message, 64)
+
 ### ocp.signature-format.p256.raw
 
 The concatenation of the 32-byte R value and 32-byte S value of the ECDSA signature.
@@ -573,6 +609,10 @@ Both the R and S value SHALL be big-endian and left-padded with zeros.
 The concatenation of the 48-byte R value and 48-byte S value of the ECDSA signature.
 
 Both the R and S value SHALL be big-endian and left-padded with zeros.
+
+### ocp.signature-format.mldsa87.raw
+
+TODO
 
 ## Recursive Derivation
 
@@ -743,7 +783,7 @@ following requirements:
         * version: The version of the CSR specification - the version SHALL be 0
         * subject: The subject name of the CSR
         * subjectPKInfo: This field SHALL contain the subject public key and the
-          OID for the EC public key algorithm used by the DPE profile
+          OID for the public key algorithm used by the DPE profile
         * attributes: An "Extension Request" attribute as defined in RFC 2985
           [@{ietf-rfc2985}] SHALL adhere to the following requirements
             *   The BasicConstraints extension SHALL be included
@@ -786,6 +826,16 @@ The format “ocp.certificate.irot-eca.p384” is defined as follows:
 *   For the Signature field, DPE SHALL use the ECDSA-with-SHA384 OID with NIST curve
     P-384.
 
+### ocp.certificate.irot-eca.mldsa87
+
+The format “ocp.certificate.irot-eca.mldsa87” is defined as follows:
+
+*   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-512 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the ML-DSA-87 OID.
+*   For the Signature field, DPE SHALL use the ML-DSA-87 OID.
+
 ### ocp.certificate.irot-leaf.p256
 
 The format ocp.certificate.irot-leaf.p256” is defined as follows:
@@ -810,6 +860,16 @@ The format “ocp.certificate.irot.p384” is defined as follows:
 *   For the Signature field, DPE SHALL use the ECDSA-with-SHA384 OID with NIST curve
     P-384.
 
+### ocp.certificate.irot-leaf.mldsa87
+
+The format “ocp.certificate.irot-eca.mldsa87” is defined as follows:
+
+*   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-512 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the ML-DSA-87 OID.
+*   For the Signature field, DPE SHALL use the ML-DSA-87 OID.
+
 ### ocp.csr.irot-leaf.p256
 
 The format “ocp.csr.irot-leaf.p256” is defined as follows:
@@ -833,6 +893,17 @@ The format “ocp.csr.irot-leaf.p384” is defined as follows:
     curve P-384.
 *   For the Signature of both the CMS message and the CertificationRequest, DPE SHALL
     use the ECDSA-with-SHA384 OID with NIST curve P-384.
+
+### ocp.csr.irot-leaf.mldsa87
+
+The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
+
+*   SHALL follow all "Requirements for CSRs" in @sec:csr-requirements
+*   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
+    SHA2-512 OID.
+*   For the SubjectPublicKeyInfo field, DPE SHALL use the ML-DSA-87 OID.
+*   For the Signature of both the CMS message and the CertificationRequest, DPE SHALL
+    use the ML-DSA-87 OID.
 
 ## Profile Attributes
 
@@ -1178,6 +1249,46 @@ The format “ocp.csr.irot-leaf.p384” is defined as follows:
 | supports-symmetric-sign       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
 
+### ocp.profile.irot.mldsa87
+
++-------------------------------+------------------------------------------------------------------+
+| **Attribute**                 | **Value**                                                        |
++===============================+==================================================================+
+| =========================================== General ============================================ |
++-------------------------------+------------------------------------------------------------------+
+| name                          | ocp.profile.irot.ml-dsa-87                                       |
++-------------------------------+------------------------------------------------------------------+
+| inherits                      | ocp.profile.irot.p256                                            |
++-------------------------------+------------------------------------------------------------------+
+| ============================================ Input ============================================= |
++-------------------------------+------------------------------------------------------------------+
+| input-format                  | ocp.format.digest-sha384                                         |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Derivation =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| dice-derivation               | ocp.derive.kdf-cdi-512                                           |
++-------------------------------+------------------------------------------------------------------+
+| asymmetric-derivation         | ocp.derive.kdf-asymmetric-mldsa87                                |
++-------------------------------+------------------------------------------------------------------+
+| ======================================== Certificates ========================================== |
++-------------------------------+------------------------------------------------------------------+
+| leaf-certificate-format       | ocp.certificate.irot-leaf.mldsa87                                |
++-------------------------------+------------------------------------------------------------------+
+| eca-certificate-format        | ocp.certificate.irot-eca.mldsa87                                 |
++-------------------------------+------------------------------------------------------------------+
+| ========================================= Signatures =========================================== |
++-------------------------------+------------------------------------------------------------------+
+| to-be-signed-format           | ocp.format.mldsa87-external-mu.                                  |
++-------------------------------+------------------------------------------------------------------+
+| public-key-format             | ocp.key-format.mldsa87.raw                                       |
++-------------------------------+------------------------------------------------------------------+
+| signature-format              | ocp.signature-format.mldsa87.raw                                 |
++-------------------------------+------------------------------------------------------------------+
+| =========================================== Export ============================================= |
++-------------------------------+------------------------------------------------------------------+
+| export-cdi-format             | ocp.export-cdi.raw-512                                           |
++-------------------------------+------------------------------------------------------------------+
+
 ## ABI Structure Definitions {#sec:abi-structure-definitions}
 
 All structures are fixed size for a given profile. In some cases, command/response structures differ
@@ -1237,6 +1348,7 @@ Table: Profile Constants
 `DPE_PROFILE_IROT_MIN_P384_SHA384`                      | 0x2
 `DPE_PROFILE_IROT_P256_SHA256`                          | 0x3
 `DPE_PROFILE_IROT_P384_SHA384`                          | 0x4
+`DPE_PROFILE_IROT_MLDSA87_SHA384`                       | 0x5
 
 Table: Certificate Formats
 
@@ -1296,6 +1408,15 @@ Table: Profile-dependant ABI constants for `DPE_PROFILE_IROT_P384_SHA384`
 `P`          | Public Key Size       | 96
 `S`          | Signature Size        | 96
 `C`          | Certificate Size      | 6144
+
+Table: Profile-dependant ABI constants for `DPE_PROFILE_IROT_MLDSA87_SHA384`
+
+**Name**     | **Description**       | **Value**
+------------ | --------------------- | --------
+`H`          | Hash Size             | 64
+`P`          | Public Key Size       | 2592
+`S`          | Signature Size        | 4697
+`C`          | Certificate Size      | TODO
 
 ### Types
 
@@ -1465,7 +1586,7 @@ Table: `SIGN_INPUT_ARGS` struct
 | -------         | ------------- | -------  | -------------------- | -------------------------------------------------------
 | 0x00            | `U32`         | 31:0     | `MAGIC`              | Magic number `DPE_COMMAND_MAGIC`.
 | 0x04            | `U32`         | 31:0     | `COMMAND_ID`         | `DPE_COMMAND_SIGN`.
-| 0x08            | `U32`         | 31:0     | `PROFILE`            | One of `DPE_PROFILE_IROT_SHA256_P256`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`            | One of `DPE_PROFILE_*`.
 | 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`     | A numeric handle referring to a DPE context.
 | 0x1C            | `HASH`        |          | `LABEL`              | Digest measurement label used in key derivation.
 | 0x1C + H        | `BITFIELD`    | 31:0     | `RESERVED`           | Reserved
@@ -1477,7 +1598,7 @@ Table: `SIGN_OUTPUT_ARGS` struct
 | -------         | ----------    | -------  | ---------------------- | -------------------------------------------------
 | 0x00            | `U32`         | 31:0     | `MAGIC`                | Magic number `DPE_RESPONSE_MAGIC`.
 | 0x04            | `U32`         | 31:0     | `STATUS`               | One of `DPE_STATUS_*`.
-| 0x08            | `U32`         | 31:0     | `PROFILE`              | One of `DPE_PROFILE_IROT_SHA256_P256`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`              | One of `DPE_PROFILE_*`.
 | 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`   | Numeric handle referring to the updated context.
 | 0x1C            | `SIGNATURE`   |          | `SIGNATURE`            | Signature over `TO_BE_SIGNED`
 
