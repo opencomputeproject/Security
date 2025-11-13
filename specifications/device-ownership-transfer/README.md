@@ -1,4 +1,4 @@
-# Device Ownership Transfern
+# Device Ownership Transfer
 
 ## Specification Website
 
