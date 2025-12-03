@@ -1,7 +1,4 @@
 cwt-envelope-signed-csr-eat = {  
-  ; Issuer claim is StringOrURI (tstr)
-  &(iss : 1) => tstr
-
   ; Nonce claim is nonce-type = bstr .size (8..64)
   ? &(nonce : 10) => bstr
   
