@@ -5,6 +5,7 @@ type: BASE
 project: Security
 authors: Contributed by Nvidia
 bibliography: bibliography.yaml
+geometry: "left=0.5in,right=0.5in"
 ...
 ---
 
@@ -48,7 +49,7 @@ bibliography: bibliography.yaml
 
 # Introduction
 
-This document provides a high-level overview of a proposed Device Ownership Transfer (DOT) architecture, to be discussed within the OCP - Security Project with the eventual goal of publishing an OCP specification for Device Ownership Transfer, based upon the architecture outlined in this document.
+This document provides a high-level overview of a proposed Device Ownership Transfer (DOT) architecture.
 
 ## Audience
 
@@ -139,7 +140,7 @@ Security sensitive information such as MIN_SVN, which is used to indicate the mi
 
 Additional details about the proposed DOT archetypes are provided in @tbl:dot-archetypes, below.
 
-Table: DOT Archetypes {#tbl:dot-archetypes}
+Table: DOT Archetypes {#tbl:dot-archetypes .small}
 
 +---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Archetype           | Salient Details                                                                                                                                                                                                                                 |
