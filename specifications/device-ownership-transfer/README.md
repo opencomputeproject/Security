@@ -5,6 +5,7 @@
 A version of the specification tracking the latest content in the `main` branch can be found at the following links:
 
 - HTML render: https://opencomputeproject.github.io/Security/device-ownership-transfer/HEAD/
+- PDF render: https://opencomputeproject.github.io/Security/device-ownership-transfer/HEAD/pdf
 
 ## Specification source
 
