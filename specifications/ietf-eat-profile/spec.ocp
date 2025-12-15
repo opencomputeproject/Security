@@ -1,6 +1,6 @@
 ---
-title: "OCP Profile for IETF Entity Attestation Token (Draft)"
-version: 0.1
+title: "OCP Profile for IETF Entity Attestation Token"
+version: "1.0"
 type: BASE
 project: Security
 authors: [(See Acknowledgements section)]
