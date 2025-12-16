@@ -151,7 +151,7 @@ The roles “attester”, “verifier”, and “reference integrity measurement
 
 Critical requirements, recommendations, and choices described in this document are highlighted *in this style.*
 
-### REQUIREMENTS - Conformance Statement {#requirements-conformance-statement}
+### REQUIREMENTS - Conformance Statement {#sec:requirements-conformance-statement}
 
 *The manufacturer / Provisioner **MUST** provide a statement of conformance describing how the attester device satisfies the critical requirements, follows the recommendations, and selects from the choices allowed by this document.*
 
@@ -417,9 +417,7 @@ This protocol is highly dependent on the specific technology of the platform, bu
 
 - *Platforms **MUST** be capable of interrogating attester devices that do not communicate their capabilities before being taken out of reset, e.g., by interrogating them later in the boot cycle or by having them pre-configured as such, in the platform reference manifest.*
 
-- *Platforms **MAY** use the message formats for GET\_CAPABILITIES and NEGOTIATE\_ALGORITHMS as described in* [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf) or *Device Capabilities* *as described in [Project Cerberus Firmware Challenge Specification](https://github.com/opencomputeproject/Project_Olympus/blob/master/Project_Cerberus/Project%20Cerberus%20Challenge%20Protocol.pdf) .* *Where necessary, bridge components may be responsible for translating from the native bus protocol into the GET\_CAPABILITIES/ NEGOTIATE\_ALGORITHMS message formats.*
-
-***NOTE from Bryan Kelly: "Replace Cerberus with GET_EAT"***
+- *Platforms **MAY** use the message formats for GET\_CAPABILITIES and NEGOTIATE\_ALGORITHMS as described in* [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf). Where necessary, bridge components may be responsible for translating from the native bus protocol into the GET\_CAPABILITIES/ NEGOTIATE\_ALGORITHMS message formats.*
 
 ## Authentication, Attestation, and Enrollment protocol {#sec:authentication-attestation-and-enrollment-protocol}
 
@@ -483,18 +481,20 @@ To conform to the OCP SPDM profile the following requirements must be met:
 
 ### Required Capabilities for SPDM
 
-***NOTE from Bryan Kelly: "Do we need MEAS_CAP if we have GET_EAT support?"***
-
 The following table lists the SPDM capabilities, as defined in the CAPABILITIES response, that are required for attester devices that are compliant with this specification. Note, this table is based on version 1.1.0 of the SPDM specification, and capabilities that are only defined in version 1.1.0 are not required if the attester device does not support version 1.1.0.
 
 | Capability     | Description                                                                          |
 | :------------- | :----------------------------------------------------------------------------------- |
 | CERT_CAP       | Supports certificate exchanges                                                       |
 | CHAL_CAP       | Supports challenge                                                                   |
-| MEAS_CAP       | Supports MEASUREMENTS and should support signed MEASUREMENTS (SPDM MEAS\_CAP \= 10b) |
 | MEAS_FRESH_CAP | 0 (may return cached measurements)                                                   |
 | CHUNK_CAP      | Supports CHUNK_SEND/CHUNK_GET                                                        |
 | CSR_CAP        | Supports GET_CSR                                                                     |
+
+In addition to the above, the device must support attestation of measurements. This document specifies two mechanisms for accomplishing this, at least one of which must be supported:
+
+- GET_MEASUREMENTS, in which case the responder must report the MEAS_CAP capability (SPDM MEAS\_CAP \= 10b).
+- GET_EAT, defined in @sec:get-eat-cmd.
 
 ### Required Commands for SPDM
 
@@ -559,7 +559,7 @@ May call these "(strongly) recommended"
 
 See <https://github.com/opencomputeproject/Security/tree/main/specifications/ietf-eat-profile>.
 
-# GET_EAT Command
+# GET_EAT Command {#sec:get-eat-cmd}
 
 ## Overview
 
