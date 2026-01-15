@@ -374,12 +374,7 @@ When a PKI owner issues an identity certificate for a device key (such as IDevID
 
 1. **The chain SHALL terminate with a certificate for an advertised identity keypair** - The end-entity certificate in the chain MUST correspond to one of the keypairs for which the device can generate CSRs (e.g., IDevID, LDevID, or other device-specific identity keys).
 
-2. **Chain validation** - The device SHALL validate that:
-   - The public key in the terminal certificate matches a keypair that the device advertises via CSR capabilities
-   - The certificate chain is well-formed (proper DER encoding, valid signatures where verifiable)
-   - Note: When only a single certificate is provisioned (the identity certificate itself), the device cannot validate the complete chain to a root. This is expected and valid.
-
-3. **CSR advertisement policy** - Devices SHALL NOT advertise CSRs for ephemeral keys (e.g., TLS server keys, attestation signing keys that are generated per-session).
+2. **CSR advertisement policy** - Devices SHALL NOT advertise CSRs for ephemeral keys (e.g., TLS server keys, attestation signing keys that are generated per-session).
 
 This approach ensures that only identity certificates can be provisioned, as those are the only keys for which CSRs are available.
 
@@ -394,7 +389,7 @@ In this specification, a "slot" refers to a storage location within the device t
 
 - **SPDM context**: SPDM defines 8 possible slots (0-7) where certificate chains can be stored. When an SPDM requester invokes `GET_CERTIFICATE`, they specify which slot's certificate chain they want to retrieve.
 
-- **Attestation context**: During attestation, the device uses these certificate chains to establish trust. For example, when generating an EAT, the device may include a LEAF certificate that chains to one of the certificates stored in these slots. The verifier can then retrieve the appropriate certificate chain to validate the complete trust path.
+- **Attestation context**: During attestation, the device uses these certificate chains to establish trust. For example, when generating Evidence, the device may include a LEAF certificate that chains to one of the certificates stored in these slots. The verifier can then retrieve the appropriate certificate chain to validate the complete trust path.
 
 - **OCP abstraction**: While SPDM uses numeric slot IDs (0-7), the OCP commands abstract this using Key Provisioning Entity identifiers (VENDOR, OWNER, TENANT). The device internally maps these entities to specific slot numbers, which can be discovered via `OCP_GET_SLOT_ID_MAPPING`.
 
@@ -574,14 +569,12 @@ Table: GET_ENDORSEMENT VendorDefinedRespPayload {#tbl:get-endorsement-resp}
 | 1      | CommandCode             | 1                       | Shall be 05h to indicate                 |
 |        |                         |                         | GET_ENDORSEMENT.                         |
 +--------+-------------------------+-------------------------+------------------------------------------+
-| 2      | Reserved                | 4                       | Reserved.                                |
+| 2      | Reserved                | 2                       | Reserved.                                |
 +--------+-------------------------+-------------------------+------------------------------------------+
-| 6      | Reserved                | 1                       | Reserved.                                |
-+--------+-------------------------+-------------------------+------------------------------------------+
-| 7      | CertChainLength         | 2                       | Length of the certificate chain.         |
+| 4      | CertChainLength         | 2                       | Length of the certificate chain.         |
 |        |                         |                         | Zero if status is not success.           |
 +--------+-------------------------+-------------------------+------------------------------------------+
-| 9      | CertChain               | CertChainLength         | DER-encoded certificate chain.           |
+| 6      | CertChain               | CertChainLength         | DER-encoded certificate chain.           |
 |        |                         |                         | Does NOT include LEAF certificate.       |
 |        |                         |                         | Present only if status is success.       |
 +--------+-------------------------+-------------------------+------------------------------------------+
@@ -604,9 +597,9 @@ For SPDM-aware implementations:
 For devices that support both SPDM and OCP attestation paths:
 
 - `OCP_SET_ENDORSEMENT` internally manages slot allocation based on the KeyProvisioningEntity
-- `OCP_GET_ENDORSEMENT` retrieves endorsements by entity rather than slot number
+- `OCP_GET_ENDORSEMENT` retrieves endorsements by KeyProvisioningEntity rather than slot number
 - `GET_CERTIFICATE` (SPDM) can still be used with the slot numbers reported by `OCP_GET_SLOT_ID_MAPPING`
-- The device ensures consistency between OCP entity-based and SPDM slot-based access
+- The device ensures consistency between OCP KeyProvisioningEntity and SPDM slot-based access
 
 This approach simplifies the interface by abstracting slot management while maintaining full compatibility with SPDM.
 
@@ -725,6 +718,8 @@ Here's a complete example of a platform owner provisioning their endorsement cha
 1. **BMC → Device**: `GET_ENVELOPE_SIGNED_CSR(KeyPairID=LDevID, SignerSlotIDParam=0, Nonce)`
    
    **Device → BMC**: `EAT{CSR for LDevID, LDEVID Key Derivation Attributes(OIDs), Nonce}`
+   
+   Note: The EAT's COSE_Sign1 protected header contains a `kid` (key identifier) that specifies which key signed the EAT. The `kid` matches the subject name of the certificate containing the public key that can verify the EAT signature. In this case, the `SignerSlotIDParam=0` indicates the EAT should be signed using a key from slot 0 (typically RT_Alias or the leaf attestation key from the vendor's certificate chain). The CSR itself contains the LDevID public key.
 
 2. **BMC validates CSR and issues certificate for LDevID**
 
@@ -745,13 +740,106 @@ Here's a complete example of a platform owner provisioning their endorsement cha
 After this sequence, attestations from the device can reference the owner's endorsement chain
 
 
-TODO: fill in additional details.
-
 ## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
 
-This will be accomplished by selecting the correct `SignerSlotIDParam` when invoking SPDM commands.
+After a PKI owner has provisioned their identity certificate chain to the device using `OCP_SET_ENDORSEMENT`, attestation requesters can specify which PKI owner's endorsement should be used when requesting attestations from the device.
 
-TODO: fill in additional details.
+### Understanding slot-based endorsements
+
+**Critical concept**: Multiple slots can contain different certificate chains that all terminate with certificates endorsing the **same leaf attestation keypair**. 
+
+Using Caliptra as an example, the leaf attestation private key (DPE) is used for signing SPDM messages and remains constant, but:
+
+- Slot 0 may contain a certificate chain issued by the vendor's PKI:
+
+  - `DPE cert → RT_Alias cert → FMC_Alias cert → LDevID cert → IDevID cert → Vendor root`
+
+- Slot 2 may contain a certificate chain issued by the owner's PKI (anchored at LDevID):
+
+  - `DPE cert → RT_Alias cert → FMC_Alias cert → LDevID cert → Owner root`
+
+- Slot 4 may contain a certificate chain issued by the tenant's PKI (anchored at FMC_Alias):
+
+  - `DPE cert → RT_Alias cert → FMC_Alias cert → Tenant root`
+
+The key points are:
+
+- **The leaf attestation private key used for signing SPDM messages is the same** across all slots
+- **The leaf certificate's public key is the same** across all slots (the leaf attestation public key)
+- **The certificate chains differ** based on the selected slot - they may have different lengths, intermediate certificates, and PKI anchor points
+- **The trust anchor changes** depending on which PKI owner's endorsement is selected
+
+This allows the same device to serve attestations to different verifiers, each trusting a different PKI root, while using a consistent leaf attestation signing key for all SPDM operations.
+
+### SPDM attestation with slot selection
+
+For SPDM-based attestation flows, the requester specifies which certificate chain to use via the `SlotID` parameter in attestation commands:
+
+- **CHALLENGE / CHALLENGE_AUTH**: The `SlotID` field in the `CHALLENGE` request (Param1, bits [3:0]) specifies which certificate slot should be referenced. The device signs the challenge response using the **leaf attestation private key**, and the `CHALLENGE_AUTH` response includes a hash of the certificate chain from the specified slot. The signature can be verified using the leaf attestation public key in the leaf certificate of that slot's chain.
+
+- **GET_MEASUREMENTS / MEASUREMENTS**: When requesting signed measurements, the `SlotID` field in `GET_MEASUREMENTS` (Param2, bits [3:0]) specifies which certificate slot should be referenced. The device signs the measurements using the **leaf attestation private key**, and the signature can be verified using the leaf attestation public key in the leaf certificate of the specified slot's chain.
+
+- **KEY_EXCHANGE / KEY_EXCHANGE_RSP**: For session establishment, the `SlotID` field in `KEY_EXCHANGE` (Param2, bits [3:0]) specifies which certificate slot should be used for mutual authentication. The device signs the key exchange using the **leaf attestation private key**.
+
+**Important**: The leaf attestation signing key is **identical** across all slots. What changes is the certificate chain that establishes the trust path from the leaf attestation public key to different PKI roots.
+
+### Mapping PKI owners to SPDM slots
+
+To determine which `SlotID` value corresponds to a specific PKI owner's endorsement:
+
+1. **Query the mapping**: Use `OCP_GET_SLOT_ID_MAPPING` to discover which SPDM slot numbers correspond to each KeyProvisioningEntity (VENDOR, OWNER, TENANT).
+
+2. **Select the appropriate slot**: When requesting attestation, specify the `SlotID` that corresponds to the desired PKI owner's endorsement.
+
+**Example**: If `OCP_GET_SLOT_ID_MAPPING` returns `{VENDOR: 0, OWNER: 2, TENANT: 4}`, then:
+- To request attestation with the vendor's endorsement, set `SlotID=0`
+- To request attestation with the owner's endorsement, set `SlotID=2`  
+- To request attestation with the tenant's endorsement, set `SlotID=4`
+
+In all cases, the **same leaf attestation private key** signs the attestation, but the certificate chain hash or certificate chain provided in the response corresponds to the selected slot, allowing verification against different PKI roots.
+
+### Certificate chain composition across slots
+
+When a PKI owner provisions an endorsement using `OCP_SET_ENDORSEMENT`, they specify which identity keypair the chain should anchor at (via the `KeyPairID` parameter). This determines the composition of the certificate chain.
+
+Using Caliptra as an example:
+
+- **Vendor slot (typically slot 0)**: Contains the full DICE hierarchy
+  - Leaf: Leaf attestation certificate (e.g., DPE cert, signed by RT_Alias)
+  - Intermediate: RT_Alias certificate (signed by FMC_Alias)
+  - Intermediate: FMC_Alias certificate (signed by LDevID)
+  - Intermediate: LDevID certificate (signed by IDevID)
+  - Intermediate: IDevID certificate (signed by DevID or vendor root)
+  - Root: Vendor root certificate
+
+- **Owner slot**: Contains a shorter chain if the owner chooses to anchor at LDevID
+  - Leaf: Leaf attestation certificate (e.g., DPE cert, signed by RT_Alias)
+  - Intermediate: RT_Alias certificate (signed by FMC_Alias)
+  - Intermediate: FMC_Alias certificate (signed by LDevID)
+  - Intermediate: LDevID certificate (signed by owner intermediate or root)
+  - Root: Owner root certificate
+
+- **Tenant slot**: Contains an even shorter chain if the tenant chooses to anchor at FMC_Alias
+  - Leaf: Leaf attestation certificate (e.g., DPE cert, signed by RT_Alias)
+  - Intermediate: RT_Alias certificate (signed by FMC_Alias)
+  - Intermediate: FMC_Alias certificate (signed by tenant root)
+  - Root: Tenant root certificate
+
+Regardless of chain length or composition, the **leaf certificate always contains the same leaf attestation public key**, and SPDM signatures are always generated using the **same leaf attestation private key**.
+
+### Non-SPDM attestation flows
+
+For devices that support attestation protocols other than SPDM, the mechanism for selecting which PKI owner's endorsement to use is implementation-specific and outside the scope of this specification. However, such mechanisms SHOULD provide equivalent functionality to allow attestation requesters to specify their preferred PKI anchor point.
+
+### Relationship to certificate provisioning
+
+The ability to request attestations using a specific PKI owner's endorsement depends on that endorsement having been previously provisioned:
+
+1. **Before provisioning**: Only the vendor-provisioned endorsement (typically in slot 0) can be used for attestation
+2. **After owner provisioning**: Attestations can be requested using either the vendor's or owner's endorsement (both using the same leaf attestation signing key)
+3. **After tenant provisioning**: Attestations can be requested using vendor's, owner's, or tenant's endorsement (all using the same leaf attestation signing key)
+
+This allows different verifiers in a deployment to each verify attestations against their own PKI root, as illustrated in @fig:anchor-point-selection.
 
 ## Confidential compute considerations
 
