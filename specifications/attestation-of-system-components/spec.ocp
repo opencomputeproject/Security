@@ -417,7 +417,7 @@ This protocol is highly dependent on the specific technology of the platform, bu
 
 - *Platforms **MUST** be capable of interrogating attester devices that do not communicate their capabilities before being taken out of reset, e.g., by interrogating them later in the boot cycle or by having them pre-configured as such, in the platform reference manifest.*
 
-- *Platforms **MAY** use the message formats for GET\_CAPABILITIES and NEGOTIATE\_ALGORITHMS as described in* [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf) or *Device Capabilities* *as described in [Project Cerberus Firmware Challenge Specification](https://github.com/opencomputeproject/Project_Olympus/blob/master/Project_Cerberus/Project%20Cerberus%20Challenge%20Protocol.pdf) .* *Where necessary, bridge components may be responsible for translating from the native bus protocol into the GET\_CAPABILITIES/ NEGOTIATE\_ALGORITHMS message formats.*
+- *Platforms **MAY** use the message formats for GET\_CAPABILITIES and NEGOTIATE\_ALGORITHMS as described in* [Security Protocol and Data Model (SPDM) Specification](https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.0.0.pdf).
 
 ***NOTE from Bryan Kelly: "Replace Cerberus with GET_EAT"***
 
@@ -471,15 +471,26 @@ To conform to the OCP SPDM profile the following requirements must be met:
 
 11. *Attester devices that support the SPDM standard **SHOULD** support  the set of algorithms as defined in the table “Recommended Algorithms for SPDM”.*
 
-12. *Attester devices that support the SPDM standard **MUST** support SPDM version 1.2 or higher.*
+12. *Attester devices that support the SPDM standard **MUST** support SPDM version 1.3 or higher.*
 
 13. *Attester devices that support the SPDM standard **SHOULD**  support the current version.*
 
 14. *Attestor devices **MUST** support the required commands as listed per version*
 
-15. *Attester devices SHALL provide attestation report in either RATS EAT Format expressed as CWT (Cbor Web Token) or as SPDM evidence manifest TOC (direct measurement form) as defined by the TCG DICE Concise Evidence for SPDM Specification*
+15. Attester devices MUST provide attestation evidence using one of the following methods:
 
-16. *Attester devices that provide an IETF EAT SHALL locate the IETF EAT at SPDM measurement indexblock 0xF0*
+   - GET_EAT command returning an Entity Attestation Token (EAT) conforming to the OCP EAT Profile, OR
+   - GET_MEASUREMENTS command with the EAT located at SPDM Measurement Block 0xFD
+In both cases, the EAT MUST be expressed as a CWT (CBOR Web Token) and conform to the OCP EAT Profile specification.
+
+16. When using GET_MEASUREMENTS, attester devices SHALL locate the Entity Attestation Token at SPDM Measurement Block index 0xFD. The measurement block SHALL contain the complete EAT encoded as a CWT.
+
+17. Platform verifiers MUST support retrieving attestation evidence through at least one of the following methods:
+
+ - GET_EAT command
+ - GET_MEASUREMENTS command with EAT at Measurement Block 0xFD
+
+Platform verifiers SHOULD support both methods to maximize interoperability.
 
 ### Required Capabilities for SPDM
 
@@ -491,10 +502,12 @@ The following table lists the SPDM capabilities, as defined in the CAPABILITIES 
 | :------------- | :----------------------------------------------------------------------------------- |
 | CERT_CAP       | Supports certificate exchanges                                                       |
 | CHAL_CAP       | Supports challenge                                                                   |
-| MEAS_CAP       | Supports MEASUREMENTS and should support signed MEASUREMENTS (SPDM MEAS\_CAP \= 10b) |
+| MEAS_CAP       | Supports MEASUREMENTS and should support signed MEASUREMENTS (SPDM MEAS_CAP = 10b).  |
 | MEAS_FRESH_CAP | 0 (may return cached measurements)                                                   |
-| CHUNK_CAP      | Supports CHUNK_SEND/CHUNK_GET                                                        |
+| CHUNK_CAP      | Supports CHUNK_SEND/CHUNK_GET (required for large certificates and EATs)             |
 | CSR_CAP        | Supports GET_CSR                                                                     |
+| MULTI_KEY_CAP  | Supports multiple key pairs (required for device identity provisioning)              |
+
 
 ### Required Commands for SPDM
 
@@ -513,51 +526,69 @@ Table: Required SPDM Commands
 
 Note: see <https://github.com/opencomputeproject/Security/tree/master/specifications/device-identity-provisioning> for additional requirements around GET_CSR.
 
-### Recommended Algorithms for SPDM
+### Algorithm Requirements for SPDM
 
-Attester devices are allowed a large number of algorithm combinations under the
-SPDM Specification. To improve compatibility, attester devices should follow the
-guidelines in this section. The OCP SPDM Profile requires support for the following
-algorithms:
+To ensure interoperability and quantum readiness, this specification defines mandatory 
+baseline algorithms that all compliant devices must support.
 
-***NOTE from Jeremy O'Donoghue: "I would prefer to see the requirements on interoperability moved to the verifier - it generally has lower security requirements than RoT and a more performance compute environment. For example: attester must support TPM_ALG_ECDSA_NIST_P384, TPM_ALG_SHA384, AES-256-GCM, TPM_ALG_MLDSA_65 (assuming that's what TCG eventually calls the algorithm). Verifier MAY support other algorithms."***
+#### Tier 1: Mandatory Baseline Algorithms
 
-***Aug 26 2025: Let's refine this list, add PQC, and state that devices need to support at least one of a set. Examples:***
+All attester devices **MUST** support the following algorithm set:
 
-- secp384r1
-- AES-256-GCM
-- TPM_ALG_SHA_384
-- [ml-dsa-xxx]
-- [ml-kem-xxx]
+| Algorithm Type                             | Required Algorithm                | Rationale                                                            |
+|:-------------------------------------------|:----------------------------------|:---------------------------------------------------------------------|
+| **Asymmetric Signature (Classical)**       | secp384r1 (ECDSA with NIST P-384) | CNSA Suite compliant, widely supported, strong security margin       |
+| **Asymmetric Signature (PQC)**             | ML-DSA-87                         | Only ML-DSA variant meeting CNSA 2.0 requirements (192-bit security) |
+| **Hash**                                   | TPM_ALG_SHA_384                   | CNSA Suite compliant, appropriate for P-384 and ML-DSA-87            |
+| **AEAD Cipher**                            | AES-256-GCM                       | CNSA Suite compliant, widely hardware-accelerated                    |
+| **KEM (Classical)**                        | ECDH with P-384                   | CNSA Suite compliant (if session encryption used)                    |
+| **KEM (PQC)**                              | ML-KEM-1024                       | Only ML-KEM variant meeting CNSA 2.0 requirements (192-bit security) |
 
-May call these "(strongly) recommended"
+**Note on Algorithm Selection:**
+- **ML-DSA-87** is required (not ML-DSA-65 or ML-DSA-44) because it is the only variant 
+  providing security equivalent to 192-bit classical security, meeting CNSA 2.0 requirements
+- **ML-KEM-1024** is required (not ML-KEM-768 or ML-KEM-512) for the same reason
+- All algorithms align with CNSA Suite and CNSA 2.0 for quantum resistance
+- This provides a consistent, high-security baseline across all deployments
 
-| Algorithm Type  | Required Algorithm               |
-| :-------------- | :------------------------------- |
-| **Asymmetric**  | TPM\_ALG\_RSASSA\_2048           |
-|                 | TPM\_ALG\_RSAPSS\_2048           |
-|                 | TPM\_ALG\_RSASSA\_3072           |
-|                 | TPM\_ALG\_RSAPSS\_3072           |
-|                 | TPM\_ALG\_ECDSA\_ECC\_NIST\_P256 |
-|                 | TPM\_ALG\_RSASSA\_4096           |
-|                 | TPM\_ALG\_RSAPSS\_4096           |
-|                 | TPM\_ALG\_ECDSA\_ECC\_NIST\_P384 |
-|                 | EdDSA ed25519                    |
-|                 | EdDSA ed448                      |
-|                 | secp256r1                        |
-|                 | secp384r1                        |
-| **Hash**        | TPM\_ALG\_SHA\_384               |
-|                 | TPM\_ALG\_SHA\_512               |
-|                 | TPM\_ALG\_SHA3\_256              |
-|                 | TPM\_ALG\_SHA3\_384              |
-|                 | TPM\_ALG\_SHA3\_512              |
-| **AEAD Cipher** | AES-128-GCM                      |
-|                 | AES-256-GCM                      |
-|                 | CHACHA20\_POLY1305               |
+#### Verifier Requirements
+
+Platform verifiers **MUST** support all Tier 1 mandatory algorithms listed above.
+
+Platform verifiers **MAY** support additional algorithms beyond Tier 1 to accommodate:
+- Legacy devices that cannot be updated to support Tier 1
+- Specialized deployment requirements (e.g., performance-optimized, resource-constrained)
+- Regional or regulatory algorithm requirements
+- Future algorithm standards
+
+**Examples of additional algorithms verifiers may support:**
+- Classical signatures: secp256r1, RSA-3072/4096, EdDSA ed25519/ed448
+- PQC signatures: ML-DSA-44, ML-DSA-65, SLH-DSA variants
+- Hash: SHA-256, SHA-512, SHA3 variants
+- AEAD: AES-128-GCM, CHACHA20_POLY1305
+- KEM: ML-KEM-512, ML-KEM-768, ECDH with P-256
+
+**Important**: Attester devices are **NOT REQUIRED** to support these additional algorithms. 
+Verifiers that choose to support them do so to enable interoperability with non-compliant 
+or legacy devices, not because compliant attesters need them.
+
+#### Algorithm Negotiation
+
+During SPDM NEGOTIATE_ALGORITHMS:
+1. Compliant attesters **MUST** advertise all Tier 1 algorithms
+2. Verifiers **SHOULD** select Tier 1 algorithms when available
+3. Verifiers **SHOULD** prefer PQC algorithms (ML-DSA-87, ML-KEM-1024) over classical 
+   algorithms (P-384, ECDH-P384) to ensure quantum resistance
+4. If an attester does not support Tier 1 algorithms, it is non-compliant with this 
+   specification, but verifiers **MAY** choose to accept it based on local policy
+
+**Algorithm Selection Priority (Recommended):**
+1. **Preferred**: ML-DSA-87 for signatures, ML-KEM-1024 for key exchange
+2. **Acceptable**: secp384r1 for signatures, ECDH-P384 for key exchange (during transition)
+3. **Non-compliant**: Any other algorithms (verifier discretion whether to accept)
+
 
 ### IETF EAT Binding for SPDM
-
-See <https://github.com/opencomputeproject/Security/tree/main/specifications/ietf-eat-profile>.
 
 # GET_EAT Command
 
@@ -620,16 +651,7 @@ For successful responses, the following structure is returned:
 
 ## EAT Token Requirements
 
-The EATToken returned in the GET_EAT response **MUST** conform to the OCP EAT Profile specification, which includes:
-
-1. The EAT **MUST** be encoded as a signed CWT (CBOR Web Token)
-2. The EAT Profile claim (265) **MUST** be present and contain the OCP Profile OID
-3. The Nonce claim (10) **MUST** be present and contain the exact nonce value from the request (matching both value and length)
-4. The Measurements claim (273) **MUST** be present and contain concise evidence as defined in the OCP EAT Profile
-5. The issuer claim (1) **MUST** be present to bind the EAT to the certificate chain that issued it
-6. The rim-locators claim (-70001) **MAY** be present to reference CoRIM locations
-
-**Note:** The nonce claim in the EAT response must preserve both the value and length of the nonce provided in the GET_EAT request to ensure proper freshness verification.
+The device should use EAT OCP Profile as described in [@{ocp-eat-profile}]
 
 ## Transport Bindings
 
