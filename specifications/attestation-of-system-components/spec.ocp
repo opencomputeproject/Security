@@ -407,13 +407,13 @@ Platforms can optionally hold the main data bus (e.g. PCIe) in reset while the p
 
 Management First Boot (MFB) is a generalized term for an initialization sequence that starts the system management plane before it starts the data plane. When a system powers on, only the management plane is enabled. Conceptually, this allows a verifier to first attest all of the devices, and then a trusted management controller can enable data plane access for the successfully verified devices.
 
-One concrete approach to MFB is to use PCIe Enhanced System Firmware Intermediary (eSFI). The recommended sequence for eSFI is to start the system with all devices in quarantine. The trusted management controller uses a physically isolated management bus to verify the state of all of the devices. Once a device has been successfully verified, its link can be enabled using eSFI controls. As an opitonal  intermediate step, the trusted management controller can enable device links in a filtering mode that enables MCTP over PCIe-VDM management and configuration cycles, while continuing to restrict memory access.
+One concrete approach to MFB is to use PCIe Enhanced System Firmware Intermediary (eSFI). The recommended sequence for eSFI is to start the system with all devices in quarantine. The trusted management controller uses a physically isolated management bus to verify the state of all of the devices. Once a device has been successfully verified, its link can be enabled using eSFI controls. As an optional intermediate step, the trusted management controller can enable device links in a filtering mode that enables MCTP over PCIe-VDM management and configuration cycles, while continuing to restrict memory access.
 
-This sequence, from the view of the tTrusted management controllerk, is shown in the following diagram.
+This sequence, from the view of the trusted management controller, is shown in the following diagram.
 
 ![](images/esfiFlow.png)
 
-### Isolation
+### Logical Isolation
 
 Another possible reset sequence is for the platform to be held in a state that cannot cause harm. This process is referred to as a unified reset sequence. In this case, the attester devices are brought out of reset as normal and interrogated by the platform. When the platform is complete with the interrogation and satisfied with its results, the platform is admitted into production servicing, or allowed to move to its fully operational state. When using a unified reset sequence, the previous diagram does not apply.
 
