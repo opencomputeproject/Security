@@ -201,7 +201,7 @@ Security-critical components in platforms and attester devices should be designe
 
 At points in the supply chain, provisioning operations establish an attester device’s unique identity and its Device Owner. The Device Owner puts the device into service and determines the authority to update the device. Details of these operations appear later in this specification.
 
-Device ownership may transition from the initial owner, to interim owners, and eventually to the final Device Owner. For example, during final testing, a manufacturing facility may temporarily establish ownership of a device to enable frequent replacement of the firmware. Eventually, it may transfer device ownership to a final customer. The following are common models for changing ownership:	
+Device ownership may transition from the initial owner, to interim owners, and eventually to the final Device Owner. For example, during final testing, a manufacturing facility may temporarily establish ownership of a device to enable frequent replacement of the firmware. Eventually, it may transfer device ownership to a final customer. The following are common models for changing ownership:
 
 * Send the device back to provisioning to be changed
 * Generate new ownership credentials in the field (back to factory state)
@@ -379,7 +379,7 @@ The parties to this protocol are the Device Owner and the attester device. (Some
 
 - *Each attester device **MAY** be provisioned with a hash of the Device Owner’s certificate over the device identity public key.*
 
-![](images/image8.png)
+![](images/image9.png)
 
 The protocol diagram above shows the interaction between a newly provisioned attester device and a Device Owner, as they interact to provision ownership information, attestation credentials, and update verification keys for a device.
 
@@ -393,13 +393,27 @@ Some attester devices may not be able to generate and sign an X.509 certificate.
 
 ## Discovery and Interrogation protocol {#sec:discovery-and-interrogation-protocol}
 
-The platform determines what attester devices are present and their authentication and attestation capabilities.
+The platform determines which attester devices are present and their authentication and attestation capabilities. The following subclauses describe potential approaches to device isolation during discovery and interrogation.
+
+### Data Plane Reset Assertion
 
 The platform begins to build a platform inventory of the attester devices present. (It completes the inventory after the authentication and enrollment protocol.)  Platforms should be able to perform such a discovery as soon as power is up. On some platforms, discovery would happen after the firmware completes device initialization. However, it is expected that some platforms would perform early discovery, and sequence the startup process by holding devices in reset until they are discovered and optionally checked for integrity, using a sideband for the discovery. It is also expected that some devices may not support discovery before they are taken out of reset, mainly for legacy and flashless devices, but for modern and smart devices, this should be made possible.
 
-Platforms can optionally hold the main data bus (i.e. PCIe) in reset while the platform interrogates the attester devices. This process is referred to as a split reset sequence. In this use case, the attester device is required to respond to requests while its main data bus interface is held in reset. One example of this mechanism is to hold PCIe reset (PERST\#) asserted while the interrogation process occurs. The following diagram shows an example of this sequence using PCIe as the main data bus. In the following diagram, the platform holds PERST\# asserted while attester devices are allowed to initialize their CPUs and firmware stacks. When the attester devices are ready to respond, the platform interrogates the attester devices according to its policies. When the platform is complete with the interrogation and satisfied with its results, the platform allows the attester devices out of reset.
+Platforms can optionally hold the main data bus (e.g. PCIe) in reset while the platform interrogates the attester devices. This process is referred to as a split reset sequence. In this use case, the attester device is required to respond to requests while its main data bus interface is held in reset. One example of this mechanism is to hold PCIe reset (PERST\#) asserted while the interrogation process occurs. The following diagram shows an example of this sequence using PCIe as the main data bus. In the following diagram, the platform holds PERST\# asserted while attester devices are allowed to initialize their CPUs and firmware stacks. When the attester devices are ready to respond, the platform interrogates the attester devices according to its policies. When the platform is complete with the interrogation and satisfied with its results, the platform allows the attester devices out of reset.
 
-![](images/image9.png)
+![](images/image8.png)
+
+### Management First Boot
+
+Management First Boot (MFB) is a generalized term for an initialization sequence that starts the system management plane before it starts the data plane. When a system powers on, only the management plane is enabled. Conceptually, this allows a verifier to first attest all of the devices, and then a trusted management controller can enable data plane access for the successfully verified devices.
+
+One concrete approach to MFB is to use PCIe Enhanced System Firmware Intermediary (eSFI). The recommended sequence for eSFI is to start the system with all devices in quarantine. The trusted management controller uses a physically isolated management bus to verify the state of all of the devices. Once a device has been successfully verified, its link can be enabled using eSFI controls. As an opitonal  intermediate step, the trusted management controller can enable device links in a filtering mode that enables MCTP over PCIe-VDM management and configuration cycles, while continuing to restrict memory access.
+
+This sequence, from the view of the tTrusted management controllerk, is shown in the following diagram.
+
+![](images/esfiFlow.png)
+
+### Isolation
 
 Another possible reset sequence is for the platform to be held in a state that cannot cause harm. This process is referred to as a unified reset sequence. In this case, the attester devices are brought out of reset as normal and interrogated by the platform. When the platform is complete with the interrogation and satisfied with its results, the platform is admitted into production servicing, or allowed to move to its fully operational state. When using a unified reset sequence, the previous diagram does not apply.
 
@@ -412,6 +426,8 @@ This protocol is highly dependent on the specific technology of the platform, bu
 - *Attester devices **MUST** be capable of communicating their authentication and attestation capabilities to the platform.*
 
 - *Attester devices **SHOULD** be capable of communicating their capabilities to the platform within 15 seconds of being provided with power, even if their data plane bus (e.g. PCIe) is held in reset by the platform.*
+
+- *Attester devices that are PCIe root or switch devices **SHOULD** support eSFI. PCIe endpoint devices **SHOULD** support being attached to a port that uses eSFI.*
 
 - *Platforms **MUST** be capable of interrogating potential attester devices and recording their authentication and attestation capabilities.*
 
