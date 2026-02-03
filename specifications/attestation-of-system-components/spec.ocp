@@ -411,7 +411,7 @@ One concrete approach to MFB is to use PCIe Enhanced System Firmware Intermediar
 
 This sequence, from the view of the trusted management controller, is shown in the following diagram.
 
-![](images/esfiFlow.png)
+![Management First Boot flow](./images/esfiFlow.drawio.svg){#fig:esfi-flow}
 
 ### Logical Isolation
 
