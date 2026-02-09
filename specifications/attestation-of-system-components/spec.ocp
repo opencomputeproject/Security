@@ -407,9 +407,9 @@ Platforms can optionally hold the main data bus (e.g. PCIe) in reset while the p
 
 Management First Boot (MFB) is a generalized term for an initialization sequence that starts the system management plane before it starts the data plane. When a system powers on, only the management plane is enabled. Conceptually, this allows a verifier to first attest all of the devices, and then a trusted management controller can enable data plane access for the successfully verified devices.
 
-One concrete approach to MFB is to use PCIe Enhanced System Firmware Intermediary (eSFI). The recommended sequence for eSFI is to start the system with all devices in quarantine. The trusted management controller uses a physically isolated management bus to verify the state of all of the devices. Once a device has been successfully verified, its link can be enabled using eSFI controls. As an optional intermediate step, the trusted management controller can enable device links in a filtering mode that enables MCTP over PCIe-VDM management and configuration cycles, while continuing to restrict memory access.
+One concrete approach to MFB for PCIe devices is to use the PCI Express Management Interface (PCIe-MI) and PCIe Enhanced System Firmware Intermediary (eSFI). The recommended sequence for eSFI is to start the system with all devices in quarantine. The trusted management controller uses a physically isolated management bus and the SPDM protocol to verify the state of all of the devices. Once a device has been successfully verified, its link can be enabled using eSFI controls. As an optional intermediate step, the trusted management controller can enable device links in a filtered mode that enables MCTP over PCIe-VDM management and configuration cycles from the BMC, while continuing to restrict host and memory access. Conceptually, this is a filter mode that only allows BMC traffic.
 
-This sequence, from the view of the trusted management controller, is shown in the following diagram.
+An example of this sequence, from the view of the trusted management controller, is shown in the following diagram. There could be a number of variations on this example sequence depending on system requirements.
 
 ![Management First Boot flow](./images/esfiFlow.drawio.svg){#fig:esfi-flow}
 
@@ -427,7 +427,7 @@ This protocol is highly dependent on the specific technology of the platform, bu
 
 - *Attester devices **SHOULD** be capable of communicating their capabilities to the platform within 15 seconds of being provided with power, even if their data plane bus (e.g. PCIe) is held in reset by the platform.*
 
-- *Attester devices that are PCIe root or switch devices **SHOULD** support eSFI. PCIe endpoint devices **SHOULD** support being attached to a port that uses eSFI.*
+- *Attester devices that are PCIe root or switch devices **SHOULD** support eSFI and PCIe-MI. Standard PCIe endpoint components are already compatible with eSFI, but **SHOULD** support PCIe-MI.*
 
 - *Platforms **MUST** be capable of interrogating potential attester devices and recording their authentication and attestation capabilities.*
 
