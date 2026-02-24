@@ -1533,7 +1533,7 @@ Table: `DERIVE_CONTEXT_INPUT_ARGS` struct
 | 0x04            | `U32`          | 31:0      | `COMMAND_ID`                     | `DPE_COMMAND_DERIVE_CONTEXT`.
 | 0x08            | `U32`          | 31:0      | `PROFILE`                        | `DPE_PROFILE_IROT_P256_SHA256`.
 | 0x0C            | `BYTES`        | 127:0     | `CONTEXT_HANDLE`                 | A numeric handle referring to a DPE context.
-| 0x1C            | `HASH`         |           | `INPUT_DATA`                     | Hash to measure.
+| 0x1C            | `HASH`         |           | `INPUT_DATA`                     | Hash to measure. Ignored when `EXPORT_CDI` is set.
 | 0x1C + H        | `BITFIELD`     | 31        | `INTERNAL_INPUT_INFO`            | Use dpe-info internal input if 1.
 |                 |                | 30        | `INTERNAL_INPUT_DICE`            | Use dpe-dice internal input if 1.
 |                 |                | 29        | `RETAIN_PARENT_CONTEXT`          | If set, `CONTEXT_HANDLE` SHALL be retained.
@@ -1566,7 +1566,7 @@ Table: `DERIVE_CONTEXT_OUTPUT_ARGS` struct if `EXPORT_CDI` is set
 | 0x00            | `U32`          | 31:0     | `MAGIC`                       | Magic number `DPE_RESPONSE_MAGIC`.
 | 0x04            | `U32`          | 31:0     | `STATUS`                      | One of `DPE_STATUS_*`.
 | 0x08            | `U32`          | 31:0     | `PROFILE`                     | One of `DPE_PROFILE_*`.
-| 0x0C            | `BYTES`        | 127:0    | `NEW_CONTEXT_HANDLE`          | The handle for the created child context, or rotated context in case RECURSIVE is set.
+| 0x0C            | `BYTES`        | 127:0    | `NEW_CONTEXT_HANDLE`          | The context is destroyed, this field can be ignored. The returned value is an invalid context handle.
 | 0x1C            | `BYTES`        | 127:0    | `PARENT_CONTEXT_HANDLE`       | The handle for the parent context if `RETAIN_PARENT_CONTEXT` is set.
 | 0x2C            | `EXPORTED_CDI` | 255:0    | `EXPORTED_CDI`                | If EXPORT_CDI is true, holds exported CDI. Else, value is ignored.
 | 0x4C            | `U32`          | 31:0     | `CERTIFICATE_SIZE`            | Number of bytes used in `NEW_CERTIFICATE`.
