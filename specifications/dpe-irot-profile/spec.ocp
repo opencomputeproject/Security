@@ -453,14 +453,14 @@ specification which are not relevant for this command:
 *   If `OFFSET` is greater than the full size of the certificate chain, this
     command SHALL fail.
 
-### UpdateContext
+### UpdateContextMeasurement
 
-UpdateContext is a vendor command that allows the holder of a parent context handle
-to update the TCI measurement of a child context. This is semantically equivalent to
-`DeriveContext` with `RECURSIVE` set, but enforces that the caller proves ownership
-of the parent context. Unlike `DeriveContext(RECURSIVE=true)`, this command is
-permitted even if `BLOCK_RECURSIVE` was set on the child context, because the update
-is authorized by the parent rather than by the child context holder.
+UpdateContextMeasurement is a vendor command that allows the holder of a parent
+context handle to update the TCI measurement of a child context. This is
+semanticaly equivalent to `DeriveContext` with `RECURSIVE` set, but enforces that
+the caller proves ownership of the parent context. Unlike `DeriveContext(RECURSIVE=true)`,
+this command is permitted even if `BLOCK_RECURSIVE` was set on the child context,
+because the update is authorized by the parent rather than by the child context holder.
 
 #### Behavior
 
@@ -475,9 +475,9 @@ is authorized by the parent rather than by the child context holder.
         this command SHALL fail with `DPE_STATUS_INVALID_ARGUMENT`.
 *   The identified child context's TCI SHALL be updated as described in
     ocp.recursive-derivation.extend-tci.
-*   An implementation may choose not to support `INTERNAL_INPUT_INFO` or
-    `INTERNAL_INPUT_DICE`. If either is not supported and the bit is set, return
-    `DPE_STATUS_INVALID_ARGUMENT`.
+*   The `INTERNAL_INPUT_INFO` and `INTERNAL_INPUT_DICE` settings of the child context
+    are not modified by this command; the values established at context creation
+    via DeriveContext are preserved.
 *   `NEW_CONTEXT_HANDLE` SHALL be a rotated handle for the updated child context.
 *   `NEW_PARENT_CONTEXT_HANDLE` SHALL be a rotated handle for the parent context.
 
@@ -1373,7 +1373,7 @@ Table: Command IDs
 `DPE_COMMAND_DESTROY_CONTEXT`                           | 0xF
 `DPE_COMMAND_GET_CERTIFICATE_CHAIN`                     | 0x10
 Reserved Range for Vendor Commands                      | 0x80000000 - 0x8000FFFF
-`DPE_COMMAND_UPDATE_CONTEXT`                            | 0x80000000
+`DPE_COMMAND_UPDATE_CONTEXT_MEASUREMENT`                | 0x80000000
 
 Table: Status Codes
 
@@ -1727,24 +1727,22 @@ Table: `GET_CERTIFICATE_CHAIN_OUTPUT_ARGS` struct
 | 0x0C            | `U32`         | 31:0      | `CERTIFICATE_SIZE`       | Number of bytes used in `CERTIFICATE_CHAIN`. Can be smaller than requested if no bytes are left to read.
 | 0x10            | `BYTES`       | 16383:0   | `CERTIFICATE_CHAIN`      | Returned certificate chain. This may be a partial certificate chain.
 
-#### UpdateContext ABI
+#### UpdateContextMeasurement ABI
 
-Table: `UPDATE_CONTEXT_INPUT_ARGS` struct
+Table: `UPDATE_CONTEXT_MEASUREMENT_INPUT_ARGS` struct
 
 | **Byte Offset** | **Type**       | **Bits**  | **Name**                         | **Description**
 | ---------       | -------------- | --------- | -------------------------------- | ---------------------------------------------------------
 | 0x00            | `U32`          | 31:0      | `MAGIC`                          | Magic number `DPE_COMMAND_MAGIC`.
-| 0x04            | `U32`          | 31:0      | `COMMAND_ID`                     | `DPE_COMMAND_UPDATE_CONTEXT`.
+| 0x04            | `U32`          | 31:0      | `COMMAND_ID`                     | `DPE_COMMAND_UPDATE_CONTEXT_MEASUREMENT`.
 | 0x08            | `U32`          | 31:0      | `PROFILE`                        | One of `DPE_PROFILE_*`.
 | 0x0C            | `BYTES`        | 127:0     | `PARENT_CONTEXT_HANDLE`          | Handle of the parent context. Required; command fails if null or not found.
 | 0x1C            | `HASH`         |           | `INPUT_DATA`                     | Hash to measure.
-| 0x1C + H        | `BITFIELD`     | 31        | `INTERNAL_INPUT_INFO`            | Use dpe-info internal input if 1.
-|                 |                | 30        | `INTERNAL_INPUT_DICE`            | Use dpe-dice internal input if 1.
-|                 |                | 29:0      | `RESERVED`                       | Reserved.
+| 0x1C + H        | `BITFIELD`     | 31:0      | `RESERVED`                       | Reserved.
 | 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte type used to identify the child of `PARENT_CONTEXT_HANDLE` to update.
 | 0x24 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | SVN added to TCI node. Callers SHOULD set this field to `0` when SVN is unused.
 
-Table: `UPDATE_CONTEXT_OUTPUT_ARGS` struct
+Table: `UPDATE_CONTEXT_MEASUREMENT_OUTPUT_ARGS` struct
 
 | **Byte Offset** | **Type**      | **Bits** | **Name**                        | **Description**
 | ---------       | ----------    | -------  | ------------------------------- | --------------------------------------------------
