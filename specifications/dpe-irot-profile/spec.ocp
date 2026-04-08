@@ -280,6 +280,9 @@ specification which are omitted by this profile:
 *   An implementation may choose not to support `INTERNAL_INPUT_INFO` or
     `INTERNAL_INPUT_DICE`. If either is not supported and the bit is set, return
     `DPE_STATUS_INVALID_ARGUMENT`.
+*   If a direct child of `CONTEXT_HANDLE` with the same `INPUT_TYPE` already exists,
+    this command SHALL fail with `DPE_STATUS_INVALID_ARGUMENT`. Each `INPUT_TYPE`
+    value SHALL be unique among the direct children of a given context.
 *   If the current number of active TCI nodes is equal to `MAX_CONTEXTS`, this
     command SHALL fail with argument `DPE_STATUS_OUT_OF_MEMORY`.
 *   `RETAIN_PARENT_CONTEXT`:
@@ -310,6 +313,14 @@ specification which are omitted by this profile:
         `INTERNAL_INPUT_DICE` SHALL be ignored. The resulting context
         will have the same values for these flags as the input
         `CONTEXT_HANDLE`.
+    *   If `CONTEXT_HANDLE` refers to a context for which `BLOCK_RECURSIVE`
+        was set during creation, this command SHALL fail with
+        `DPE_STATUS_INVALID_ARGUMENT`.
+*   `BLOCK_RECURSIVE`
+    *   If set, the generated context SHALL have `BLOCK_RECURSIVE` stored as
+        a context property.
+    *   If `RECURSIVE` is also set, this command SHALL fail with
+        `DPE_STATUS_INVALID_ARGUMENT`.
 *   If `CREATE_CERTIFICATE` is set, `EXPORT_CDI` SHALL also be set. Else, this
     command SHALL fail.
 *   If `CREATE_CERTIFICATE` is set, `RETURN_CERTIFICATE` SHALL also be
@@ -441,6 +452,34 @@ specification which are not relevant for this command:
 *   If `SIZE` is greater than 2048, this command SHALL fail.
 *   If `OFFSET` is greater than the full size of the certificate chain, this
     command SHALL fail.
+
+### UpdateContext
+
+UpdateContext is a vendor command that allows the holder of a parent context handle
+to update the TCI measurement of a child context. This is semantically equivalent to
+`DeriveContext` with `RECURSIVE` set, but enforces that the caller proves ownership
+of the parent context. Unlike `DeriveContext(RECURSIVE=true)`, this command is
+permitted even if `BLOCK_RECURSIVE` was set on the child context, because the update
+is authorized by the parent rather than by the child context holder.
+
+#### Behavior
+
+*   `PARENT_CONTEXT_HANDLE` is required. If `PARENT_CONTEXT_HANDLE` is the null
+    handle (all-zero bytes), this command SHALL fail with `DPE_STATUS_INVALID_ARGUMENT`.
+*   `PARENT_CONTEXT_HANDLE` SHALL exist in the caller's locality. If it does not,
+    this command SHALL fail with `DPE_STATUS_INVALID_HANDLE`.
+*   The child context to be updated is identified by `PARENT_CONTEXT_HANDLE` and
+    `INPUT_TYPE`. DPE SHALL select the direct child of `PARENT_CONTEXT_HANDLE` whose
+    type matches `INPUT_TYPE`.
+    *   If no direct child of `PARENT_CONTEXT_HANDLE` has a type matching `INPUT_TYPE`,
+        this command SHALL fail with `DPE_STATUS_INVALID_ARGUMENT`.
+*   The identified child context's TCI SHALL be updated as described in
+    ocp.recursive-derivation.extend-tci.
+*   An implementation may choose not to support `INTERNAL_INPUT_INFO` or
+    `INTERNAL_INPUT_DICE`. If either is not supported and the bit is set, return
+    `DPE_STATUS_INVALID_ARGUMENT`.
+*   `NEW_CONTEXT_HANDLE` SHALL be a rotated handle for the updated child context.
+*   `NEW_PARENT_CONTEXT_HANDLE` SHALL be a rotated handle for the parent context.
 
 ## Cryptographic Algorithms
 
@@ -1334,6 +1373,7 @@ Table: Command IDs
 `DPE_COMMAND_DESTROY_CONTEXT`                           | 0xF
 `DPE_COMMAND_GET_CERTIFICATE_CHAIN`                     | 0x10
 Reserved Range for Vendor Commands                      | 0x80000000 - 0x8000FFFF
+`DPE_COMMAND_UPDATE_CONTEXT`                            | 0x80000000
 
 Table: Status Codes
 
@@ -1544,7 +1584,8 @@ Table: `DERIVE_CONTEXT_INPUT_ARGS` struct
 |                 |                | 24        | `RECURSIVE`                      | If set, do a recursive derivation on `CONTEXT_HANDLE`.
 |                 |                | 23        | `EXPORT_CDI`                     | Whether CDI should be exported for this context.
 |                 |                | 22        | `CREATE_CERTIFICATE`             | Whether a certificate is generated for the derived context.
-|                 |                | 21:0      | `RESERVED`                       | Reserved
+|                 |                | 21        | `BLOCK_RECURSIVE`                | If set, the generated context SHALL NOT be allowed to call DeriveContext with `RECURSIVE` set.
+|                 |                | 20:0      | `RESERVED`                       | Reserved
 | 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte measurement type field
 | 0x24 + H        | `U32`          | 31:0      | `TARGET_LOCALITY`                | Locality in which `NEW_CONTEXT_HANDLE` will be created if `CHANGE_LOCALITY` is set.
 | 0x28 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | SVN added to TCI node. Callers SHOULD set this field to `0` when SVN is unused.
@@ -1685,3 +1726,30 @@ Table: `GET_CERTIFICATE_CHAIN_OUTPUT_ARGS` struct
 | 0x08            | `U32`         | 31:0      | `PROFILE`                | One of `DPE_PROFILE_*`.
 | 0x0C            | `U32`         | 31:0      | `CERTIFICATE_SIZE`       | Number of bytes used in `CERTIFICATE_CHAIN`. Can be smaller than requested if no bytes are left to read.
 | 0x10            | `BYTES`       | 16383:0   | `CERTIFICATE_CHAIN`      | Returned certificate chain. This may be a partial certificate chain.
+
+#### UpdateContext ABI
+
+Table: `UPDATE_CONTEXT_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**       | **Bits**  | **Name**                         | **Description**
+| ---------       | -------------- | --------- | -------------------------------- | ---------------------------------------------------------
+| 0x00            | `U32`          | 31:0      | `MAGIC`                          | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`          | 31:0      | `COMMAND_ID`                     | `DPE_COMMAND_UPDATE_CONTEXT`.
+| 0x08            | `U32`          | 31:0      | `PROFILE`                        | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`        | 127:0     | `PARENT_CONTEXT_HANDLE`          | Handle of the parent context. Required; command fails if null or not found.
+| 0x1C            | `HASH`         |           | `INPUT_DATA`                     | Hash to measure.
+| 0x1C + H        | `BITFIELD`     | 31        | `INTERNAL_INPUT_INFO`            | Use dpe-info internal input if 1.
+|                 |                | 30        | `INTERNAL_INPUT_DICE`            | Use dpe-dice internal input if 1.
+|                 |                | 29:0      | `RESERVED`                       | Reserved.
+| 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte type used to identify the child of `PARENT_CONTEXT_HANDLE` to update.
+| 0x24 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | SVN added to TCI node. Callers SHOULD set this field to `0` when SVN is unused.
+
+Table: `UPDATE_CONTEXT_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                        | **Description**
+| ---------       | ----------    | -------  | ------------------------------- | --------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                         | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`                        | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`                       | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`            | Rotated handle for the updated child context.
+| 0x1C            | `BYTES`       | 127:0    | `NEW_PARENT_CONTEXT_HANDLE`     | Rotated handle for the parent context.
