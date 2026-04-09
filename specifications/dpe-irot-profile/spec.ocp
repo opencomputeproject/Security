@@ -313,11 +313,11 @@ specification which are omitted by this profile:
         `INTERNAL_INPUT_DICE` SHALL be ignored. The resulting context
         will have the same values for these flags as the input
         `CONTEXT_HANDLE`.
-    *   If `CONTEXT_HANDLE` refers to a context for which `BLOCK_RECURSIVE`
-        was set during creation, this command SHALL fail with
+    *   If `CONTEXT_HANDLE` refers to a context for which `ALLOW_RECURSIVE`
+        was NOT set during creation, this command SHALL fail with
         `DPE_STATUS_INVALID_ARGUMENT`.
-*   `BLOCK_RECURSIVE`
-    *   If set, the generated context SHALL have `BLOCK_RECURSIVE` stored as
+*   `ALLOW_RECURSIVE`
+    *   If set, the generated context SHALL have `ALLOW_RECURSIVE` stored as
         a context property.
     *   If `RECURSIVE` is also set, this command SHALL fail with
         `DPE_STATUS_INVALID_ARGUMENT`.
@@ -459,7 +459,7 @@ UpdateContextMeasurement is a vendor command that allows the holder of a parent
 context handle to update the TCI measurement of a child context. This is
 semanticaly equivalent to `DeriveContext` with `RECURSIVE` set, but enforces that
 the caller proves ownership of the parent context. Unlike `DeriveContext(RECURSIVE=true)`,
-this command is permitted even if `BLOCK_RECURSIVE` was set on the child context,
+this command is permitted even if `ALLOW_RECURSIVE` was NOT set on the child context,
 because the update is authorized by the parent rather than by the child context holder.
 
 #### Behavior
@@ -1583,10 +1583,10 @@ Table: `DERIVE_CONTEXT_INPUT_ARGS` struct
 |                 |                | 27        | `CHANGE_LOCALITY`                | Whether `NEW_CONTEXT_HANDLE` is created in a different locality than the caller's locality.
 |                 |                | 26        | `ALLOW_NEW_CONTEXT_TO_EXPORT`    | Whether callers referencing the new context can export the CDI.
 |                 |                | 25        | `INPUT_ALLOW_X509`               | Whether callers referencing the new context can request an X.509 cert. If false, the context can only request a CSR.
-|                 |                | 24        | `RECURSIVE`                      | If set, do a recursive derivation on `CONTEXT_HANDLE`.
+|                 |                | 24        | `RECURSIVE`                      | If set, do a recursive derivation on `CONTEXT_HANDLE`. `ALLOW_RECURSIVE` MUST have been set when `CONTEXT_HANDLE` was created, or this command SHALL fail.
 |                 |                | 23        | `EXPORT_CDI`                     | Whether CDI should be exported for this context.
 |                 |                | 22        | `CREATE_CERTIFICATE`             | Whether a certificate is generated for the derived context.
-|                 |                | 21        | `BLOCK_RECURSIVE`                | If set, the generated context SHALL NOT be allowed to call DeriveContext with `RECURSIVE` set.
+|                 |                | 21        | `ALLOW_RECURSIVE`                | If set, the generated context SHALL be allowed to call DeriveContext with `RECURSIVE` set.
 |                 |                | 20:0      | `RESERVED`                       | Reserved
 | 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte measurement type field
 | 0x24 + H        | `U32`          | 31:0      | `TARGET_LOCALITY`                | Locality in which `NEW_CONTEXT_HANDLE` will be created if `CHANGE_LOCALITY` is set.
@@ -1738,7 +1738,7 @@ Table: `UPDATE_CONTEXT_MEASUREMENT_INPUT_ARGS` struct
 | 0x00            | `U32`          | 31:0      | `MAGIC`                          | Magic number `DPE_COMMAND_MAGIC`.
 | 0x04            | `U32`          | 31:0      | `COMMAND_ID`                     | `DPE_COMMAND_UPDATE_CONTEXT_MEASUREMENT`.
 | 0x08            | `U32`          | 31:0      | `PROFILE`                        | One of `DPE_PROFILE_*`.
-| 0x0C            | `BYTES`        | 127:0     | `PARENT_CONTEXT_HANDLE`          | Handle of the parent context. Required; command fails if null or not found.
+| 0x0C            | `BYTES`        | 127:0     | `PARENT_CONTEXT_HANDLE`          | Handle of the parent context. Required; command fails if invalid or not found.
 | 0x1C            | `HASH`         |           | `INPUT_DATA`                     | Hash to measure.
 | 0x1C + H        | `BITFIELD`     | 31:0      | `RESERVED`                       | Reserved.
 | 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte type used to identify the child of `PARENT_CONTEXT_HANDLE` to update.
