@@ -464,10 +464,10 @@ because the update is authorized by the parent rather than by the child context 
 
 #### Behavior
 
-*   `PARENT_CONTEXT_HANDLE` is required. If `PARENT_CONTEXT_HANDLE` is the null
-    handle (all-zero bytes), this command SHALL fail with `DPE_STATUS_INVALID_ARGUMENT`.
+*   `PARENT_CONTEXT_HANDLE` is required. If `PARENT_CONTEXT_HANDLE` is the default
+    context handle (all-zero bytes), this command SHALL fail with `DPE_STATUS_INVALID_ARGUMENT`.
 *   `PARENT_CONTEXT_HANDLE` SHALL exist in the caller's locality. If it does not,
-    this command SHALL fail with `DPE_STATUS_INVALID_HANDLE`.
+    this command SHALL fail with `DPE_STATUS_INVALID_PARENT_LOCALITY`.
 *   The child context to be updated is identified by `PARENT_CONTEXT_HANDLE` and
     `INPUT_TYPE`. DPE SHALL select the direct child of `PARENT_CONTEXT_HANDLE` whose
     type matches `INPUT_TYPE`.
@@ -479,7 +479,8 @@ because the update is authorized by the parent rather than by the child context 
     are not modified by this command; the values established at context creation
     via DeriveContext are preserved.
 *   `NEW_CONTEXT_HANDLE` SHALL be a rotated handle for the updated child context.
-*   `NEW_PARENT_CONTEXT_HANDLE` SHALL be a rotated handle for the parent context.
+*   `NEW_PARENT_CONTEXT_HANDLE` SHALL be a rotated handle for `PARENT_CONTEXT_HANDLE`,
+    as if `RETAIN_PARENT_CONTEXT` were always set.
 
 ## Cryptographic Algorithms
 
@@ -1392,6 +1393,7 @@ Table: Status Codes
 `DPE_STATUS_HANDLE_DEFINED`                  | 0x82        | Passed handle is already defined.
 `DPE_STATUS_ARGUMENT_NOT_SUPPORTED`          | 0x83        | Argument is not supported by this profile, implementation, or integration.
 `DPE_STATUS_ALREADY_INITIALIZED`             | 0x84        | InitializeContext has already been called on this DPE reset cycle
+`DPE_STATUS_INVALID_PARENT_LOCALITY`         | 0x85        | Parent ContextHandle does not exist in the caller's locality.
 
 Table: Magic Constants
 
