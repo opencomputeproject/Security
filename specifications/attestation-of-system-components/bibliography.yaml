@@ -6,3 +6,10 @@ references:
       year: 2025
       month: 9
     url: "https://github.com/opencomputeproject/ocp-registry/blob/main/command-registry.md"
+  - id: "ocp-eat-profile"
+    title: "OCP EAT Profile"
+    publisher: "Open Compute Project"
+    issued:
+      year: 2025
+      month: 12
+    url: "https://github.com/opencomputeproject/Security/blob/main/specifications/dpe-irot-profile/spec.ocp"
