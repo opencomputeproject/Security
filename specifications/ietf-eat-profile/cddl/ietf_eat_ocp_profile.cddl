@@ -85,6 +85,9 @@ protected-ce-header-map = {
 
 unprotected-ce-header-map = {
   ? &(x5-chain: 33) => bstr / [ 2*certs: bstr ]
+  ; kid is a SHA-384 digest of the DER-encoded SPKI of the attestation public key.
+  ; Used in lieu of x5chain when space constraints apply.
+  ? &(kid: 4) => bstr .size 48
   * cose-label => cose-value
 }
 
