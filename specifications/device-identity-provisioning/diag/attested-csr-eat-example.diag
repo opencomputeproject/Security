@@ -1,0 +1,61 @@
+; ----------------------------------------------------------------------
+; Example: CSR response (returned when the Requester sent
+; GET_ATTESTED_CSR with a specific KeyPairID > 0). The payload
+; carries the CSR for the selected keypair along with the derivation-
+; attribute OIDs that apply to it.
+; ----------------------------------------------------------------------
+
+signed-cwt / 18([
+  / protected / <<{
+    / alg-id / 1 : 7,
+    / content-type / 3 : "application/eat+cbor",
+    ; SHA-384 digest of the Attestation Key (i.e. the SPDM Signing Key)
+    ; that produced this envelope signature.
+    / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
+  }>>,
+  / unprotected / {},
+/ payload / <<{
+      / iss / 1 : "RT Alias Key",
+      / nonce / 10: h'AAAABBBBAAAABBBBAAAABBBB', 
+      / csr / -70001 :  h'59025630820252308201d9a003020102021431a4e0',
+      / attrib / -70002: [
+      / tagged-oid-type / 111(h'6086480186F84D010F046301')
+      ]
+  }>>,
+  / signature / h'FA45AAB345AB4988' 
+])
+
+; ----------------------------------------------------------------------
+; Example: discovery response (returned when the Requester sent
+; GET_ATTESTED_CSR with KeyPairID = 0). The payload omits the
+; CSR/attrib claims and instead carries the KeyPair Inventory claim,
+; which enumerates every supported KeyPairID and its derivation OIDs.
+; ----------------------------------------------------------------------
+
+signed-cwt / 18([
+  / protected / <<{
+    / alg-id / 1 : 7,
+    / content-type / 3 : "application/eat+cbor",
+    ; SHA-384 digest of the Attestation Key (i.e. the SPDM Signing Key)
+    ; that produced this envelope signature.
+    / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
+  }>>,
+  / unprotected / {},
+  / payload / <<{
+      / iss / 1 : "RT Alias Key",
+      / nonce / 10 : h'AAAABBBBAAAABBBBAAAABBBB',
+      / keypair-inventory / -70003 : [
+        ; KeyPairID 1: IDevID, derived from First Mutable Code
+        [ 1, [ 111(h'6086480186F84D010F040602') ] ],
+        ; KeyPairID 2: LDevID, derived from Owner Entropy Fuse +
+        ;                      First Mutable Code
+        [ 2, [
+            111(h'6086480186F84D010F040601'),
+            111(h'6086480186F84D010F040602')
+        ] ],
+        ; KeyPairID 3: Owner-provisioned alias key
+        [ 3, [ 111(h'6086480186F84D010F040604') ] ]
+      ]
+  }>>,
+  / signature / h'FA45AAB345AB4988'
+])

@@ -1,0 +1,67 @@
+; An Attested CSR EAT is one of two variants:
+;   - A CSR response, returned for a specific KeyPairID > 0.
+;   - A keypair-inventory (discovery) response, returned when the
+;     Requester specifies KeyPairID = 0.
+cwt-attested-csr-eat =
+  cwt-attested-csr-eat-csr /
+  cwt-attested-csr-eat-inventory
+
+cwt-attested-csr-eat-csr = {
+  ; Issuer claim is StringOrURI (tstr)
+  &(iss : 1) => tstr
+
+  ; Nonce claim is nonce-type = bstr .size (8..64)
+  ? &(nonce : 10) => bstr
+
+  ; Private Claims (they have to be < -65536 for rfc8392)
+
+  ; CSR bytestring
+  &(csr: -70001) => bstr
+
+  ; Attribute List of OIDs
+  &(attrib: -70002) => [+ $key-attributes-type]
+}
+
+; Discovery response payload returned when KeyPairID = 0 in the request.
+cwt-attested-csr-eat-inventory = {
+  &(iss : 1) => tstr
+
+  ? &(nonce : 10) => bstr
+
+  ; KeyPair Inventory private claim. Each entry pairs a KeyPairID
+  ; with the list of derivation-attribute OIDs that apply to it.
+  &(keypair-inventory: -70003) => [+ keypair-inventory-entry]
+}
+
+keypair-inventory-entry = [
+  keypair-id: 1..255,
+  attributes: [+ $key-attributes-type]
+]
+
+$key-attributes-type = tagged-oid-type
+
+signed-cwt = #6.18(COSE-Sign1-attested-csr)
+
+COSE-Sign1-attested-csr = [
+  protected: bstr .cbor protected-esc-header-map
+  unprotected: unprotected-esc-header-map
+  payload: bstr .cbor cwt-attested-csr-eat 
+  signature: bstr
+]
+
+protected-esc-header-map {
+  ; Well-defined header fields
+  &(alg-id: 1) => int
+  &(content-type: 3) => tstr / int
+  &(issuer-key-id: 4) => bstr
+  ; User-defined fields
+  * cose-label => cose-value
+}
+
+unprotected-esc-header-map = {
+  ; The Attestation Key's certificate chain is NOT carried here; the
+  ; Requester retrieves it via SPDM GET_CERTIFICATE for the slot
+  ; identified by SignerSlotIDParam.
+  * cose-label => cose-value
+}
+
