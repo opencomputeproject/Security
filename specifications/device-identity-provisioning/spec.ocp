@@ -334,19 +334,17 @@ Subsequent versions of this specification may be expanded with additional key de
 
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
-This will be accomplished via the `SET_CERTIFICATE` SPDM command.
+The Requester should execute the following flow for issuing and provisioning an identity certificate chain to the Responder device.
 
-TODO: fill in additional details.
+1. Acquire all keypairs and their associated OIDs for derivation attributes from the Responder device by issuing a `GET_ATTESTED_CSR` request with `KeyPairID` = 0. The `GET_ATTESTED_CSR` may or may not require an attested response, depending on the security model of the Requester's use case. However, the Responder shall provide a signature if the request asks for an attested response (when `SignerSlotIDParam` Bit [4] is 1).  
+2. Examine the derivation attributes of the candidate keypairs and choose one that matches the Requester's use case.
+3. Issue a `GET_ATTESTED_CSR` request with the chosen `KeyPairID`. Check the received CSR for validity, including verifying the self-signature if an attested CSR is requested.
+4. Construct and sign an identity leaf certificate for the Responder based off the CSR. The leaf certificate is rooted to the Requester's PKI.
+5. Issue an SPDM `SET_CERTIFICATE` request to provision the certificate chain to the Responder device. The `SlotID` should point to a slot that is currently not provisioned.
 
 ## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
 
-This will be accomplished by selecting the correct `SlotIDParam` when invoking SPDM commands.
-
-TODO: fill in additional details.
-
-## Confidential compute considerations
-
-TODO: fill in
+For attestation over SPDM, the Requester should first invoke `GET_CERTIFICATE` with `SlotID` to which the Requester provisioned the identity certificate chain. Then, the Requester should issue `GET_MEASUREMENTS` with `SlotIDParam` equal to the ID of the provisioned slot.
 
 # Appendix
 
