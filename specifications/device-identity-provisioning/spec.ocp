@@ -54,6 +54,10 @@ The Contributors of this Specification would like to acknowledge the following:
 - Steven Bellock (NVIDIA)
 - Jeff Andersen (Google)
 - Brett Henning (Broadcom)
+- Shalini Sharma (Qualcomm)
+- Denis Pochuev (Qualcomm)
+- Parvathi Bhogaraju (Microsoft)
+- Xiaoyu Ruan (Intel)
 
 <!---
 Please describe how this Specification complies with the OCP tenets.
@@ -88,14 +92,14 @@ This specification does not impact sustainability.
 
 -->
 
-## Terminology
+# Terminology
 
 - **PKI**: Public-key infrastructure. Consists of a root key that is trusted by relying parties and infrastructure that manages the issuing of certificates.
 - **PKI owner**: An entity that owns a PKI and issues device identity certificates that chain back to that PKI's root key.
 - **PKI anchor point**: In the context of this specification, this is the key in a device's internal identity key hierarchy for which a PKI owner issues an identity certificate.
 - **Certificate deactivation**: In the context of this specification, this occurs when a device identity certificate subject key's derivation input changes, which causes the identity keypair to change.
 
-## Introduction
+# Introduction
 
 In a data center environment, hardware roots of trust leverage device identity keys to attest to their current configuration. Verifiers ensure that the device emitting the attestation is authentic, before going on to evaluate the attested claims against a policy.
 
@@ -149,7 +153,7 @@ Note: "certificate deactivation" is not the same as certificate revocation or ex
 
 Each PKI owner may have their own desired implicit attestation properties, and can select their PKI anchor point accordingly.
 
-### Support for multiple PKI owners
+## Support for multiple PKI owners
 
 A device may have multiple simultaneous PKI owners, and serve attestations to multiple verifiers, each with their own configured PKI root key.
 
@@ -159,7 +163,7 @@ While each identity certificate issued by a given PKI owner could be distributed
 
 Note: there may be intermediate certificates between a given PKI owner's root key and the identity certificate issued for a device. This specification does not impose an upper-limit on the number of intermediate certificates that may exist for a given PKI owner. Devices typically have limited internal storage capacity. As a result, this specification does not require that the device's attestation responses include any intermediate certificates beyond the identity certificate issued by a PKI owner. These intermediate certificates should be communicated to the verifier out-of-band. Such communication is outside the scope of this specification.
 
-### Specification scope
+## Specification scope
 
 This specification describes the following aspects of device identity endorsement and provisioning:
 
@@ -173,11 +177,11 @@ The following items are out of scope:
 - Certificate revocation
 - General attestation verification
 
-## Discovering device identity keypairs {#sec:discovering-device-keypairs}
+# Discovering device identity keypairs {#sec:discovering-device-keypairs}
 
 TODO: fill in
 
-## Establishing trust in a selected identity keypair {#sec:establishing-trust-in-identity}
+# Establishing trust in a selected identity keypair {#sec:establishing-trust-in-identity}
 
 To allow a remote party to establish trust in a selected keypair, the device can emit a Certification Signing Request (CSR) [@{pkcs-10}]. This is supported in SPDM 1.3 [@{spdm-1.3}] via the GET_CSR command. However, there is a drawback to GET_CSR as it is currently defined: the CSR is signed only by the subject key, and does not include a way to attest that the CSR was emitted from a given device.
 
@@ -313,7 +317,15 @@ The EnvelopeSignedCSRdata shall adhere to the following requirements:
 
 [^private-claims]: RFC 8392 [@{ietf-cwt}] defines a private claim as one whose key value has an integer value < -65536.
 
-### Defined OIDs {#sec:defined-oids}
+To summarize, the Requester should execute the following sequence for issuing and provisioning an identity certificate chain to the Responder device.
+
+1. Acquire all keypair IDs and their associated OIDs for derivation attributes from the Responder device by issuing `GET_ATTESTED_CSR` request with `KeyPairID` = 0.
+2. Examine the derivation attributes of the candidate keypair IDs and choose one that matches the Requester's use case.
+3. Issue `GET_ATTESTED_CSR` request with the chosen `KeyPairID`. Check the received CSR for validity, including verifying the self-signature if attestation was requested.
+4. Construct and sign an identity leaf certificate for the Responder based off the CSR. The leaf certificate is rooted to the Requester's trust anchor.
+5. Issue SPDM `SET_CERTIFICATE` request to provision the identity certificate chain to the Responder. The `SlotID` should point to a slot that is currently not provisioned.
+
+## Defined OIDs {#sec:defined-oids}
 
 **OCP Security Branch**: `ocp-security OBJECT IDENTIFIER ::= {1 3 6 1 4 1 42623 1}`
 
@@ -332,21 +344,18 @@ These OIDs indicate which inputs contribute to the derivation of the identity ke
 
 Subsequent versions of this specification may be expanded with additional key derivation attribute OIDs.
 
-## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
+# Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
 
-This will be accomplished via the `SET_CERTIFICATE` SPDM command.
+For attestation, the Requester should first issue SPDM `GET_CERTIFICATE` request with the `SlotID` containing the Responder's identity certificate chain that roots to the Requester's desired trust anchor, then issue SPDM `GET_MEASUREMENTS` request with `SlotIDParam` pointing to this `SlotID`.
 
-TODO: fill in additional details.
+<!----
 
-## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
-
-This will be accomplished by selecting the correct `SlotIDParam` when invoking SPDM commands.
-
-TODO: fill in additional details.
-
-## Confidential compute considerations
+# Confidential compute considerations
 
 TODO: fill in
+
+--->
+
 
 # Appendix
 
