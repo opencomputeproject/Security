@@ -9,14 +9,14 @@ signed-cwt / 18([
   / protected / <<{
     / alg-id / 1 : 7,
     / content-type / 3 : "application/eat+cbor",
-    ; SHA-384 digest of the Attestation Key (i.e. the SPDM Signing Key)
-    ; that produced this envelope signature.
+    ; SHA-384 hash of the Attestation Key's certificate chain (same as
+    ; the SPDM DIGEST response) for the slot that produced this signature.
     / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
   }>>,
   / unprotected / {},
 / payload / <<{
       / iss / 1 : "RT Alias Key",
-      / nonce / 10: h'AAAABBBBAAAABBBBAAAABBBB', 
+      / nonce / 10: h'AAAABBBBCCCCDDDDEEEEFFFF0000111122223333444455556666777788889999', 
       / csr / -70001 :  h'59025630820252308201d9a003020102021431a4e0',
       / attrib / -70002: [
       / tagged-oid-type / 111(h'6086480186F84D010F046301')
@@ -36,14 +36,14 @@ signed-cwt / 18([
   / protected / <<{
     / alg-id / 1 : 7,
     / content-type / 3 : "application/eat+cbor",
-    ; SHA-384 digest of the Attestation Key (i.e. the SPDM Signing Key)
-    ; that produced this envelope signature.
+    ; SHA-384 hash of the Attestation Key's certificate chain (same as
+    ; the SPDM DIGEST response) for the slot that produced this signature.
     / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
   }>>,
   / unprotected / {},
   / payload / <<{
       / iss / 1 : "RT Alias Key",
-      / nonce / 10 : h'AAAABBBBAAAABBBBAAAABBBB',
+      / nonce / 10 : h'AAAABBBBCCCCDDDDEEEEFFFF0000111122223333444455556666777788889999',
       / keypair-inventory / -70003 : [
         ; KeyPairID 1: IDevID, derived from First Mutable Code
         [ 1, [ 111(h'6086480186F84D010F040602') ] ],

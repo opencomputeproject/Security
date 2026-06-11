@@ -177,7 +177,7 @@ The following items are out of scope:
 
 A device may expose multiple identity keypairs (e.g., IDevID, LDevID, and other vendor- or owner-defined keys), each with its own derivation inputs. Before a PKI owner can select a suitable PKI anchor point, it must discover which keypairs the device supports and which derivation attributes are associated with each.
 
-This specification reuses the `GET_ATTESTED_CSR` command defined in @sec:establishing-trust-in-identity for keypair discovery, by reserving `KeyPairID = 0` as a discovery sentinel. SPDM 1.3 reserves the value 0 for the `KeyPairID` field, so it is safe to repurpose here without colliding with any valid keypair identifier.
+This specification reuses the `GET_ATTESTED_CSR` command defined in @sec:establishing-trust-in-identity for keypair discovery, by reserving `KeyPairID = 0` as a discovery sentinel. SPDM reserves the value 0 for the `KeyPairID` field; value 0 is not a valid KeyPairID, so it is safe to repurpose here without colliding with any valid keypair identifier.
 
 ### Discovery request
 
@@ -185,23 +185,23 @@ To discover the set of supported identity keypairs, the Requester sends a `GET_A
 
 - `Param1` (`KeyPairID`) SHALL be `0`, indicating a discovery request rather than a CSR request.
 - `Param2` (Request Attributes), `RequesterInfoLength`, `OpaqueDataLength`, `RequesterInfo`, and `OpaqueData` SHALL be `0` / empty. The Responder SHALL ignore any non-zero values in these fields when `KeyPairID` is `0`.
-- `SignerSlotIDParam` SHALL be interpreted identically to the CSR case. Bit [4] selects whether the response is attested by an Attestation Key, and bits [3:0] select the SPDM slot whose Attestation Key signs the CWT. Requesters SHOULD request an attested response so that the inventory is attestable.
+- `SignerSlotIDParam` SHALL be interpreted identically to the CSR case. Bits [3:0] select the SPDM slot whose Attestation Key signs the CWT. The discovery response SHALL be attested so that the inventory is attestable.
 - `Nonce` SHALL be a fresh random value chosen by the Requester, and is used to bind the discovery response to this request.
 
 ### Discovery response
 
 When `KeyPairID = 0` is specified in the request, the Responder SHALL return an `ATTESTED_CSR` response whose `AttestedCSRdata` is an EAT encoded as a CWT, with the following requirements:
 
-- The EAT SHALL include the standard issuer claim and a nonce claim whose value matches the `Nonce` provided in the discovery request.
+- The EAT SHALL include a nonce claim whose value matches the `Nonce` provided in the discovery request.
 - The EAT SHALL NOT include the CSR claim or the derivation-attribute-OID claim defined in @sec:establishing-trust-in-identity. Instead, it SHALL include a single private claim, the *KeyPair Inventory* claim, containing the device's keypair inventory.
-- If `SignerSlotIDParam` indicated an attested response, the CWT SHALL be signed by the Attestation Key corresponding to the specified slot, following the same `kid` and signing rules as in @sec:establishing-trust-in-identity.
+- The CWT SHALL be signed by the Attestation Key corresponding to the specified slot, following the same `kid` and signing rules as in @sec:establishing-trust-in-identity.
 
 The *KeyPair Inventory* claim SHALL be a CBOR array. Each element SHALL be a CBOR array of two elements:
 
-1. The `KeyPairID` as a CBOR unsigned integer in the range `1..255`.
+1. The `KeyPairID` as a CBOR unsigned integer in the range `1..255`. KeyPairID values are the same as those defined in SPDM.
 2. An array of OIDs describing the derivation attributes of that keypair, drawn from the OIDs defined in @sec:defined-oids.
 
-The inventory SHALL include every `KeyPairID` for which the device is willing to issue an attested CSR.
+The inventory SHALL include every `KeyPairID` for which the device is willing to issue an attested CSR. The CDDL definition of the *KeyPair Inventory* claim (`cwt-attested-csr-eat-inventory`) is provided in @sec:attested-csr-eat-cddl.
 
 After consuming the inventory, the Requester can issue a follow-up `GET_ATTESTED_CSR` request with a specific `KeyPairID` to retrieve a CSR for the selected keypair, as described in @sec:establishing-trust-in-identity.
 
@@ -221,7 +221,7 @@ Some devices may not support the generation of self-signed CSRs for certain keys
 
 ![Attested Non-self-signed CSR](./diagrams/attested_csr_non_self_signed.drawio.svg){#fig:attested-csr-non-self-signed}
 
-This specification provides a definition for a vendor-defined SPDM command, utilizing VENDOR_DEFINED_REQUEST from SPDM 1.3, which can be used to surface these attested CSRs.
+This specification provides a definition for a vendor-defined SPDM command, utilizing VENDOR_DEFINED_REQUEST of SPDM 1.3 and later, which can be used to surface these attested CSRs.
 
 Note: the `GET_ATTESTED_CSR` request format described in this section (including the `VENDOR_DEFINED_REQUEST` framing and Tables [-@tbl:ecsr-req] / [-@tbl:ecsr-resp]) is provided as a reference only and is **non-normative**. This specification is normative on the contents and encoding of the response payload (the attested CSR EAT/CWT defined in this section), but does not mandate a particular transport or command format for the request. Implementations are free to surface the attested CSR via any suitable mechanism. Open-source implementations such as Caliptra [@{caliptra}] may define and carry their own implementation of the `GET_ATTESTED_CSR` command for interoperability convenience.
 
@@ -265,11 +265,7 @@ Table: GET_ATTESTED_CSR VendorDefinedReqPayload {#tbl:ecsr-req}
 |                     |                     |                     | bytes. Shall be 0 if no OpaqueData is        |
 |                     |                     |                     | provided.                                    |
 +---------------------+---------------------+---------------------+----------------------------------------------+
-| 12                  | SignerSlotIDParam   | 1                   | - Bit [7:5]. Reserved.                       |
-|                     |                     |                     | - Bit [4:4]. If this value is `1`, the CSR   |
-|                     |                     |                     | is attested (i.e., the CWT is signed by an   |
-|                     |                     |                     | Attestation Key); otherwise the CSR is not   |
-|                     |                     |                     | attested and bits [3:0] are ignored.         |
+| 12                  | SignerSlotIDParam   | 1                   | - Bit [7:4]. Reserved.                       |
 |                     |                     |                     | - Bit [3:0]. Shall be the SlotID. Slot       |
 |                     |                     |                     | number of the Responder certificate chain    |
 |                     |                     |                     | that shall be used for authenticating the    |
@@ -337,8 +333,8 @@ The AttestedCSRdata shall adhere to the following requirements:
   - An array of OIDs representing the key's derivation attributes (see @sec:defined-oids for defined OIDs)
 - The CSR included in the EAT SHALL be DER-encoded and may be either self-signed or non-self-signed depending on device capabilities. For non-self-signed CSRs, the signature field SHALL contain all zeroes and be the same size as would be required for a valid signature using the subject key's algorithm.
 - The nonce claim SHALL match the nonce value provided in the GET_ATTESTED_CSR request to ensure freshness.
-- If SignerSlotIDParam indicates an attested response, the CWT SHALL be signed by an Attestation Key endorsed by the certificate chain corresponding to the specified SlotID. The Requester obtains the Attestation Key's certificate chain out-of-band via the SPDM `GET_CERTIFICATE` command for that slot.
-- If SignerSlotIDParam indicates an attested response, the `kid` parameter (COSE header label `4`) in the CWT's protected header SHALL be the SHA-384 digest of the DER-encoded `SubjectPublicKeyInfo` of the Attestation Key. The Requester uses this digest to confirm that the signing key matches the Attestation Key whose certificate chain it retrieved from the selected SPDM slot.
+- The CWT SHALL be signed by an Attestation Key endorsed by the certificate chain corresponding to the specified SlotID. The Requester obtains the Attestation Key's certificate chain out-of-band via the SPDM `GET_CERTIFICATE` command for that slot.
+- The `kid` parameter (COSE header label `4`) in the CWT's protected header SHALL be the SHA-384 digest of the Attestation Key's certificate chain, computed in the same manner as the SPDM DIGEST response for the selected slot. The Requester uses this digest to confirm that the signing key matches the Attestation Key whose certificate chain it retrieved from the selected SPDM slot.
 
 [^private-claims]: RFC 8392 [@{ietf-cwt}] defines a private claim as one whose key value has an integer value < -65536.
 
@@ -385,7 +381,7 @@ In TCG's DICE Hardware Requirements [@{tcg-dice-hardware-requirements}], FMC is 
 
 The difference between First Measured Code and First Mutable Code is subtle but important. In Caliptra, the First Measured Code corresponds with the Caliptra ROM layer. As such, Caliptra's Device ID or IDevID keypair is wielded by ROM, rather than Caliptra's FMC.
 
-## Attested CSR EAT CDDL
+## Attested CSR EAT CDDL {#sec:attested-csr-eat-cddl}
 
 ```include {.small}
 !include cddl/attested-csr-eat.cddl
