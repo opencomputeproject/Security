@@ -2,7 +2,7 @@
 ; Example: CSR response (returned when the Requester sent
 ; GET_ATTESTED_CSR with a specific KeyPairID > 0). The payload
 ; carries the CSR for the selected keypair along with the derivation-
-; attribute OIDs that apply to it.
+; attribute bitfield map that applies to it.
 ; ----------------------------------------------------------------------
 
 signed-cwt / 18([
@@ -15,12 +15,15 @@ signed-cwt / 18([
   }>>,
   / unprotected / {},
 / payload / <<{
-      / iss / 1 : "RT Alias Key",
       / nonce / 10: h'AAAABBBBCCCCDDDDEEEEFFFF0000111122223333444455556666777788889999', 
       / csr / -70001 :  h'59025630820252308201d9a003020102021431a4e0',
-      / attrib / -70002: [
-      / tagged-oid-type / 111(h'6086480186F84D010F046301')
-      ]
+      ; Derivation attributes as an OID -> bitfield map. The single OCP
+      ; OID (1.3.6.1.4.1.42623.1.2) maps to the OCP bitfield. This CSR is
+      ; for the LDevID keypair (KeyPairID 2 in the discovery example):
+      ; UDS(bit 0) | FIELD_ENTROPY(bit 1) = 3
+      / attrib / -70002: {
+        111(h'2B0601040182CC7F0102') : 3
+      }
   }>>,
   / signature / h'FA45AAB345AB4988' 
 ])
@@ -29,7 +32,8 @@ signed-cwt / 18([
 ; Example: discovery response (returned when the Requester sent
 ; GET_ATTESTED_CSR with KeyPairID = 0). The payload omits the
 ; CSR/attrib claims and instead carries the KeyPair Inventory claim,
-; which enumerates every supported KeyPairID and its derivation OIDs.
+; which enumerates every supported KeyPairID and its derivation-
+; attribute bitfield map.
 ; ----------------------------------------------------------------------
 
 signed-cwt / 18([
@@ -42,19 +46,28 @@ signed-cwt / 18([
   }>>,
   / unprotected / {},
   / payload / <<{
-      / iss / 1 : "RT Alias Key",
       / nonce / 10 : h'AAAABBBBCCCCDDDDEEEEFFFF0000111122223333444455556666777788889999',
       / keypair-inventory / -70003 : [
-        ; KeyPairID 1: IDevID, derived from First Mutable Code
-        [ 1, [ 111(h'6086480186F84D010F040602') ] ],
-        ; KeyPairID 2: LDevID, derived from Owner Entropy Fuse +
-        ;                      First Mutable Code
-        [ 2, [
-            111(h'6086480186F84D010F040601'),
-            111(h'6086480186F84D010F040602')
-        ] ],
-        ; KeyPairID 3: Owner-provisioned alias key
-        [ 3, [ 111(h'6086480186F84D010F040604') ] ]
+        ; Each entry: [ KeyPairID, { OCP OID : bitfield } ].
+        ; The single OCP OID is 1.3.6.1.4.1.42623.1.2.
+        ; Bitfields are cumulative: each key's bitfield includes the
+        ; derivation components inherited from its ancestor keys.
+        ; KeyPairID 1: IDevID, derived from UDS.
+        ; UDS(bit 0) = 1
+        [ 1, {
+            111(h'2B0601040182CC7F0102') : 1
+        } ],
+        ; KeyPairID 2: LDevID, derived from IDevID + Field Entropy.
+        ; UDS(bit 0) | FIELD_ENTROPY(bit 1) = 3
+        [ 2, {
+            111(h'2B0601040182CC7F0102') : 3
+        } ],
+        ; KeyPairID 3: derived from Owner-provisioned alias key +  Field Entropy + UDS.
+        ; UDS(bit 0) | FIELD_ENTROPY(bit 1) |
+        ;   OWNER_PROVISIONED_NON_CONFIDENTIAL_FUSE(bit 2) = 7
+        [ 3, {
+            111(h'2B0601040182CC7F0102') : 7
+        } ]
       ]
   }>>,
   / signature / h'FA45AAB345AB4988'
