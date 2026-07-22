@@ -50,8 +50,8 @@ signed-cwt / 18([
       / keypair-inventory / -70003 : [
         ; Each entry: [ KeyPairID, { OCP OID : bitfield } ].
         ; The single OCP OID is 1.3.6.1.4.1.42623.1.2.
-        ; Bitfields are cumulative: each key's bitfield includes the
-        ; derivation components inherited from its ancestor keys.
+        ; In a typical DICE implementation, bitfields are cumulative: each key's
+        ; bitfield includes the derivation components inherited from its ancestor keys.
         ; KeyPairID 1: IDevID, derived from UDS.
         ; UDS(bit 0) = 1
         [ 1, {

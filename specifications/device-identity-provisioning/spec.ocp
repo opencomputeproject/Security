@@ -186,7 +186,7 @@ To discover the set of supported identity keypairs, the Requester sends a `GET_A
 - `Param1` (`KeyPairID`) SHALL be `0`, indicating a discovery request rather than a CSR request.
 - `Param2` (Request Attributes), `RequesterInfoLength`, `OpaqueDataLength`, `RequesterInfo`, and `OpaqueData` SHALL be `0` / empty. The Responder SHALL ignore any non-zero values in these fields when `KeyPairID` is `0`.
 - `SignerSlotIDParam` SHALL be interpreted identically to the CSR case. Bits [3:0] select the SPDM slot whose Attestation Key signs the CWT. The discovery response SHALL be attested so that the inventory is attestable.
-- `Nonce` SHALL be a fresh random value chosen by the Requester, and is used to bind the discovery response to this request.
+- `Nonce` SHOULD be a fresh random value chosen by the Requester, and is used to bind the discovery response to this request.
 
 ### Discovery response
 
@@ -223,7 +223,7 @@ Some devices may not support the generation of self-signed CSRs for certain keys
 
 This specification provides a definition for a vendor-defined SPDM command, utilizing VENDOR_DEFINED_REQUEST of SPDM 1.3 and later, which can be used to surface these attested CSRs.
 
-Note: the `GET_ATTESTED_CSR` request format described in this section (including the `VENDOR_DEFINED_REQUEST` framing and Tables [-@tbl:ecsr-req] / [-@tbl:ecsr-resp]) is provided as a reference only and is **non-normative**. This specification is normative on the contents and encoding of the response payload (the attested CSR EAT/CWT defined in this section), but does not mandate a particular transport or command format for the request. Implementations are free to surface the attested CSR via any suitable mechanism. Open-source implementations such as Caliptra [@{caliptra}] may define and carry their own implementation of the `GET_ATTESTED_CSR` command for interoperability convenience.
+Note: the `GET_ATTESTED_CSR` request format described in this section (including the `VENDOR_DEFINED_REQUEST` framing and Tables [-@tbl:acsr-req] / [-@tbl:acsr-resp]) is provided as a reference only and is **non-normative**. This specification is normative on the contents and encoding of the response payload (the attested CSR EAT/CWT defined in this section), but does not mandate a particular transport or command format for the request. Implementations are free to surface the attested CSR via any suitable mechanism. Open-source implementations such as Caliptra [@{caliptra}] may define and carry their own implementation of the `GET_ATTESTED_CSR` command for interoperability convenience.
 
 GET_ATTESTED_CSR request and ATTESTED_CSR response messages are transported as follows:
 
@@ -232,9 +232,9 @@ GET_ATTESTED_CSR request and ATTESTED_CSR response messages are transported as f
 - The StandardID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 4 (the value assigned in SPDM to identify IANA).
 - The VendorID field of VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE message must contain 42623 (the value assigned in IANA to identify Open Compute Project).
 - The first byte of the VendorDefinedReqPayload/VendorDefinedRespPayload is the Command Code, and must contain the value 01h to indicate GET_ATTESTED_CSR / ATTESTED_CSR.
-- The GET_ATTESTED_CSR request and ATTESTED_CSR response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:ecsr-req] and [-@tbl:ecsr-resp].
+- The GET_ATTESTED_CSR request and ATTESTED_CSR response forms the payload in the VendorDefinedReqPayload and VendorDefinedRespPayload respectively, defined in Tables [-@tbl:acsr-req] and [-@tbl:acsr-resp].
 
-Table: GET_ATTESTED_CSR VendorDefinedReqPayload {#tbl:ecsr-req}
+Table: GET_ATTESTED_CSR VendorDefinedReqPayload {#tbl:acsr-req}
 
 +---------------------+---------------------+---------------------+----------------------------------------------+
 | Byte offset         | Field               | Size (bytes)        | Description                                  |
@@ -302,7 +302,7 @@ The following fields present in this command are not present in GET_CSR:
 - **SignerSlotIDParam** - defines which Attestation Key signs the attested CSR.
 - **Nonce** - provides freshness.
 
-Table: ATTESTED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
+Table: ATTESTED_CSR VendorDefinedRespPayload {#tbl:acsr-resp}
 
 +--------+-------------------------+-------------------------+------------------------------------------+
 | Byte   | Field                   | Size (bytes)            | Description                              |
@@ -319,7 +319,7 @@ Table: ATTESTED_CSR VendorDefinedRespPayload {#tbl:ecsr-resp}
 | 6      | AttestedCSRLength       | 2                       | Shall be the length of the               |
 |        |                         |                         | AttestedCSRdata in bytes.                |
 +--------+-------------------------+-------------------------+------------------------------------------+
-| 8      | AttestedCSRdata   | AttestedCSRLength | Shall be the requested contents of the               |
+| 8      | AttestedCSRdata         | AttestedCSRLength       | Shall be the requested contents of the   |
 |        |                         |                         | attested CSR. This field shall be        |
 |        |                         |                         | CBOR-encoded.                            |
 +--------+-------------------------+-------------------------+------------------------------------------+
@@ -358,7 +358,7 @@ The OCP bitfield is a CBOR unsigned integer. A set bit indicates that the corres
 - **Bit 4 — FIRST_MUTABLE_CODE**: The first mutable code layer (FMC).
 - **Bit 5 — RUNTIME_FIRMWARE**: The runtime firmware layer.
 
-The bitfield is cumulative across the device's identity key hierarchy: a keypair's bitfield SHALL include every derivation component that contributed to it, including those inherited from its ancestor keys. A key's bitfield is therefore the union (bitwise OR) of the components introduced at its own derivation step and the bitfields of all of its ancestors. Because the property is cumulative, a descendant key's bitfield can never clear a bit that is set in an ancestor key's bitfield.
+The bitfield for a given key is a complete enumeration of all derivation components that contributed to that keypair. In typical DICE implementations, a given key's bitfield will be the union (bitwise OR) of the components introduced at its own derivation step and the bitfields of all of its ancestors. For such implementations, a descendant key's bitfield can never clear a bit that is set in an ancestor key's bitfield.
 
 For example, consider an identity hierarchy in which the IDevID key is derived from the UDS, and the LDevID key is derived from the IDevID key plus field entropy. The cumulative bitfields are then:
 
