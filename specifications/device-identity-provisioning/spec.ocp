@@ -54,6 +54,10 @@ The Contributors of this Specification would like to acknowledge the following:
 - Steven Bellock (NVIDIA)
 - Jeff Andersen (Google)
 - Brett Henning (Broadcom)
+- Shalini Sharma (Qualcomm)
+- Denis Pochuev (Qualcomm)
+- Parvathi Bhogaraju (Microsoft)
+- Xiaoyu Ruan (Intel)
 
 <!---
 Please describe how this Specification complies with the OCP tenets.
@@ -84,9 +88,9 @@ This specification is applicable to a wide range of devices that support SPDM.
 
 This specification does not impact sustainability.
 
-# Base specification
 
 -->
+# Base specification
 
 ## Terminology
 
@@ -338,6 +342,14 @@ The AttestedCSRdata shall adhere to the following requirements:
 
 [^private-claims]: RFC 8392 [@{ietf-cwt}] defines a private claim as one whose key value has an integer value < -65536.
 
+To summarize, the Requester should execute the following sequence for issuing and provisioning an identity certificate chain to the Responder device.
+
+1. Acquire all keypair IDs and their associated OIDs for derivation attributes from the Responder device by issuing `GET_ATTESTED_CSR` request with `KeyPairID` = 0.
+2. Examine the derivation attributes of the candidate keypair IDs and choose one that matches the Requester's use case.
+3. Issue `GET_ATTESTED_CSR` request with the chosen `KeyPairID`. Check the received CSR for validity, including verifying the self-signature if attestation was requested.
+4. Construct and sign an identity leaf certificate for the Responder based off the CSR. The leaf certificate is rooted to the Requester's trust anchor.
+5. Issue SPDM `SET_CERTIFICATE` request to provision the identity certificate chain to the Responder. The `SlotID` should point to a slot that is currently not provisioned.
+
 ### Defined OIDs {#sec:defined-oids}
 
 **OCP Security Branch**: `ocp-security OBJECT IDENTIFIER ::= {1 3 6 1 4 1 42623 1}`
@@ -373,21 +385,18 @@ The CDDL definition of the derivation-attribute map (`key-attributes-map`) is pr
 
 Subsequent versions of this specification may define additional bits in the OCP bitfield, or additional OIDs.
 
-## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
-
-This will be accomplished via the `SET_CERTIFICATE` SPDM command.
-
-TODO: fill in additional details.
-
 ## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
 
-This will be accomplished by selecting the correct `SlotIDParam` when invoking SPDM commands.
+For attestation, the Requester should first issue SPDM `GET_CERTIFICATE` request with the `SlotID` containing the Responder's identity certificate chain that roots to the Requester's desired trust anchor, then issue SPDM `GET_MEASUREMENTS` request with `SlotIDParam` pointing to this `SlotID`.
 
-TODO: fill in additional details.
+<!----
 
-## Confidential compute considerations
+# Confidential compute considerations
 
 TODO: fill in
+
+--->
+
 
 # Appendix
 
