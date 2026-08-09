@@ -331,7 +331,7 @@ The protocol diagram above shows a variation of the interaction between a newly 
 
 - *Cryptographic algorithms and deterministic random bit generators **MUST** be validated under the [NIST Cryptographic Algorithm Validation Program (CAVP)](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program)*
 
-- *Cryptographic modules, if used, **SHOULD** be validated at overall level 2 or higher under [FIPS 140-2 SECURITY REQUIREMENTS FOR CRYPTOGRAPHIC MODULES](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf) or [Security Requirements for Cryptographic Modules, FIPS 140-3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-3.pdf)*
+- *Cryptographic modules, if used, **SHOULD** be validated at overall level 1 or higher under [FIPS 140-3](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-3.pdf) and **SHOULD** achieve level 2 or higher in the areas of "Software/Firmware Security" and "Physical Security" (see ISO 19790:2012 Table 1)*
 
 - *Entropy, random bits, symmetric keys, and private asymmetric keys **MUST** be generated within the attester device itself, in a hardware security module, or locally, in a device with the following properties:*
 
