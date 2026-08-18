@@ -373,6 +373,18 @@ The CDDL definition of the derivation-attribute map (`key-attributes-map`) is pr
 
 Subsequent versions of this specification may define additional bits in the OCP bitfield, or additional OIDs.
 
+## SPDM certificate slot allocation {#sec:spdm-certificate-slot-allocation}
+
+To provide a consistent mapping across implementations, the following SPDM certificate slot allocation applies:
+
+| Identity | SPDM certificate slot | Requirement |
+|----------|-----------------------|-------------|
+| Vendor | Slot 0 | As specified by SPDM, slot 0 is the default certificate chain slot and is used for the Vendor identity. |
+| Owner | Slot 2 | The device owner identity certificate chain SHALL be provisioned in slot 2. |
+| Tenant | Implementation-defined | A tenant identity certificate chain MAY be provisioned in any otherwise available slot. The selected slot SHALL be discoverable by the requester. |
+
+Slot 1 is not allocated by this specification.
+
 ## Issuing and provisioning an identity certificate {#sec:issuing-and-provisioning-identity-cert}
 
 This will be accomplished via the `SET_CERTIFICATE` SPDM command.
@@ -381,7 +393,7 @@ TODO: fill in additional details.
 
 ## Requesting an identity certificate during attestation {#sec:requesting-identity-cert-during-attestation}
 
-This will be accomplished by selecting the correct `SlotIDParam` when invoking SPDM commands.
+This will be accomplished by selecting the `SlotIDParam` corresponding to the identity certificate described in @sec:spdm-certificate-slot-allocation when invoking SPDM commands.
 
 TODO: fill in additional details.
 
