@@ -9,9 +9,9 @@ signed-cwt / 18([
   / protected / <<{
     / alg-id / 1 : 7,
     / content-type / 3 : "application/eat+cbor",
-    ; SHA-384 hash of the Attestation Key's certificate chain (same as
-    ; the SPDM DIGEST response) for the slot that produced this signature.
-    / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
+    ; Subject Key Identifier from the certificate corresponding to the
+    ; Attestation Key that produced this signature.
+    / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233'
   }>>,
   / unprotected / {},
 / payload / <<{
@@ -40,9 +40,9 @@ signed-cwt / 18([
   / protected / <<{
     / alg-id / 1 : 7,
     / content-type / 3 : "application/eat+cbor",
-    ; SHA-384 hash of the Attestation Key's certificate chain (same as
-    ; the SPDM DIGEST response) for the slot that produced this signature.
-    / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
+    ; Subject Key Identifier from the certificate corresponding to the
+    ; Attestation Key that produced this signature.
+    / kid / 4 : h'1a2b3c4d5e6f70819203a4b5c6d7e8f900112233'
   }>>,
   / unprotected / {},
   / payload / <<{

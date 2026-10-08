@@ -338,7 +338,7 @@ The AttestedCSRdata shall adhere to the following requirements:
 - The CSR included in the EAT SHALL be DER-encoded and may be either self-signed or non-self-signed depending on device capabilities. For non-self-signed CSRs, the signature field SHALL contain all zeroes and be the same size as would be required for a valid signature using the subject key's algorithm.
 - The nonce claim SHALL match the nonce value provided in the GET_ATTESTED_CSR request to ensure freshness.
 - The CWT SHALL be signed by an Attestation Key endorsed by the certificate chain corresponding to the specified SlotID. The Requester obtains the Attestation Key's certificate chain out-of-band via the SPDM `GET_CERTIFICATE` command for that slot.
-- The `kid` parameter (COSE header label `4`) in the CWT's protected header SHALL be the SHA-384 digest of the Attestation Key's certificate chain, computed in the same manner as the SPDM DIGEST response for the selected slot. The Requester uses this digest to confirm that the signing key matches the Attestation Key whose certificate chain it retrieved from the selected SPDM slot.
+- The `kid` parameter (COSE header label `4`) in the CWT's protected header SHALL be a 20-byte byte string equal to the `keyIdentifier` value in the Subject Key Identifier extension, as specified in RFC 5280 [@{rfc5280}], of the X.509 certificate corresponding to the Attestation Key that signs the CWT. The Requester may match the `kid` against the Subject Key Identifier extension of a certificate in the certificate chain retrieved from the selected SPDM slot and use that certificate's subject public key to verify the CWT signature.
 
 [^private-claims]: RFC 8392 [@{ietf-cwt}] defines a private claim as one whose key value has an integer value < -65536.
 

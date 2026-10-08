@@ -45,3 +45,10 @@ references:
       year: 2000
       month: 11
     url: "https://datatracker.ietf.org/doc/html/rfc2986"
+  - id: rfc5280
+    title: "Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile"
+    publisher: "IETF"
+    issued:
+      year: 2008
+      month: 5
+    url: "https://www.rfc-editor.org/rfc/rfc5280.html"
