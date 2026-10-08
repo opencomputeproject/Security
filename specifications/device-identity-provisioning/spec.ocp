@@ -359,7 +359,7 @@ To summarize, the Requester should execute the following sequence for issuing an
 A keypair's derivation attributes are expressed as a CBOR map from an OID to a bitfield. This keeps the encoding compact while preserving a mandatory, interoperable baseline and allowing vendor-specific extension:
 
 - The OCP derivation-attributes OID (`ocp-security-dip-kda`) SHALL be present and maps to the *OCP derivation-component bitfield* defined below. This single OID and bitfield provide a common, high-level set of derivation components that all PKI owners can interpret.
-- A device MAY include additional vendor-defined OIDs, each mapping to a vendor-specific bitfield, to describe derivation components not covered by the OCP bitfield. PKI owners that do not recognize a vendor OID SHALL ignore its bitfield.
+- A device MAY include additional vendor-defined OIDs, each mapping to a vendor-specific bitfield, to describe derivation components not covered by the OCP bitfield. PKI owners that do not recognize a vendor OID may ignore its bitfield.
 
 The OCP bitfield is a CBOR unsigned integer. A set bit indicates that the corresponding component contributed to the derivation of the identity key:
 
