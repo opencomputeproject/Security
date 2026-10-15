@@ -539,18 +539,6 @@ The CDI derivation scheme “ocp.derive.kdf-cdi-384” is defined as follows:
 *   Outputs
     *   48-byte key
 
-### ocp.derive.kdf-cdi-512
-
-The CDI derivation scheme “ocp.derive.kdf-cdi-512” is defined as follows:
-
-*   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
-*   Inputs
-    *   CDI
-    *   `MEASUREMENT_DATA`
-    *   ASCII Bytes "DPE"
-*   Outputs
-    *   64-byte key
-
 ## CDI Export
 
 ### ocp.export-cdi.raw-256
@@ -562,12 +550,6 @@ To derive the exported keypair, use asymmetric-derivation for the relevant profi
 ### ocp.export-cdi.raw-384
 
 The CDI export scheme "ocp.export-cdi.raw" is a raw 384-bit secret
-
-To generate exported keypair, use asymmetric-derivation for the relevant profile.
-
-### ocp.export-cdi.raw-512
-
-The CDI export scheme "ocp.export-cdi.raw" is a raw 512-bit secret
 
 To generate exported keypair, use asymmetric-derivation for the relevant profile.
 
@@ -613,13 +595,19 @@ follows:
 
 *   The asymmetric key type is ML-DSA-87
 *   Signature scheme is ML-DSA
-*   This derivation scheme SHALL use a cryptographically secure KDF or DRBG.
+*   This derivation scheme SHALL use the following sequence.
+*   Use a cryptographically secure KDF or DRBG to derive 32-byte seed 𝜉 (xi).
 *   Inputs
     *   CDI
     *   `LABEL`
     *   ASCII Bytes "MLDSA"
 *   Outputs
-    *   64-byte key
+    *   32-byte xi
+*   Use ML-DSA.KeyGen_internal (Algorithm 6) to derive the private key [@{fips204}].
+*   Inputs
+    *   32-byte xi
+*   Outputs
+    *  4,896-byte key
 
 ### ocp.key-format.p384.raw
 
@@ -892,7 +880,7 @@ The format “ocp.certificate.irot-eca.mldsa87” is defined as follows:
 
 *   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
-    SHA2-512 OID.
+    SHA2-384 OID.
 *   For the SubjectPublicKeyInfo field, DPE SHALL use the ML-DSA-87 OID.
 *   For the Signature field, DPE SHALL use the ML-DSA-87 OID.
 
@@ -926,7 +914,7 @@ The format “ocp.certificate.irot-eca.mldsa87” is defined as follows:
 
 *   SHALL follow all "Requirements for ECA Certificates" in @sec:eca-cert-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
-    SHA2-512 OID.
+    SHA2-384 OID.
 *   For the SubjectPublicKeyInfo field, DPE SHALL use the ML-DSA-87 OID.
 *   For the Signature field, DPE SHALL use the ML-DSA-87 OID.
 
@@ -960,7 +948,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 
 *   SHALL follow all "Requirements for CSRs" in @sec:csr-requirements
 *   For FWID hashAlg fields provided by DeriveContext, DPE SHALL use the
-    SHA2-512 OID.
+    SHA2-384 OID.
 *   For the SubjectPublicKeyInfo field, DPE SHALL use the ML-DSA-87 OID.
 *   For the Signature of both the CMS message and the CertificationRequest, DPE SHALL
     use the ML-DSA-87 OID.
@@ -1326,7 +1314,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | ========================================= Derivation =========================================== |
 +-------------------------------+------------------------------------------------------------------+
-| dice-derivation               | ocp.derive.kdf-cdi-512                                           |
+| dice-derivation               | ocp.derive.kdf-cdi-384                                           |
 +-------------------------------+------------------------------------------------------------------+
 | asymmetric-derivation         | ocp.derive.kdf-asymmetric-mldsa87                                |
 +-------------------------------+------------------------------------------------------------------+
@@ -1346,7 +1334,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | =========================================== Export ============================================= |
 +-------------------------------+------------------------------------------------------------------+
-| export-cdi-format             | ocp.export-cdi.raw-512                                           |
+| export-cdi-format             | ocp.export-cdi.raw-384                                           |
 +-------------------------------+------------------------------------------------------------------+
 
 ## ABI Structure Definitions {#sec:abi-structure-definitions}
@@ -1475,10 +1463,10 @@ Table: Profile-dependant ABI constants for `DPE_PROFILE_IROT_MLDSA87_SHA384`
 
 **Name**     | **Description**       | **Value**
 ------------ | --------------------- | --------
-`H`          | Hash Size             | 64
+`H`          | Hash Size             | 48
 `P`          | Public Key Size       | 2592
 `S`          | Signature Size        | 4697
-`C`          | Certificate Size      | TODO
+`C`          | Certificate Size      | 17408
 
 ### Types
 
