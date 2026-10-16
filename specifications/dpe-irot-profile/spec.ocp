@@ -1,7 +1,7 @@
 ---
 title: "Server iRoT Profile for DPE"
 type: SPECIFICATION
-version: 0.13.0
+version: 0.14.0
 authors: [(See Acknowledgements section)]
 bibliography: bibliography.yaml
 ...
@@ -385,6 +385,23 @@ specification which are omitted by this profile:
     with status `DPE_STATUS_INVALID_ARGUMENT`.
 *   If `CONTEXT_HANDLE` is the default context, the returned
     `NEW_CONTEXT_HANDLE` SHALL be the same as `CONTEXT_HANDLE`.
+*   `IS_RAW`
+    *   Only supported for `DPE_PROFILE_IROT_MLDSA87_SHA384`.
+    *   If set, the command uses the raw `SIGN_INPUT_ARGS` layout where `RAW_DATA[..SIZE]`
+        supplies the raw ML-DSA input rather than a pre-computed external `mu`.
+    *   If `SIZE` is greater than `SIGN_RAW_MAX_SIZE` (1024), this command SHALL fail with
+        `DPE_STATUS_INVALID_ARGUMENT`.
+    *   If `HAS_CONTEXT` is not set, `RAW_DATA[..SIZE]` is the ML-DSA message and the
+        ML-DSA signing context is empty.
+*   `HAS_CONTEXT`
+    *   Interpreted only when `IS_RAW` is set.
+    *   Supplies a FIPS 204 signing context with a raw ML-DSA message.
+    *   The first `SIZE` bytes of `RAW_DATA` SHALL be encoded as
+        `context_len: u8 || context[context_len] || message[SIZE - 1 - context_len]`, where
+        `RAW_DATA[0]` is `context_len`, `RAW_DATA[1..1 + context_len]` is the context, and
+        `RAW_DATA[1 + context_len..SIZE]` is the message.
+    *   If `SIZE == 0` or `1 + context_len > SIZE`, this command SHALL fail with
+        `DPE_STATUS_INVALID_ARGUMENT`.
 
 ### RotateContextHandle
 
@@ -657,6 +674,17 @@ The mu parameter as described in FIPS 204.
 
 *   tr = SHAKE256(public_key, 64)
 *   mu = SHAKE256(tr || message, 64)
+
+### ocp.tbs-format.mldsa87-raw
+
+The format “ocp.tbs-format.mldsa87-raw” is defined as a raw ML-DSA input buffer of up to
+`SIGN_RAW_MAX_SIZE` (1024) bytes, selected when `IS_RAW` is set in `SIGN_INPUT_ARGS`:
+
+*   When `HAS_CONTEXT` is not set: `RAW_DATA[..SIZE]` is the raw message to be signed with an
+    empty FIPS 204 context (`ctx = ""`).
+*   When `HAS_CONTEXT` is set: `RAW_DATA[..SIZE]` is encoded as
+    `context_len (1 byte) || context (context_len bytes) || message (SIZE - 1 - context_len bytes)`,
+    which is signed according to FIPS 204 Algorithm 2 (`M' = 0x00 || context_len || context || message`).
 
 ### ocp.signature-format.p256.raw
 
@@ -1338,7 +1366,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | ========================================= Signatures =========================================== |
 +-------------------------------+------------------------------------------------------------------+
-| to-be-signed-format           | ocp.format.mldsa87-external-mu.                                  |
+| to-be-signed-format           | ocp.tbs-format.mldsa87-external-mu, ocp.tbs-format.mldsa87-raw   |
 +-------------------------------+------------------------------------------------------------------+
 | public-key-format             | ocp.key-format.mldsa87.raw                                       |
 +-------------------------------+------------------------------------------------------------------+
@@ -1431,7 +1459,8 @@ Table: Numeric Constants
 -------------------------------- | ----------------------------
 `MAX_CONTEXTS`                   | Implementation-defined. SHALL be greater than or equal to 8.
 `CURRENT_PROFILE_MAJOR_VERSION`  | 0
-`CURRENT_PROFILE_MINOR_VERSION`  | 13
+`CURRENT_PROFILE_MINOR_VERSION`  | 14
+`SIGN_RAW_MAX_SIZE`              | 1024
 
 The following constants are used to compute field sizes:
 
@@ -1643,7 +1672,7 @@ Table: `CERTIFY_KEY_OUTPUT_ARGS` struct
 
 #### Sign ABI
 
-Table: `SIGN_INPUT_ARGS` struct
+Table: `SIGN_INPUT_ARGS` struct if `IS_RAW` is **not** set
 
 | **Byte Offset** | **Type**      | **Bits** | **Name**             | **Description**
 | -------         | ------------- | -------  | -------------------- | -------------------------------------------------------
@@ -1652,8 +1681,25 @@ Table: `SIGN_INPUT_ARGS` struct
 | 0x08            | `U32`         | 31:0     | `PROFILE`            | One of `DPE_PROFILE_*`.
 | 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`     | A numeric handle referring to a DPE context.
 | 0x1C            | `HASH`        |          | `LABEL`              | Digest measurement label used in key derivation.
-| 0x1C + H        | `BITFIELD`    | 31:0     | `RESERVED`           | Reserved
-| 0x20 + H        | `HASH`        |          | `TO_BE_SIGNED`       | Hash to be signed.
+| 0x1C + H        | `BITFIELD`    | 31:2     | `RESERVED`           | Reserved
+|                 |               | 1        | `HAS_CONTEXT`        | Ignored when `IS_RAW` is not set.
+|                 |               | 0        | `IS_RAW`             | Must be 0 for this layout.
+| 0x20 + H        | `HASH`        |          | `TO_BE_SIGNED`       | Hash (or external `mu` for ML-DSA-87) to be signed.
+
+Table: `SIGN_INPUT_ARGS` struct if `IS_RAW` is set (`DPE_PROFILE_IROT_MLDSA87_SHA384` only)
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**             | **Description**
+| -------         | ------------- | -------  | -------------------- | -------------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`              | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`         | `DPE_COMMAND_SIGN`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`            | `DPE_PROFILE_IROT_MLDSA87_SHA384`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`     | A numeric handle referring to a DPE context.
+| 0x1C            | `HASH`        |          | `LABEL`              | Digest measurement label used in key derivation.
+| 0x1C + H        | `BITFIELD`    | 31:2     | `RESERVED`           | Reserved
+|                 |               | 1        | `HAS_CONTEXT`        | If set, `RAW_DATA[..SIZE]` is encoded as `context_len: u8 || context[context_len] || message[SIZE - 1 - context_len]`. If not set, `RAW_DATA[..SIZE]` is the message and the ML-DSA context is empty.
+|                 |               | 0        | `IS_RAW`             | Must be 1 for this layout.
+| 0x20 + H        | `U32`         | 31:0     | `SIZE`               | Number of valid bytes in `RAW_DATA`. Must be less than or equal to `SIGN_RAW_MAX_SIZE` (1024).
+| 0x24 + H        | `BYTES`       | 8191:0   | `RAW_DATA`           | Fixed-size 1024-byte buffer containing raw data to be signed.
 
 Table: `SIGN_OUTPUT_ARGS` struct
 
