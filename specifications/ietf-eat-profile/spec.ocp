@@ -234,6 +234,7 @@ encoding order and appear after all standard claims. Each private claim **SHOULD
 be limited to 100 bytes in size to ensure efficient transmission and processing.
 
 The following private claim keys are reserved for implementor use:
+
 - **Private claim 1** (claim key: -70002, encoded as 0x3a00011171, optional)
 - **Private claim 2** (claim key: -70003, encoded as 0x3a00011172, optional)
 - **Private claim 3** (claim key: -70004, encoded as 0x3a00011173, optional)
@@ -264,16 +265,22 @@ authenticated. An **Attestation Key**, which is managed by the Attester’s
 data structure that ensures the integrity of the token.
 
 The unprotected section of the COSE_Sign1 data structure is not secured by the
-CWT signature and **MUST** include an **x5-chain** field [@{ietf-rfc9360}].
-This x5-chain field **SHALL** be either a single byte string (bstr) or an array
-of byte strings and **MUST** contain at least one ASN.1 DER-encoded
-certificate, specifically the Attestation Key (AK) Certificate. The AK
-Certificate may optionally include a TCBInfo extension, which reports the
-Attester's **TCB (Trusted Computing Base)** Claims.
+CWT signature. Attesters **SHOULD** include an **x5-chain** field
+[@{ietf-rfc9360}] for key identification. This x5-chain field **SHALL** be
+either a single byte string (bstr) or an array of byte strings and **MUST**
+contain at least one ASN.1 DER-encoded certificate, specifically the
+Attestation Key (AK) Certificate. The AK Certificate may optionally include a
+TCBInfo extension, which reports the Attester's **TCB (Trusted Computing
+Base)** Claims.
 
 Additionally, an Attester has the option to include a complete certificate path
 within the x5-chain, extending from a recognized Trusted Anchor (such as a
 Vendor Root CA) or up to the Initial Device Identity (IDEVID).
+
+When attester space constraints prevent inclusion of the full certificate chain,
+a **kid** field (label 4, [@{ietf-rfc9052}]) **MAY** be used in the unprotected
+header in lieu of **x5chain**. See [Key Identification](#key-identification)
+for requirements on the **kid** value.
 
 ## COSE Algorithm Requirements
 
@@ -287,6 +294,7 @@ Implementations of this profile **SHALL** support the following COSE
 algorithm for the COSE_Sign1 signature:
 
 **ECDSA with P-384 and SHA-384** (COSE Algorithm ID: -51)
+
 * **Algorithm**: ES384 as defined in [@{ietf-rfc9052}]
 * **Curve**: NIST P-384
 * **Hash**: SHA-384
@@ -311,16 +319,37 @@ The COSE_Sign1 protected header **MUST** include:
 * **alg** (label 1): The COSE algorithm identifier (-35 for ES384)
 * Additional algorithm-specific parameters as required by the algorithm
 
-The COSE_Sign1 unprotected header **MUST** include:
+The COSE_Sign1 unprotected header **MUST** include exactly one of the following
+for key identification:
 
 * **x5chain** (label 33): Certificate chain as specified in the main
-  specification
+  specification. This is the **RECOMMENDED** method.
+* **kid** (label 4): Key identifier as described in
+  [Key Identification](#key-identification). This **MAY** be used as an
+  alternative to **x5chain** when attester space constraints prevent inclusion
+  of the full certificate chain.
+
+Both **x5chain** and **kid** **SHALL NOT** appear simultaneously in the same
+COSE_Sign1 unprotected header.
 
 ### Key Identification
 
-The leaf certificate in the certificate chain of the COSE_Sign1 header identifies
-the public key associated with the signing keypair.  No other methods to identify
-the keypair must be included in the token (e.g. kid).
+The leaf certificate in the **x5chain** of the COSE_Sign1 unprotected header is
+the **RECOMMENDED** method for identifying the public key associated with the
+signing keypair.
+
+When attester space constraints prevent the inclusion of **x5chain**, the
+**kid** header parameter (label 4) **MAY** be used instead, subject to the
+following requirements:
+
+* The **kid** value **MUST** contain the SHA-384 digest of the DER-encoded
+  SubjectPublicKeyInfo (SPKI) structure of the attestation public key, encoded
+  as a CBOR byte string (bstr).
+* When **kid** is used, the verifier **MUST** obtain the attestation certificate
+  chain through an out-of-band mechanism and **MUST** verify that the public key
+  in the obtained certificate matches the digest carried in the **kid**.
+* **x5chain** and **kid** **SHALL NOT** appear simultaneously in the same
+  COSE_Sign1 unprotected header.
 
 ### Future Algorithm Support
 
