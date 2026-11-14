@@ -372,6 +372,8 @@ The OCP bitfield is a CBOR unsigned integer. A set bit indicates that the corres
 
 The bitfield for a given key is a complete enumeration of all derivation components that contributed to that keypair. In typical DICE implementations, a given key's bitfield will be the union (bitwise OR) of the components introduced at its own derivation step and the bitfields of all of its ancestors. For such implementations, a descendant key's bitfield can never clear a bit that is set in an ancestor key's bitfield.
 
+It is possible that some contributing components, such as **Bit 1 — FIELD_ENTROPY**, are not provisioned or have been zeroized. In this case, although the component is participating in the identity key derivation, it is not contributing entropy and hence does provide actual security enhancement. An implementation should define an attestation mechanism for the Requester to acquire states of this type of contributing components; the Requester should use the defined attestation mechanism to evaluate the components that contribute entropy to the derivation of the identity key. The attestation mechanism is out of scope of this specification.
+
 For example, consider an identity hierarchy in which the IDevID key is derived from the UDS, and the LDevID key is derived from the IDevID key plus field entropy. The cumulative bitfields are then:
 
 | Key    | Derivation components introduced at this step | Bits set (inclusive of ancestors) | Bitfield value |
