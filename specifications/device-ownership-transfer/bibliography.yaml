@@ -1,0 +1,6 @@
+references:
+  - id: "caliptra-dot"
+    title: "Caliptra Device Ownership Transfer"
+    publisher: "CHIPS Alliance"
+    url: "https://chipsalliance.github.io/caliptra-mcu-sw/dot.html"
+  

@@ -1,0 +1,8 @@
+references:
+  - id: "ocp-command-registry"
+    title: "OCP Command Registry"
+    publisher: "Open Compute Project"
+    issued:
+      year: 2025
+      month: 9
+    url: "https://github.com/opencomputeproject/ocp-registry/blob/main/command-registry.md"

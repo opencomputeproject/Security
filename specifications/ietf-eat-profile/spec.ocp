@@ -1,0 +1,436 @@
+---
+title: "OCP Profile for IETF Entity Attestation Token"
+version: "1.0"
+type: BASE
+project: Security
+authors: [(See Acknowledgements section)]
+bibliography: bibliography.yaml
+...
+---
+
+\currenttemplateversion
+
+---
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+---
+
+<!-- Will bring this in when its an actual contribution
+
+# License
+
+## Open Web Foundation (OWF) CLA
+
+-->
+
+# Acknowledgements
+
+The Contributors of this Specification would like to acknowledge the following:
+
+- Fabrizio Damato (AMD)
+- Giridhar Mandyam (AMD)
+- Piotr Kwidzinski (AMD)
+- Jason Young (Google)
+- Jeff Andersen (Google)
+- Ned Smith (Intel)
+- Parvathi Bhogaraju (Microsoft)
+- Roksana Golizadeh Mojarad (Microsoft)
+- Raghu Krishnamurthy (NVIDIA)
+- Steven Bellock (NVIDIA)
+
+# Compliance with OCP Tenets
+
+<!---
+Please describe how this Specification complies with the OCP tenets.
+A full explanation of the OCP core tenets can be seen [here](https://146a55aca6f00848c565-a7635525d40ac1c70300198708936b4e.ssl.cf1.rackcdn.com/images/bf648bb75091907147e76846cad590f402660d2e.pdf).
+-->
+
+## Openness
+
+This specification is open.
+
+## Efficiency
+
+This specification is efficient.
+
+## Impact
+
+This specification is impactful.
+
+## Scale
+
+This specification is scalable.
+
+## Sustainability
+
+This specification is sustainable.
+
+# Overview
+
+This profile builds on the **Concise Evidence (CoEv) Binding for SPDM**
+[@{tcg-dice-concise-evidence-binding-for-spdm}] by defining a dedicated
+profile. This profile utilizes a **CBOR Web Token (CWT)** that includes claims
+as defined by **Entity Attestation Token (EAT)** to ensure the integrity of
+CoEv through the implementation of a **COSE_Sign1** data structure.
+
+The document details the binding between the **Security Protocol and Data Model
+(SPDM)** and the CWT Data Structure profile tailored for datacenter devices.
+Importantly, while the profile is designed to integrate seamlessly with SPDM as
+the message exchange protocol, its usage is not restricted solely to SPDM and
+can be applied with other protocols as well.
+
+The primary objective of this specification is to establish a standardized
+method for representing evidence that is scalable across a diverse range of
+attesters, including **Systems on Chips (SoCs)**, hard drives, and
+accelerators. By providing a unified approach, the specification aims to
+simplify and streamline the attestation and verification process within complex
+and heterogeneous environments.
+
+## Profile Identifier
+
+**OID: 1.3.6.1.4.1.42623.1.3**
+
+This Object Identifier (OID) uniquely identifies this OCP Profile for IETF Entity Attestation Token. The OID **MUST** be included in the **eat_profile** claim (claim key 265, encoded as `0x190109`) within every CWT that conforms to this specification.
+
+
+## Terms and Definitions
+
+- **CWT**: CBOR Web Token
+- **SPDM**: Secure Protocol and Data Model
+- **DICE**: Device Identifier Composition Engine
+- **AK**: Attestation Key
+- **EAT**: Entity Attestation Token
+- **CDDL**: Concise Data Definition Language
+- **CBOR**: Concise Binary Object Representation
+
+## Introduction
+
+This specification details how an attester should represent its evidence within
+a CBOR Web Token profile. Specifically, the CWT serves as the CBOR encoding of an
+IETF Entity Attestation Token, in accordance with the CDDL semantics. The specification
+delineates the essential set of claims required within the CWT to form a coherent and
+interoperable profile.
+
+Moreover, the specification elaborates on the method for transmitting the CWT
+via SPDM, as outlined in the "Concise Evidence Binding for SPDM" [@{tcg-dice-concise-evidence-binding-for-spdm}].
+While the profile is designed to work effectively with SPDM, it is not limited to this
+protocol and can be employed with alternative transmission methods as needed.
+
+## Motivation
+
+Datacenters are becoming increasingly complex due to the growing number of
+integrated devices. For Cloud Service Providers (CSPs) and their tenants,
+evaluating the security posture of these intricate configurations is vital.
+This specification aims to simplify the attestation process by providing a
+common profile for representing evidence across various vendors’ devices,
+thereby reducing the diversity of environments that Verifiers need to
+accommodate.
+
+## Scope
+
+This profile defines the evidence format for an Attester Endpoint Application.
+With respect to RFC 9711, it is a full profile, as it specifies the mandatory
+cryptographic algorithm that must be used for signing the statement. It is application
+layer agnostic, supporting implementations such as an SPDM Responder or any
+other custom solution. The profile focuses solely on the evidence related to
+the claims gathered by the Attester Application. Consequently, it does not
+differentiate whether the Attestation Key is part of a DICE hierarchy that
+attests to the measurements of the Attester Application, or if the Attester
+Application measurements are implicitly trusted or verified in a separate
+manner. The profile's scope is solely intended to guide both attesters and
+verifiers on the recommended claims and appraisal policy methodologies. It is
+important to note that this profile does not extend any CDDL, as it uses CDDL
+already defined by the IETF CoRIM Draft and DICE Concise Evidence.
+
+The evidence is expressed as a CBOR Web Token. This profile describes the
+list of claims that must be included in the CWT and how they should be used.
+Additionally, the profile outlines how the COSE_Sign1 fields must be populated
+and asserts that the certificate path of the Attestation Key must be included
+in the unsigned section of the COSE_Sign1 header.
+
+![CWT over SPDM](./diagrams/cwt_spdm.drawio.svg){#fig:cwt_spdm}
+
+## CWT Claim Set
+
+The CWT claim set is intentionally minimalistic, serving primarily as an
+integrity-protected wrapper for concise evidence. The claims are divided into
+mandatory and optional categories to balance attestation requirements with
+implementation flexibility.
+
+**Claim Ordering**: To ensure consistent CBOR serialization and maximize
+interoperability across different implementations, **all claims MUST**
+be reported following the CBOR deterministic encoding requirements as specified
+in Section 4.2 of [@{ietf-rfc8949}].
+Specifically, the keys in the CWT map **MUST** be sorted in the bytewise
+lexicographic order of their deterministic encodings. This ordering convention
+applies to mandatory claims, optional claims, and private claims when present.
+
+**Mandatory Claims (1-4)**: These claims are **REQUIRED** for all attestations
+and provide the minimum necessary information for verifier appraisal policies.  The verifier
+can expect at a minimum these claims in a compliant attestation:
+
+1. **Nonce**  (claim key: 10, encoded as 0x0a)
+    * This claim is used by the attester to ensure the freshness of the response. Refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+2. **dbgstat** (claim key: 263, encoded as 0x190107)
+    * This claim is used by the attester to determine whether the attester is in Debug mode. Refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+3. **EAT Profile** (claim key: 265, encoded as 0x190109)
+    * This claim is used by the attester to identify the profile. It **MUST** be present and **SHALL** contain the OID `1.3.6.1.4.1.42623.1.3` assigned to the OCP Profile.
+
+4. **Measurements** (claim key: 273, encoded as 0x190111)
+    * This claim is used by the attester to present the target environment claims that verifier will consume for the appraisal policy. It **MUST** be present and **SHALL** encapsulate a "concise-evidence" as a serialized CBOR byte string using the appropriate IANA media type.
+
+**Optional Claims (5-15)**: These claims are **OPTIONAL** and provide additional
+platform information that may be useful for audit purposes but are not strictly
+necessary for appraisal policies. These claims are typically non-verifiable and
+serve informational purposes:
+
+5. **issuer**  (claim key: 1, encoded as 0x01)
+    * This claim is used by the attester to bind the EAT to the certificate chain that issued it. It **SHALL** match the SUBJECT Common Name of the Attestation Key Certificate.
+
+6. **cti**  (claim key: 7, encoded as 0x07)
+    * This claim is used by the attester to establish uniqueness of the token. Refer to [@{ietf-rfc8392}] for acceptable values for this claim
+
+7. **ueid** (claim key: 256, encoded as 0x190100)
+    * This claim is used by the attester to identify the attester. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+8. **sueid** (claim key: 257, encoded as 0x190101)
+    * This claim is used by the attester to identify the attester at the different lifecycle stages. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+9. **oemid** (claim key: 258, encoded as 0x190102)
+    * This claim is used by the attester to identify the Original Equipment Manufacturer (OEM) of the hardware. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+10. **hwmodel** (claim key: 259, encoded as 0x190103)
+    * This claim is used by the attester to differentiate hardware models, products, and variants manufactured by a particular OEM. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+11. **uptime** (claim key: 261, encoded as 0x190105)
+    * This claim is used by the attester to indicate the number of seconds elapsed since boot. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+12. **bootcount** (claim key: 267, encoded as 0x19010b)
+    * This claim is used by the attester to indicate the number of times the attester has booted. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+13. **bootseed** (claim key: 268, encoded as 0x19010c)
+    * This claim is used by the attester to differentiate boot sessions. If present, refer to [@{ietf-rfc9711}] for acceptable values for this claim
+
+14. **dloas** (claim key: 269, encoded as 0x19010d)
+    * This claim is used by the attester to point the verifier to the endorsement repository (one example, OCP SAFE). If present, refer to [@{ietf-rfc9711}] for the claim structure.
+
+15. **rim-locators** (claim key: -70001, encoded as 0x3a00011170)
+    * This claim is used by the attester to point the verifier to the rim repository. If present, **SHALL** be an array of corim-locator-map (refer to [@{ietf-rats-corim}]).
+
+
+**Private Claims**: In addition to the standard claims defined above, this
+profile allows for up to 5 implementor-specific private claims. These claims
+are **OPTIONAL** and **MAY** be included to address vendor-specific requirements
+or unique platform characteristics. Private claims **MUST** use claim keys less
+than -65536 per RFC 8392. When present, private claims follow the deterministic
+encoding order and appear after all standard claims. Each private claim **SHOULD**
+be limited to 100 bytes in size to ensure efficient transmission and processing.
+
+The following private claim keys are reserved for implementor use:
+- **Private claim 1** (claim key: -70002, encoded as 0x3a00011171, optional)
+- **Private claim 2** (claim key: -70003, encoded as 0x3a00011172, optional)
+- **Private claim 3** (claim key: -70004, encoded as 0x3a00011173, optional)
+- **Private claim 4** (claim key: -70005, encoded as 0x3a00011174, optional)
+- **Private claim 5** (claim key: -70006, encoded as 0x3a00011175, optional)
+
+**Size Limitations**: To maintain efficiency and interoperability, the following
+size constraints apply:
+
+* The complete CWT token (including the certificate chain in the unprotected header) **SHALL NOT** exceed 64kB. This limitation aligns with the SPDM Measurement block size limit, as most OCP Attesters are expected to rely on SPDM for EAT conveyance.
+* Each vendor-specific private claim **SHOULD NOT** exceed 100 bytes
+* Each URI value in any claim **SHOULD NOT** exceed 100 bytes
+* Each text string value in any claim **SHOULD NOT** exceed 100 bytes
+
+**Appraisal Policy Considerations**: For verifier appraisal policies, the
+mandatory claims (1-4) **SHALL** be sufficient to establish the security
+posture of the attesting platform. Optional claims provide supplementary
+information that enhances visibility into platform state and configuration but
+are not critical for basic attestation verification. Verifiers **MAY** choose
+to incorporate optional claims into their policies based on specific security
+requirements or audit needs.
+
+## CWT Integrity Protection
+
+The CWT is protected against integrity breaches and can be cryptographically
+authenticated. An **Attestation Key**, which is managed by the Attester’s
+**Root of Trust (RoT)**, is used to sign the **COSE_Sign1** [@{ietf-rfc8152}]
+data structure that ensures the integrity of the token.
+
+The unprotected section of the COSE_Sign1 data structure is not secured by the
+CWT signature and **MUST** include an **x5-chain** field [@{ietf-rfc9360}].
+This x5-chain field **SHALL** be either a single byte string (bstr) or an array
+of byte strings and **MUST** contain at least one ASN.1 DER-encoded
+certificate, specifically the Attestation Key (AK) Certificate. The AK
+Certificate may optionally include a TCBInfo extension, which reports the
+Attester's **TCB (Trusted Computing Base)** Claims.
+
+Additionally, an Attester has the option to include a complete certificate path
+within the x5-chain, extending from a recognized Trusted Anchor (such as a
+Vendor Root CA) or up to the Initial Device Identity (IDEVID).
+
+## COSE Algorithm Requirements
+
+This profile defines specific cryptographic algorithms that **MUST** be
+supported for CWT signing to ensure interoperability and appropriate security
+levels for datacenter environments.
+
+### Supported Algorithms
+
+Implementations of this profile **SHALL** support the following COSE
+algorithm for the COSE_Sign1 signature:
+
+**ECDSA with P-384 and SHA-384** (COSE Algorithm ID: -51)
+* **Algorithm**: ES384 as defined in [@{ietf-rfc9052}]
+* **Curve**: NIST P-384
+* **Hash**: SHA-384
+* **Key Size**: 384 bits
+* **Security Level**: 192-bit classical security
+* **Signature Size**: 96 bytes
+* **Public Key Size**: 97 bytes (uncompressed point)
+* **Private Key Size**: 48 bytes
+* **Profile OID**: 1.3.6.1.4.1.42623.1.3
+
+### Size Implications
+
+Implementations **MUST** account for the following signature size
+implications when calculating total CWT size against the 64kB limit:
+
+* **ECDSA-P384**: 96 bytes signature size
+
+### COSE Header Requirements
+
+The COSE_Sign1 protected header **MUST** include:
+
+* **alg** (label 1): The COSE algorithm identifier (-35 for ES384)
+* Additional algorithm-specific parameters as required by the algorithm
+
+The COSE_Sign1 unprotected header **MUST** include:
+
+* **x5chain** (label 33): Certificate chain as specified in the main
+  specification
+
+### Key Identification
+
+The leaf certificate in the certificate chain of the COSE_Sign1 header identifies
+the public key associated with the signing keypair.  No other methods to identify
+the keypair must be included in the token (e.g. kid).
+
+### Future Algorithm Support
+
+This profile serves as the base for ECDSA-based attestation. Additional
+profiles will be derived from this specification when post-quantum
+cryptography algorithms become standardized. For example, when
+[@{ietf-cose-dilithium}] becomes an RFC, a new profile with a distinct
+OID will be assigned to support ML-DSA algorithms. Each new algorithm
+profile will maintain the same claim structure and overall architecture
+while specifying the appropriate cryptographic parameters for that
+algorithm.
+
+## Use of CBOR Tags
+
+CBOR tags as described in this specification **MUST** be included in the attestation.
+The required tags are the registered self-described CBOR tag, EAT tag, COSE_Sign1 tag
+and the concise evidence tag.
+
+
+## Concise Evidence
+
+The concise evidence **MUST** be defined according to the specifications
+outlined in [@{tcg-dice-concise-evidence-binding-for-spdm}] and **SHALL**
+comprehensively describe all **Target Environments**
+that the Attester Environment is responsible for attesting. The concise
+evidence **SHALL** follow the definition from
+[@{tcg-dice-concise-evidence-binding-for-spdm}]. The choice of using concise evidence
+to report the target environment claims is to converge on the
+“reference-triple” [@{tcg-dice-concise-evidence-binding-for-spdm}] data
+structure used by the CoRIM to represent reference values, simplifying the
+appraisal policy for the verifier.
+Note: The ce.evidence-triples field is the only mandatory field that this profile
+must implement for the "ev-triples-map" CDDL."
+
+Each Target Environment **SHOULD** comprehensively describe three key components:
+
+1. **Firmware (FW) Component**: This includes details such as
+* Name
+* Digest (a cryptographic hash of the firmware)
+* SVN (Security Version Number)
+* FW version
+* Vendor ID
+* Product ID
+* Digest of FW journey to reflect impactless update since last cold reboot
+* Flags Attributes that indicate specific firmware states or configurations like debug mode or production mode, anti-roll back enable or disable
+
+The table below maps the above entries with the reference-triple dictionary structure:
+
+| Field | reference-triple entry | Description |
+| :--- | :-------- | :---- |
+| Name | environment-map->class->class_id | Identification of the Component |
+| Vendor | environment-map->class->vendor | Identification of the Platform Vendor |
+| Model | environment-map->class->model | Identification of the Platform Model |
+| Version | measurement-map->mval->version | FW version number |
+| SVN | measurement-map->mval->SVN | FW Security Version Number |
+| Digest | measurement-map->mval->digests | FW Digest (Current) |
+| Journey Digest | measurement-map->mval->integrity-registers | FW Journey Measurement |
+
+2. **Hardware (HW) Configuration**: This includes details such as
+    * Fuse Settings
+    * Crypto HW security posture
+    * Selected/configured Encryption type and key size for memory encryption engines
+    * FIPS status of relevant boundary for FW component
+    * HW configurations and settings that impacts security posture like device life cycle and so on
+    * Note, this info **MUST** be defined for CPU, devices, and links as all would impact the target environment.
+
+The table below maps the above entries with the reference-triple dictionary structure:
+
+| Field | reference-triple entry | Description |
+| :--- | :-------- | :---- |
+| Name | environment-map->class->class_id | Identification of the Component |
+| Vendor | environment-map->class->vendor | Identification of the Attester Vendor |
+| Model | environment-map->class->model | Identification of the Attester Model |
+| Digest | measurement-map->mval->digests | Digest of the Secure Fuse Configuration |
+| Value | measurement-map->mval->raw_value | (Optional) Raw Value of the Fuse Setting |
+
+3. **Software (SW) Configuration**: This includes information about the
+software environment, such as the Debug State, which indicates whether
+debugging features are enabled or disabled, along with other relevant software
+parameters such as
+    * Configured migration pool policy
+    * Total memory encryption enable/disable
+    * Configured I/O policy
+
+The table below maps the above entries with the reference-triple dictionary structure:
+
+| Field | reference-triple entry | Description |
+| :--- | :-------- | :---- |
+| Name | environment-map->class->class_id | Identification of the Component |
+| Vendor | environment-map->class->vendor | Identification of the Attester Vendor |
+| Model | environment-map->class->model | Identification of the Attester Model |
+| Value | measurement-map->mval->raw_value | Raw Value of the Security Setting |
+| ValueMask | measurement-map->mval->raw_value_mask | (Optional) Raw Value Mask |
+
+# Appendix
+
+## Profile CDDL
+
+```include {.small}
+!include cddl/ietf_eat_ocp_profile.cddl
+```
+
+## CWT example
+
+The following example illustrates a CWT containing claims for three target environments:
+
+* **Firmware (FW) Component**: Digest and Security Version Number (SVN)
+* **Hardware (HW) Configuration**: RAW Value (e.g., Fuse Configuration)
+* **Software (SW) Configuration**: RAW Value (e.g., Debug State)
+
+```include {.small}
+!include diag/ocp-profile-eat-example.diag
+```

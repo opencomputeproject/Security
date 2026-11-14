@@ -1,0 +1,54 @@
+references:
+  - id: "caliptra"
+    title: "Caliptra"
+    publisher: "CHIPS Alliance"
+    url: "https://caliptra.io"
+  - id: "tcg-dice-layering-architecture"
+    title: "TCG DICE Layering Architecture version 1.0 r0.19"
+    publisher: "Trusted Computing Group"
+    issued:
+      year: 2020
+      month: 7
+    url: "https://trustedcomputinggroup.org/wp-content/uploads/DICE-Layering-Architecture-r19_pub.pdf"
+  - id: "tcg-dice-hardware-requirements"
+    title: "Hardware Requirements for a Device Identifier Composition Engine version 1.0 r0.91"
+    publisher: "Trusted Computing Group"
+    issued:
+      year: 2024
+      month: 8
+    url: "https://trustedcomputinggroup.org/wp-content/uploads/Hardware-Requirements-for-a-Device-Identifier-Composition-Engine-Version-1.0-Revision-0.91_pub.pdf"
+  - id: spdm-1.3
+    title: "Security Protocol and Data Model (SPDM) Specification version 1.3.2"
+    publisher: "DMTF"
+    issued:
+      year: 2024
+      month: 9
+    url: "https://www.dmtf.org/sites/default/files/standards/documents/DSP0274_1.3.2.pdf"
+  - id: ietf-cwt
+    title: "CBOR Web Token (CWT)"
+    publisher: "IETF"
+    issued:
+      year: 2018
+      month: 5
+    url: "https://datatracker.ietf.org/doc/html/rfc8392"
+  - id: ietf-eat
+    title: "Entity Attestation Token"
+    publisher: "IETF"
+    issued:
+      year: 2025
+      month: 4
+    url: "https://datatracker.ietf.org/doc/rfc9711/"
+  - id: pkcs-10
+    title: "PKCS #10: Certification Request Syntax Specification Version 1.7"
+    publisher: "IETF"
+    issued:
+      year: 2000
+      month: 11
+    url: "https://datatracker.ietf.org/doc/html/rfc2986"
+  - id: rfc5280
+    title: "Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile"
+    publisher: "IETF"
+    issued:
+      year: 2008
+      month: 5
+    url: "https://www.rfc-editor.org/rfc/rfc5280.html"

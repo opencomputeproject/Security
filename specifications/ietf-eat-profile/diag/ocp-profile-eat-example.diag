@@ -1,0 +1,186 @@
+/ Self-described CBOR tag /
+55799(
+  / CWT tag 61 /
+  61(
+    / COSE_Sign1 tag 18 /
+    18([
+      / Protected header /
+      << {
+        / alg: ECDSA P-384 /
+        1: -51,
+        / content-type: application/eat+cwt
+        3: 263
+      } >>,
+      
+      / Unprotected header /
+      {
+        / x5chain: single certificate /
+        33: << h'308202a4...certificate_bytes...' >>
+      },
+      
+      / Payload: CWT claims /
+      << {
+        / Mandatory claims in deterministic order /
+        
+        / 1 (0x01): issuer /
+        1: "Attester-AK-2024",
+        
+        / 7 (0x07): cti /
+        7: h'0123456789abcdef0123456789abcdef',
+        
+        / 10 (0x0a): nonce /
+        10: h'fedcba9876543210fedcba9876543210',
+        
+        / 263 (0x190107): dbgstat - disabled /
+        263: 2,
+        
+        / 265 (0x190109): EAT Profile - OCP Security Attestation EAT Profile /
+        265: 111(h'2b0601040182e42b0103'),
+        
+        / 273 (0x190111): measurements /
+        273: [
+          [
+            / CoAP content-format for concise-evidence /
+            10571,
+            
+            / Concise evidence as CBOR bytestring /
+            <<({
+              / ce.ev-triples /
+              0: {
+                / ce.evidence-triples /
+                0: [
+                  / Triple 1: Firmware Component /
+                  [
+                    / environment-map /
+                    {
+                      / class /
+                      0: {
+                        / class-id: tagged-bytes #6.560 with 4-byte identifier /
+                        0: 560(h'01020304'),
+                        / vendor /
+                        1: "ACME Inc.",
+                        / model /
+                        2: "ACME RoadRunner Trap"
+                      }
+                    },
+                    / measurement-map array /
+                    [
+                      {
+                        / mkey /
+                        0: {
+                          / index /
+                          0: 1
+                        },
+                        / mval /
+                        1: {
+                          / version /
+                          0: {
+                            0: "1.2.3.45"
+                          },
+                          / svn /
+                          1: 45,
+                          / digests /
+                          2: [
+                            [
+                              / sha-384 /
+                              "sha-384",
+                              h'38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b'
+                            ]
+                          ],
+                          / integrity-registers: journey digest /
+                          5: [
+                            [
+                              "sha-384",
+                              h'c7ade88fc7a21498a6a5e5c385e1f68bed822b72aa63c4a9a48a3c9c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c'
+                            ]
+                          ]
+                        }
+                      }
+                    ]
+                  ],
+                  
+                  / Triple 2: Hardware Configuration /
+                  [
+                    / environment-map /
+                    {
+                      / class /
+                      0: {
+                        / class-id: tagged-bytes #6.560 with 4-byte identifier /
+                        0: 560(h'05060708'),
+                        / vendor /
+                        1: "ACME Inc.",
+                        / model /
+                        2: "ACME RoadRunner Trap"
+                      }
+                    },
+                    / measurement-map array /
+                    [
+                      {
+                        / mkey /
+                        0: {
+                          / index /
+                          0: 2
+                        },
+                        / mval /
+                        1: {
+                          / digests: hash of HW configuration /
+                          2: [
+                            [
+                              / sha-384 /
+                              "sha-384",
+                              h'1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+                            ]
+                          ],
+                          / raw-value: fuse settings /
+                          4: h'00000001',
+                          / raw-value-mask /
+                          6: h'ffffffff'
+                        }
+                      }
+                    ]
+                  ],
+                  
+                  / Triple 3: Software Configuration /
+                  [
+                    / environment-map /
+                    {
+                      / class /
+                      0: {
+                        / class-id: tagged-bytes #6.560 with 4-byte identifier /
+                        0: 560(h'090a0b0c'),
+                        / vendor /
+                        1: "ACME Inc.",
+                        / model /
+                        2: "ACME RoadRunner Trap"
+                      }
+                    },
+                    / measurement-map array /
+                    [
+                      {
+                        / mkey /
+                        0: {
+                          / index /
+                          0: 3
+                        },
+                        / mval /
+                        1: {
+                          / raw-value: security configuration /
+                          4: h'00000003',
+                          / raw-value-mask /
+                          6: h'000000ff'
+                        }
+                      }
+                    ]
+                  ]
+                ]
+              }
+            }) >>
+          ]
+        ]
+      } >>,
+      
+      / Signature: ES384 signature bytes (96 bytes) /
+      h'3045022100ab3c8d9e7f1234567890abcdef1234567890abcdef1234567890abcdef123456022100fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321'
+    ])
+  )
+)

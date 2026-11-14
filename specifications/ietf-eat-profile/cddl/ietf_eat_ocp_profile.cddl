@@ -1,0 +1,95 @@
+cwt-eat = {
+  ; Mandatory Claims
+
+  ; Nonce claim is nonce-type = bstr .size (8..64) (Mandatory)
+  &(Nonce : 10) => bstr .size (8..64)
+
+  ; Debug status claim (Mandatory) // dbgstat-type is defined in https://datatracker.ietf.org/doc/rfc9711/
+  &(dbgstat : 263) => dbgstat-type
+
+    ; The EAT Profile for OCP OID (Mandatory) // eat-profile is defined in https://datatracker.ietf.org/doc/rfc9711/
+  &(EAT Profile : 265 ) => ~oid ; 1.3.6.1.4.1.42623.1.3 - note: `~` strips CBOR tag #6.111(oid) from `oid`
+
+  ; EAT measurements (Mandatory)
+  &(Measurements : 273) => measurements-type
+
+  ; Optional Claims
+
+  ; Issuer claim is StringOrURI (tstr) (Optional)
+  &(iss : 1) => tstr
+
+  ; CTI claim for token uniqueness (Optional)
+  &(cti : 7) => bstr .size (8..64)
+ 
+  ; UEID claim (Optional)
+  ? &(ueid : 256) => bstr .size (7..33)
+
+  ; SUEID claim (Optional)
+  ? &(sueid : 257) => bstr .size (7..33)
+
+  ; OEM ID claim (Optional) // oemid-type is defined in https://datatracker.ietf.org/doc/rfc9711/
+  ? &(oemid : 258) => oemid-type
+
+  ; Hardware model claim (Optional)
+  ? &(hwmodel : 259) => bytes .size (1..32)
+
+  ; Uptime claim (Optional)
+  ? &(uptime : 261) => uint
+
+  ; Boot count claim (Optional)
+  ? &(bootcount : 267) => uint
+
+  ; Boot seed claim (Optional)
+  ? &(bootseed : 268) => bstr .size (32..64)
+
+  ; DLOA claim (Optional) // dloa-type is defined in https://datatracker.ietf.org/doc/rfc9711/
+  ? &(dloas : 269) => [ + dloa-type ]
+
+  ; CoRIM Locator Map (Optional) // corim-locator-map is defined in https://datatracker.ietf.org/doc/draft-ietf-rats-corim/
+  ? &(rim-locators : -70001) => [ + corim-locator-map]
+
+  ; Private Claims (up to 5, must be < -65536 per RFC 8392)
+  * $$private-claims => any
+}
+
+; The concise-evidence-map CDDL is defined in
+; https://github.com/TrustedComputingGroup/dice-coev/blob/main/concise-evidence.cddl
+;
+$measurements-body-cbor /= bytes .cbor concise-evidence-map
+oid = tagged-oid-type
+
+; The measurement-type encapsulates the concise-evidence-map as CBOR bytestring
+measurements-type = [+ measurements-format]
+measurements-format = [
+  content-type:   coap-content-format,
+  content-format:  $measurements-body-cbor
+]
+coap-content-format = uint .le 65535
+
+signed-cwt = #6.18(COSE-Sign1-cwt-eat)
+
+COSE-Sign1-cwt-eat = [
+  protected: bstr .cbor protected-ce-header-map
+  unprotected: unprotected-ce-header-map
+  payload: bstr .cbor cwt-eat
+  signature: bstr
+]
+
+protected-ce-header-map = {
+  ; Well-defined header fields
+  &(alg-id: 1) => int
+  &(content-type: 3) => tstr / int
+  ; User-defined fields
+  * cose-label => cose-value
+}
+
+unprotected-ce-header-map = {
+  ? &(x5-chain: 33) => bstr / [ 2*certs: bstr ]
+  * cose-label => cose-value
+}
+
+; Explictly identify the CWT using its tag.
+cwt = #6.61(signed-cwt)
+
+; Explicitly assert that CWT is encoded as CBOR with the self-described CBOR tag.
+ocp-evidence-eat = #6.55799(cwt)

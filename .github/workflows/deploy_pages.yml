@@ -1,0 +1,74 @@
+name: Deploy specifications to GitHub pages
+
+on:
+  push:
+    branches: ["main"]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+jobs:
+  # Render specs
+  spec-render:
+    uses: opencomputeproject/ocp-spec-tools/.github/workflows/render.yml@stable
+    with:
+      tcg-container-version: latest
+      ocp-template-ref: stable
+      inputs: >-
+        [
+          {
+            "src": "specifications/attestation-of-system-components/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "attestation-of-system-components/HEAD"
+          },
+          {
+            "src": "specifications/device-identity-provisioning/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "device-identity-provisioning/HEAD",
+            "gh_pages_pdf": "device-identity-provisioning/HEAD/pdf"
+          },
+          {
+            "src": "specifications/device-ownership-transfer/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "device-ownership-transfer/HEAD",
+            "gh_pages_pdf": "device-ownership-transfer/HEAD/pdf"
+          },
+          {
+            "src": "specifications/dpe-irot-profile/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "dpe-irot-profile/HEAD"
+          },
+          {
+            "src": "specifications/ietf-eat-profile/spec.ocp",
+            "append_git_rev_to_version": true,
+            "gh_pages_html": "ietf-eat-profile/HEAD"
+          }
+        ]
+      artifact-name: rendered-specs
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: [spec-render]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rendered-specs
+          path: gh-pages
+      - name: Upload static files as artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "gh-pages"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
