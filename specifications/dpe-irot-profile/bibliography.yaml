@@ -34,3 +34,14 @@ references:
     title: "DICE Certificate Profiles"
     publisher: "Trusted Computing Group"
     url: "https://trustedcomputinggroup.org/resource/dice-certificate-profiles/"
+  - id: "ietf-rfc5869"
+    title: "HMAC-based Extract-and-Expand Key Derivation Function (HKDF)"
+    publisher: "IETF"
+    issued:
+      year: 2010
+      month: 5
+    url: "https://datatracker.ietf.org/doc/html/rfc5869"
+  - id: "nist-sp800-108"
+    title: "Recommendation for Key Derivation Using Pseudorandom Functions"
+    publisher: "NIST"
+    url: "https://csrc.nist.gov/pubs/sp/800/108/r1/upd1/final"
