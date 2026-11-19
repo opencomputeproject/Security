@@ -13,14 +13,15 @@ cwt-eat = {
   ; EAT measurements (Mandatory)
   &(Measurements : 273) => measurements-type
 
+  &(iss : 1) => tstr
+  &(cti : 7) => bstr .size (8..64)
+
+  ocp-optional-claims
+}
+
+ocp-optional-claims = (
   ; Optional Claims
 
-  ; Issuer claim is StringOrURI (tstr) (Optional)
-  &(iss : 1) => tstr
-
-  ; CTI claim for token uniqueness (Optional)
-  &(cti : 7) => bstr .size (8..64)
- 
   ; UEID claim (Optional)
   ? &(ueid : 256) => bstr .size (7..33)
 
@@ -50,7 +51,7 @@ cwt-eat = {
 
   ; Private Claims (up to 5, must be < -65536 per RFC 8392)
   * $$private-claims => any
-}
+)
 
 ; The concise-evidence-map CDDL is defined in
 ; https://github.com/TrustedComputingGroup/dice-coev/blob/main/concise-evidence.cddl
@@ -85,6 +86,9 @@ protected-ce-header-map = {
 
 unprotected-ce-header-map = {
   ? &(x5-chain: 33) => bstr / [ 2*certs: bstr ]
+  ; kid is a SHA-384 digest of the DER-encoded SPKI of the attestation public key.
+  ; Used in lieu of x5chain when space constraints apply.
+  ? &(kid: 4) => bstr .size 48
   * cose-label => cose-value
 }
 
@@ -93,3 +97,53 @@ cwt = #6.61(signed-cwt)
 
 ; Explicitly assert that CWT is encoded as CBOR with the self-described CBOR tag.
 ocp-evidence-eat = #6.55799(cwt)
+
+extended-cwt-eat = {
+  10 => bstr .size (8..64)
+  263 => dbgstat-type
+  265 => extended-profile-oid
+  ? 1 => tstr
+  ? 7 => bstr .size (8..64)
+  (
+    273 => measurements-type,
+    ? 266 => extended-submods
+  //
+    266 => extended-submods
+  )
+  ocp-optional-claims
+}
+
+extended-profile-oid = ~oid
+
+extended-submods = {
+  + tstr => detached-submodule-digest
+}
+
+detached-submodule-digest = [ -43, bstr .size 48 ]
+
+extended-cwt = #6.61(extended-signed-cwt)
+extended-ocp-evidence-eat = #6.55799(extended-cwt)
+
+extended-signed-cwt = #6.18(
+  extended-cose-sign1<-50, 4627>
+)
+
+extended-cose-sign1<algorithm, signature-size> = [
+  protected: bstr .cbor extended-protected-header<algorithm>
+  unprotected: extended-unprotected-header
+  payload: bstr .cbor extended-cwt-eat
+  signature: bstr .size signature-size
+]
+
+extended-protected-header<algorithm> = {
+  1 => algorithm
+  3 => tstr / int
+  * extended-header-label => cose-value
+}
+
+extended-unprotected-header = {
+  (33 => bstr / [ 2* bstr ] // 4 => bstr .size 48)
+  * extended-header-label => cose-value
+}
+
+extended-header-label = tstr / (int .le 0) / 2 / (5..32) / (int .ge 34)
