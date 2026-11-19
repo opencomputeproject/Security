@@ -97,6 +97,26 @@ and heterogeneous environments.
 
 This Object Identifier (OID) uniquely identifies this OCP Profile for IETF Entity Attestation Token. The OID **MUST** be included in the **eat_profile** claim (claim key 265, encoded as `0x190109`) within every CWT that conforms to this specification.
 
+### Extended Profile Identifier
+
+**OID: To Be Allocated (extended profile)**
+
+The extended profile defined in [Extended Profile](#extended-profile) is a new
+full EAT profile. It supports ML-DSA-87, alternative key identification, and
+lead attesters using EAT submodules. A token conforming to the extended profile
+**MUST** carry the newly allocated OID in its **eat_profile** claim,
+encoded as an untagged OID byte string as specified by [@{ietf-rfc9711}].
+
+"To Be Allocated" is an editorial placeholder, not a wire value. The extended
+profile **MUST NOT** be advertised as an allocated OCP profile until its OID
+has been assigned. No `profile_version` claim is introduced.
+
+Unless explicitly stated otherwise in the Extended Profile section, the
+requirements below describe the existing profile identified by
+`1.3.6.1.4.1.42623.1.3`. That OID retains its existing claims, ECDSA algorithm,
+and embedded-certificate requirements; it **MUST NOT** identify tokens using
+the extended profile's alternative key identification or submodule rules.
+
 
 ## Terms and Definitions
 
@@ -168,7 +188,8 @@ be reported following the CBOR deterministic encoding requirements as specified
 in Section 4.2 of [@{ietf-rfc8949}].
 Specifically, the keys in the CWT map **MUST** be sorted in the bytewise
 lexicographic order of their deterministic encodings. This ordering convention
-applies to mandatory claims, optional claims, and private claims when present.
+applies to mandatory claims, optional claims, private claims, and
+profile-specific claims when present.
 
 **Mandatory Claims (1-4)**: These claims are **REQUIRED** for all attestations
 and provide the minimum necessary information for verifier appraisal policies.  The verifier
@@ -224,6 +245,12 @@ serve informational purposes:
 15. **rim-locators** (claim key: -70001, encoded as 0x3a00011170)
     * This claim is used by the attester to point the verifier to the rim repository. If present, **SHALL** be an array of corim-locator-map (refer to [@{ietf-rats-corim}]).
 
+**Extended-Profile Claim**: The extended profile additionally defines the
+following claim. It does not change the claim requirements of the existing
+profile identified by `1.3.6.1.4.1.42623.1.3`:
+
+- **submods** (claim key: 266, encoded as 0x19010a)
+    * This claim maps sub-attester names to SHA-384 digests of their Claims-Sets. An extended-profile lead attester **MUST** include it. See [Lead Attesters and EAT Submodules](#lead-attesters-and-eat-submodules) for its structure and verification requirements.
 
 **Private Claims**: In addition to the standard claims defined above, this
 profile allows for up to 5 implementor-specific private claims. These claims
@@ -345,22 +372,138 @@ following requirements:
 * The **kid** value **MUST** contain the SHA-384 digest of the DER-encoded
   SubjectPublicKeyInfo (SPKI) structure of the attestation public key, encoded
   as a CBOR byte string (bstr).
-* When **kid** is used, the verifier **MUST** obtain the attestation certificate
-  chain through an out-of-band mechanism and **MUST** verify that the public key
-  in the obtained certificate matches the digest carried in the **kid**.
+* When **kid** is used, the verifier **SHOULD** obtain the attestation
+    certificate chain through an out-of-band mechanism and **SHOULD** verify
+    that the public key in the obtained certificate matches the digest carried
+    in the **kid**.
 * **x5chain** and **kid** **SHALL NOT** appear simultaneously in the same
   COSE_Sign1 unprotected header.
 
 ### Future Algorithm Support
 
-This profile serves as the base for ECDSA-based attestation. Additional
-profiles will be derived from this specification when post-quantum
-cryptography algorithms become standardized. For example, when
-[@{ietf-cose-dilithium}] becomes an RFC, a new profile with a distinct
-OID will be assigned to support ML-DSA algorithms. Each new algorithm
-profile will maintain the same claim structure and overall architecture
-while specifying the appropriate cryptographic parameters for that
-algorithm.
+The existing profile remains ECDSA-only. The extended profile below defines
+ML-DSA support under a new OID. Any subsequent change to a full profile's
+requirements requires a distinct profile identifier, rather than silently
+changing the meaning of an allocated OID.
+
+## Extended Profile
+
+The extended profile inherits the existing profile's encoding, tagging,
+concise-evidence format, transport, size limits, and claim requirements except
+for the explicit replacements and additions in this section. These rules
+apply only to the extended profile's new OID. A verifier implementing this
+profile **MUST** support both key-identification methods and ML-DSA-87,
+for the outer EAT.
+
+### Signing Algorithms
+
+An attester **MUST** use ML-DSA-87 for each COSE_Sign1 token conforming to
+this extended profile. A verifier implementing this profile **MUST** support
+this algorithm:
+
+| Algorithm | COSE alg | Signature size (bytes) |
+| :--- | :--- | ---: |
+| ML-DSA-87 | -50 | 4627 |
+
+ML-DSA-87 **MUST** follow [@{nist-fips-204}] and its COSE binding in
+[@{ietf-rfc9964}].
+The selected algorithm **MUST** appear in the
+protected **alg** header (label 1). The attestation key and certificate
+**MUST** be suitable for that algorithm. This profile defines a single
+ML-DSA-87 signature, not a hybrid or multiple-signature construction.
+Verifiers **MUST NOT** infer the algorithm from **kid** or the profile OID,
+and **MUST** enforce their configured algorithm policy.
+
+### Key Identification
+
+Each COSE_Sign1 unprotected header **MUST** contain exactly one of
+**x5chain** (label 33) or **kid** (label 4). Neither parameter **MAY** also
+appear in the protected header. Attesters **SHOULD** use **x5chain** when
+space permits, with the certificate contents and ordering specified for the
+existing profile. Attesters **MAY** instead use **kid** to omit certificates
+from the token for ML-DSA-87.
+
+The **kid** value **MUST** be a 48-byte CBOR byte string containing the
+SHA-384 digest of the DER-encoded SubjectPublicKeyInfo of the ML-DSA-87
+attestation public key.
+The verifier **SHOULD** obtain the corresponding AK certificate and any
+necessary intermediate certificates out of band, whether provisioned, cached,
+or retrieved. Certificate distribution is outside this profile's scope.
+
+Before accepting evidence, the verifier **SHOULD** match **kid** against the
+digest of the obtained certificate's SubjectPublicKeyInfo, validate the
+certificate path to a configured trust anchor and applicable certificate
+constraints, and verify the token signature with that public key. An unknown
+**kid**, a digest mismatch, or a failed certificate or signature validation
+**SHOULD** cause rejection. A key identifier is a lookup hint, not a trust
+anchor. Cached certificates remain subject to validity and revocation policy.
+These trust checks also apply when the certificate is supplied in **x5chain**.
+
+### Lead Attesters and EAT Submodules
+
+A lead attester collects independently signed attestation reports from
+component sub-attesters and signs an outer EAT containing their digests. A
+report may be an EAT or another attestation-report format. The outer EAT's
+claims describe the lead
+attester and the target environments it directly attests. A lead attester
+**MUST** include the **submods** claim (claim key 266, encoded as `0x19010a`)
+as defined in Section 4.2.18 of [@{ietf-rfc9711}].
+
+The **submods** value **MUST** be a non-empty CBOR map. Each key **MUST** be
+a unique text string identifying a sub-attester, and each value **MUST** be
+a two-item Detached-Submodule-Digest array `[ -43, digest ]` as defined in
+Section 4.2.18.2 of [@{ietf-rfc9711}], where `-43` is the COSE algorithm
+identifier for SHA-384 and `digest` is a 48-byte byte string. The digest
+input **MUST** be the deterministic CBOR serialization of the Claims-Set in
+the corresponding report, without byte-string wrapping. The report envelope
+and signature are not part of the digest input.
+
+Each corresponding attestation report **MUST** be conveyed separately from
+the outer EAT, using a transport agreed by the deployment. The report map
+**MUST** use the same names as the **submods** map. A verifier **SHOULD**
+extract the Claims-Set from each received report, recompute its digest, and
+reject a missing, unexpected, or mismatching entry. The outer EAT's signature
+binds the Claims-Set digests to the lead attester's claims.
+
+Each report **MUST** be independently signed and the verifier **SHOULD**
+validate its signature, signing-key trust, and association with the named
+component according to the report's format and deployment policy. A report
+may be an EAT or another format, but its Claims-Set **MUST** be represented
+as a deterministic CBOR map for digest calculation, and the report signature
+**MUST** authenticate that Claims-Set. The lead attester's signature over a
+digest does not replace validation of the report's own signature or establish
+the sub-attester's identity.
+
+The extended-profile outer EAT **MUST** include **Nonce**, **dbgstat**, and
+**eat_profile**. It **MUST** also include **Measurements**,
+**submods**, or both. An attester that directly gathers measurements **MUST**
+include those measurements in its own **Measurements** claim. A lead attester
+that only aggregates sub-attester reports **MAY** omit its own
+**Measurements** claim. All other existing claim requirements remain in
+effect. Claims **MUST NOT** be inherited from an enclosing token.
+
+The verifier **SHOULD** supply a fresh nonce for the attestation transaction.
+The lead attester **MUST** pass that nonce, or an equivalent freshness
+challenge, to each sub-attester. Each report **MUST** bind that challenge
+according to its format, and the verifier **SHOULD** check it. The verifier
+**SHOULD** also validate the outer token's algorithm, key identification,
+certificate path, and signature, and appraise each report under the policy
+for its named component. A fresh outer signature **MUST NOT** be treated as
+proof that cached reports are fresh.
+
+Submodule names identify entries within a token, not authenticated device
+identities. The deployment **MUST** define the expected component inventory
+and how each authenticated component identity is bound to the composite
+device. The verifier **SHOULD** enforce that binding and reject missing required
+components, duplicate component identities, unexpected substitutions, and
+invalid sub-attester reports before accepting the composite evidence. The
+lead attester's signature binds the digests together but does not by itself
+prove that a component belongs to that device or that its claims are valid.
+
+The existing token-size limit applies to the outer CWT. Implementations
+**MUST** enforce deployment limits on report size and component count, and
+reject evidence exceeding supported limits, not silently truncate or accept
+unchecked components.
 
 ## Use of CBOR Tags
 
@@ -447,6 +590,16 @@ The table below maps the above entries with the reference-triple dictionary stru
 # Appendix
 
 ## Profile CDDL
+
+The existing profile uses `ocp-evidence-eat`; the extended profile uses
+`extended-ocp-evidence-eat`. Sub-attester reports are conveyed separately by
+the deployment's transport. The `extended-profile-oid` production is an
+editorial placeholder accepting an OID byte string until allocation. It
+**MUST** be replaced with the exact allocated OID value before publication;
+it **MUST NOT** accept `1.3.6.1.4.1.42623.1.3` as the extended profile's OID.
+Digest verification, report signature validation, freshness, component
+identity binding, certificate validation, and report-to-name matching are
+semantic requirements not enforced by this CDDL.
 
 ```include {.small}
 !include cddl/ietf_eat_ocp_profile.cddl

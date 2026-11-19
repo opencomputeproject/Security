@@ -69,6 +69,13 @@ references:
       year: 2024
       month: 8
     url: "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf"
+  - id: "ietf-rfc9964"
+    title: "ML-DSA for JOSE and COSE"
+    publisher: "IETF"
+    issued:
+      year: 2026
+      month: 10
+    url: "https://www.rfc-editor.org/rfc/rfc9964"
   - id: "ietf-rfc9052"
     title: "CBOR Object Signing and Encryption (COSE): Structures and Process"
     publisher: "IETF"
