@@ -1,7 +1,7 @@
 ---
 title: "Server iRoT Profile for DPE"
 type: SPECIFICATION
-version: 0.14.0
+version: 0.15.0
 authors: [(See Acknowledgements section)]
 bibliography: bibliography.yaml
 ...
@@ -195,6 +195,19 @@ Default Context handles are represented by 16 null bytes. A Context Handle is in
 
 All valid non-Default Context Handles SHALL be 16-byte random values.
 
+### SVN State
+
+Each context has a Boot SVN and a Current SVN. Both are 4-byte unsigned integers.
+
+*   When a context is created by InitializeContext or auto-initialization, Boot SVN
+    and Current SVN SHALL both be 0.
+*   When a context is created by non-recursive DeriveContext, Boot SVN and Current
+    SVN SHALL both be set to `INPUT_SVN`.
+*   Boot SVN SHALL NOT change for the life of the context.
+*   Current SVN SHALL change only when UpdateContextMeasurement succeeds for that
+    context. The new value SHALL be the `INPUT_SVN` argument of that command.
+*   Recursive DeriveContext SHALL NOT modify Boot SVN or Current SVN.
+
 ## iRoT Direct Interface
 
 This profile supports a “Direct” interface for calling DPE commands. This
@@ -325,6 +338,9 @@ specification which are omitted by this profile:
     command SHALL fail.
 *   If `CREATE_CERTIFICATE` is set, `RETURN_CERTIFICATE` SHALL also be
     considered set.
+*   If `RECURSIVE` is set and `INPUT_SVN` is greater than the context's
+    Current SVN, this command SHALL fail with `DPE_STATUS_UNAUTHORIZED`
+    and SHALL NOT modify the context.
 
 ### CertifyKey
 
@@ -361,6 +377,8 @@ specification which are omitted by this profile:
             ocp.csr.irot.\*). If `SUPPORTS_CSR` is false, this command SHALL
             fail.
         *   An implementation SHALL support at least one format.
+*   A certificate returned by CertifyKey SHALL NOT contain the
+    `id-dpe-keyderivation-svn-only` extension.
 
 ### Sign
 
@@ -498,6 +516,50 @@ because the update is authorized by the parent rather than by the child context 
 *   `NEW_CONTEXT_HANDLE` SHALL be a rotated handle for the updated child context.
 *   `NEW_PARENT_CONTEXT_HANDLE` SHALL be a rotated handle for `PARENT_CONTEXT_HANDLE`,
     as if `RETAIN_PARENT_CONTEXT` were always set.
+*   The child context's Current SVN SHALL be set to `INPUT_SVN`. Boot SVN SHALL NOT be modified.
+
+### CertifyStableKey
+
+CertifyStableKey is a vendor command. It SHALL follow the behavior of CertifyKey,
+with these differences:
+
+*   The CDI SHALL be derived with the profile's `stable-cdi-derivation`
+    instead of `dice-derivation`. Measurement digests SHALL NOT be inputs.
+*   `ADD_FORMAT` SHALL be `CERT_FORMAT_X509`. The certificate SHALL meet
+    "Stable Identity Certificates".
+*   The caller selects a Stable SVN for each Context TCB node, as specified
+    in Behavior below.
+
+#### Behavior
+
+*   If `supports-stable-identity` or `supports-certify-stable-key` is False, this
+    command SHALL fail with `DPE_STATUS_ARGUMENT_NOT_SUPPORTED`.
+*   If `SVN_OVERRIDE_COUNT` is greater than `MAX_SVN_OVERRIDES`, this command
+    SHALL fail with `DPE_STATUS_INVALID_ARGUMENT`.
+*   If `supports-svn-override` is False and `SVN_OVERRIDE_COUNT` is not 0,
+    this command SHALL fail with `DPE_STATUS_ARGUMENT_NOT_SUPPORTED`.
+*   Entries at or beyond `SVN_OVERRIDE_COUNT` SHALL be ignored.
+*   Each `TYPE` SHALL match exactly one node in the Context TCB and SHALL NOT
+    appear more than once. Otherwise this command SHALL fail with
+    `DPE_STATUS_INVALID_ARGUMENT`.
+*   If `STABLE_SVN` is greater than that node's Current SVN, this command
+    SHALL fail with `DPE_STATUS_INVALID_SVN_OVERRIDE`.
+*   A node with no valid override uses its Current SVN as its Stable SVN.
+
+### SignStableKey
+
+SignStableKey is a vendor command. It SHALL follow Sign, with these
+differences:
+
+*   The CDI SHALL be derived with the profile's `stable-cdi-derivation`
+    instead of `dice-derivation`. Measurement digests SHALL NOT be inputs.
+*   `SVN_OVERRIDE_COUNT`, `SVN_OVERRIDES`, and Stable SVN selection SHALL be as
+    specified for CertifyStableKey.
+
+#### Behavior
+
+*   If `supports-stable-identity` or `supports-sign-stable-key` is False, this
+    command SHALL fail with `DPE_STATUS_ARGUMENT_NOT_SUPPORTED`.
 
 ## Cryptographic Algorithms
 
@@ -568,6 +630,57 @@ The CDI derivation scheme “ocp.derive.kdf-cdi-512” is defined as follows:
 *   Outputs
     *   64-byte key
 
+### ocp.derive.stable-cdi-384
+
+The derivation scheme `ocp.derive.stable-cdi-384` derives the CDI used by
+CertifyStableKey and SignStableKey when a profile's `stable-cdi-derivation`
+names it.
+
+*   The scheme SHALL be deterministic. Identical inputs SHALL produce an identical
+    48-byte output for a given implementation.
+*   The implementation SHALL use one of the following KDFs, and SHALL use that
+    same KDF for every invocation:
+    *   HKDF-SHA384, as specified by RFC 5869 [@{ietf-rfc5869}], with an empty salt,
+        `info` equal to the node encoding below, and length 48 bytes.
+    *   KDF in Counter Mode, as specified by NIST SP 800-108 [@{nist-sp800-108}],
+        with HMAC-SHA384 as the PRF, `K_I` equal to the running CDI, `Label` equal
+        to the ASCII bytes `DPE_STABLE`, `Context` equal to the node encoding
+        below without the trailing label, and `L` equal to 384.
+*   Measurement digests SHALL NOT be inputs.
+*   Nodes are processed from the root of the Context TCB to the Current Node,
+    inclusive. "Current Node" is the context handle passed to CertifyStableKey or
+    SignStableKey.
+*   `CDI_0` SHALL be the initial CDI supplied to the DPE by initial-derivation.
+*   For each node `i` from 1 to `n`:
+    *   `SVN_i` is the Stable SVN selected for that node by CertifyStableKey or
+        SignStableKey.
+    *   The node encoding is:
+        `node_i = LE32(len(VENDOR_i)) || VENDOR_i || LE32(len(MODEL_i))`
+        `|| MODEL_i || LE32(TYPE_i) || LE32(SVN_i) || "DPE_STABLE"`
+    *   Where:
+        *   `LE32(x)` is `x` as a little-endian U32.
+        *   `||` is concatenation.
+        *   `len(x)` is the number of octets in `x`.
+        *   `VENDOR_i` and `MODEL_i` are the recorded Vendor and Model octets of
+            node `i`, with no null terminator or padding. An omitted value has
+            length 0.
+        *   `TYPE_i` is the Type of node `i`.
+        *   `"DPE_STABLE"` is the ASCII bytes.
+    *   `CDI_i` is the 48-byte KDF output for this node, using `CDI_{i-1}` as the
+        input key material.
+*   The stable CDI is `CDI_n`.
+*   The stable CDI SHALL NOT be exported and SHALL NOT be used as the CDI input
+    of `dice-derivation`, export-cdi, or a further DICE key.
+
+### ocp.derive.stable-cdi-256
+
+The derivation scheme `ocp.derive.stable-cdi-256` is
+`ocp.derive.stable-cdi-384` with these changes:
+
+*   SHA-256 replaces SHA-384 in each KDF.
+*   Each CDI is 32 bytes instead of 48 bytes. For SP 800-108, `L` equals 256
+    instead of 384.
+
 ## CDI Export
 
 ### ocp.export-cdi.raw-256
@@ -590,8 +703,9 @@ To generate exported keypair, use asymmetric-derivation for the relevant profile
 
 ## Key Derivation
 
-*   `LABEL`: LABEL parameter passed to Sign and CertifyKey
-*   `CDI`: A CDI derived with `dice-derivation` scheme using current TCIs
+*   `LABEL`: LABEL parameter passed to Sign, CertifyKey, SignStableKey, or CertifyStableKey
+*   `CDI`: A CDI derived with `dice-derivation` for Sign and CertifyKey, or with
+    the profile's `stable-cdi-derivation` for SignStableKey and CertifyStableKey
 
 ### ocp.derive.kdf-asymmetric-p256
 
@@ -738,8 +852,7 @@ For all CertifyKey formats, MultiTcbInfo extensions SHALL be populated as follow
     *   “Model”: [Optional and vendor-defined]
     *   “Version”: ASCII representation of the 'profile' [variant](#profile)
     *   “SVN”:
-        * The security version number associated with the Target Environment.
-        * A 4-byte integer provided by a client to DeriveContext.
+        * The Boot SVN of this context, as defined in "SVN State".
     *   “Layer”: [Omitted]
     *   “Index”: [Omitted]
     *   “Fwids”:
@@ -831,6 +944,17 @@ the following requirements:
     *   The extension SHOULD be marked as critical
 *   A ocp-dice-MultiTcbInfo extension SHALL be added. This extension SHOULD be marked as critical.
     It SHALL be populated following the guidance for "Populating ocp-dice-MultiTcbInfo"
+
+### Stable Identity Certificates
+
+A certificate returned by CertifyStableKey SHALL meet "Requirements for Leaf
+Certificates" in @sec:leaf-cert-requirements, with the following exceptions:
+
+*   In every populated ocp-dice-TcbInfo, “SVN” SHALL be the Stable SVN used for
+    that node by the profile's `stable-cdi-derivation`.
+*   The certificate SHALL contain an X.509 extension with extnID
+    `id-dpe-keyderivation-svn-only` and an empty extnValue. The OID value under
+    the DPE arc is to be assigned by OCP and is TBD until that assignment.
 
 ### Requirements for CSRs {#sec:csr-requirements}
 
@@ -1000,7 +1124,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
-| =========================================== General ============================================ |
+|                                             General                                              |
 +-------------------------------+------------------------------------------------------------------+
 | name                          | ocp.profile.irot.p256                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1014,7 +1138,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-concurrent-operation | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Sessions ============================================ |
+|                                             Sessions                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-encrypted-sessions   | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1032,7 +1156,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | session-migration-policy      | Empty                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Contexts ============================================ |
+|                                             Contexts                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-default-context      | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
@@ -1051,13 +1175,13 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-recursive-derivation | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Use Cases =========================================== |
+|                                            Use Cases                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-signing              | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-sealing              | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Commands ============================================ |
+|                                             Commands                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-get-profile          | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
@@ -1079,6 +1203,17 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-sign                 | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
+| supports-stable-identity      | Implementation-defined                                           |
++-------------------------------+------------------------------------------------------------------+
+| supports-certify-stable-key   | Implementation-defined. SHALL be False when                      |
+|                               | supports-stable-identity is False.                               |
++-------------------------------+------------------------------------------------------------------+
+| supports-sign-stable-key      | Implementation-defined. SHALL be False when                      |
+|                               | supports-stable-identity is False.                               |
++-------------------------------+------------------------------------------------------------------+
+| supports-svn-override         | Implementation-defined. SHALL be False when                      |
+|                               | supports-stable-identity is False.                               |
++-------------------------------+------------------------------------------------------------------+
 | supports-seal                 | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
 | supports-unseal               | False                                                            |
@@ -1087,9 +1222,16 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-rotate-context       | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Derivation =========================================== |
+|                                            Derivation                                            |
 +-------------------------------+------------------------------------------------------------------+
 | dice-derivation               | ocp.derive.kdf-cdi-256                                           |
++-------------------------------+------------------------------------------------------------------+
+| stable-cdi-derivation         | ocp.derive.stable-cdi-256 when supports-stable-identity is       |
+|                               | True. Otherwise Empty.                                           |
++-------------------------------+------------------------------------------------------------------+
+| max-vendor-length             | 50                                                               |
++-------------------------------+------------------------------------------------------------------+
+| max-model-length              | 50                                                               |
 +-------------------------------+------------------------------------------------------------------+
 | asymmetric-derivation         | ocp.derive.kdf-asymmetric-p256                                   |
 +-------------------------------+------------------------------------------------------------------+
@@ -1103,7 +1245,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | recursive-derivation          | ocp.recursive-derivation.extend-tci                              |
 +-------------------------------+------------------------------------------------------------------+
-| =========================================== Input ============================================== |
+|                                              Input                                               |
 +-------------------------------+------------------------------------------------------------------+
 | input-format                  | ocp.format.digest-sha256                                         |
 +-------------------------------+------------------------------------------------------------------+
@@ -1119,7 +1261,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | internal-inputs               | Empty                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ======================================== Certificates ========================================== |
+|                                           Certificates                                           |
 +-------------------------------+------------------------------------------------------------------+
 | supports-certificates         | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
@@ -1162,7 +1304,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | leaf-certificate-format       | ocp.certificate.irot-leaf.p256                                   |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Signatures =========================================== |
+|                                            Signatures                                            |
 +-------------------------------+------------------------------------------------------------------+
 | public-key-format             | ocp.key-format.p256.raw                                          |
 +-------------------------------+------------------------------------------------------------------+
@@ -1174,7 +1316,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-symmetric-sign       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| =========================================== Sealing ============================================ |
+|                                             Sealing                                              |
 +-------------------------------+------------------------------------------------------------------+
 | supports-asymmetric-unseal    | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1182,13 +1324,13 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | unseal-policy-format          | Empty                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Localities =========================================== |
+|                                            Localities                                            |
 +-------------------------------+------------------------------------------------------------------+
 | supports-multiple-localities  | True                                                             |
 +-------------------------------+------------------------------------------------------------------+
 | locality-id-format            | ocp.locality-id-format.uint32                                    |
 +-------------------------------+------------------------------------------------------------------+
-| =========================================== Export ============================================= |
+|                                              Export                                              |
 +-------------------------------+------------------------------------------------------------------+
 | export-cdi-format             | ocp.export-cdi.raw-256                                           |
 +-------------------------------+------------------------------------------------------------------+
@@ -1198,31 +1340,34 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
-| =========================================== General ============================================ |
+|                                             General                                              |
 +-------------------------------+------------------------------------------------------------------+
 | name                          | ocp.profile.irot.p384                                            |
 +-------------------------------+------------------------------------------------------------------+
 | inherits                      | ocp.profile.irot.p256                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ============================================ Input ============================================= |
+|                                              Input                                               |
 +-------------------------------+------------------------------------------------------------------+
 | input-format                  | ocp.format.digest-sha384                                         |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Derivation =========================================== |
+|                                            Derivation                                            |
 +-------------------------------+------------------------------------------------------------------+
 | dice-derivation               | ocp.derive.kdf-cdi-384                                           |
++-------------------------------+------------------------------------------------------------------+
+| stable-cdi-derivation         | ocp.derive.stable-cdi-384 when supports-stable-identity is       |
+|                               | True. Otherwise Empty.                                           |
 +-------------------------------+------------------------------------------------------------------+
 | asymmetric-derivation         | ocp.derive.kdf-asymmetric-p384                                   |
 +-------------------------------+------------------------------------------------------------------+
 | symmetric-derivation          | Empty                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ======================================== Certificates ========================================== |
+|                                           Certificates                                           |
 +-------------------------------+------------------------------------------------------------------+
 | leaf-certificate-format       | ocp.certificate.irot-leaf.p384                                   |
 +-------------------------------+------------------------------------------------------------------+
 | eca-certificate-format        | ocp.certificate.irot-eca.p384                                    |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Signatures =========================================== |
+|                                            Signatures                                            |
 +-------------------------------+------------------------------------------------------------------+
 | to-be-signed-format           | ocp.tbs-format.digest-sha384                                     |
 +-------------------------------+------------------------------------------------------------------+
@@ -1232,7 +1377,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | signature-format              | ocp.signature-format.p384.raw                                    |
 +-------------------------------+------------------------------------------------------------------+
-| =========================================== Export ============================================= |
+|                                              Export                                              |
 +-------------------------------+------------------------------------------------------------------+
 | export-cdi-format             | ocp.export-cdi.raw-384                                           |
 +-------------------------------+------------------------------------------------------------------+
@@ -1242,13 +1387,13 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
-| =========================================== General ============================================ |
+|                                             General                                              |
 +-------------------------------+------------------------------------------------------------------+
 | name                          | ocp.profile.irot-min.p256                                        |
 +-------------------------------+------------------------------------------------------------------+
 | inherits                      | ocp.profile.irot.p256                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Contexts ============================================ |
+|                                             Contexts                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-context-handles      | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1258,13 +1403,13 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-recursive-derivation | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Commands ============================================ |
+|                                             Commands                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-initialize-context   | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
 | supports-rotate-context       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| =========================================== Input ============================================== |
+|                                              Input                                               |
 +-------------------------------+------------------------------------------------------------------+
 | supports-internal-inputs      | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1272,7 +1417,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-internal-dpe-dice    | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ======================================== Certificates ========================================== |
+|                                           Certificates                                           |
 +-------------------------------+------------------------------------------------------------------+
 | max-certificate-size          | 2048 bytes                                                       |
 |                               |                                                                  |
@@ -1282,7 +1427,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-eca-certificates     | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Signatures =========================================== |
+|                                            Signatures                                            |
 +-------------------------------+------------------------------------------------------------------+
 | supports-symmetric-sign       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1292,13 +1437,13 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
-| =========================================== General ============================================ |
+|                                             General                                              |
 +-------------------------------+------------------------------------------------------------------+
 | name                          | ocp.profile.irot-min.p384                                        |
 +-------------------------------+------------------------------------------------------------------+
 | inherits                      | ocp.profile.irot.p384                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Contexts ============================================ |
+|                                             Contexts                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-context-handles      | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1308,13 +1453,13 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-recursive-derivation | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================== Commands ============================================ |
+|                                             Commands                                             |
 +-------------------------------+------------------------------------------------------------------+
 | supports-initialize-context   | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
 | supports-rotate-context       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| =========================================== Input ============================================== |
+|                                              Input                                               |
 +-------------------------------+------------------------------------------------------------------+
 | supports-internal-inputs      | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1322,7 +1467,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-internal-dpe-dice    | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ======================================== Certificates ========================================== |
+|                                           Certificates                                           |
 +-------------------------------+------------------------------------------------------------------+
 | max-certificate-size          | 2048 bytes                                                       |
 |                               |                                                                  |
@@ -1332,7 +1477,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | supports-eca-certificates     | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Signatures =========================================== |
+|                                            Signatures                                            |
 +-------------------------------+------------------------------------------------------------------+
 | supports-symmetric-sign       | False                                                            |
 +-------------------------------+------------------------------------------------------------------+
@@ -1342,29 +1487,29 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | **Attribute**                 | **Value**                                                        |
 +===============================+==================================================================+
-| =========================================== General ============================================ |
+|                                             General                                              |
 +-------------------------------+------------------------------------------------------------------+
 | name                          | ocp.profile.irot.ml-dsa-87                                       |
 +-------------------------------+------------------------------------------------------------------+
 | inherits                      | ocp.profile.irot.p256                                            |
 +-------------------------------+------------------------------------------------------------------+
-| ============================================ Input ============================================= |
+|                                              Input                                               |
 +-------------------------------+------------------------------------------------------------------+
 | input-format                  | ocp.format.digest-sha384                                         |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Derivation =========================================== |
+|                                            Derivation                                            |
 +-------------------------------+------------------------------------------------------------------+
 | dice-derivation               | ocp.derive.kdf-cdi-512                                           |
 +-------------------------------+------------------------------------------------------------------+
 | asymmetric-derivation         | ocp.derive.kdf-asymmetric-mldsa87                                |
 +-------------------------------+------------------------------------------------------------------+
-| ======================================== Certificates ========================================== |
+|                                           Certificates                                           |
 +-------------------------------+------------------------------------------------------------------+
 | leaf-certificate-format       | ocp.certificate.irot-leaf.mldsa87                                |
 +-------------------------------+------------------------------------------------------------------+
 | eca-certificate-format        | ocp.certificate.irot-eca.mldsa87                                 |
 +-------------------------------+------------------------------------------------------------------+
-| ========================================= Signatures =========================================== |
+|                                            Signatures                                            |
 +-------------------------------+------------------------------------------------------------------+
 | to-be-signed-format           | ocp.tbs-format.mldsa87-external-mu, ocp.tbs-format.mldsa87-raw   |
 +-------------------------------+------------------------------------------------------------------+
@@ -1372,7 +1517,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | signature-format              | ocp.signature-format.mldsa87.raw                                 |
 +-------------------------------+------------------------------------------------------------------+
-| =========================================== Export ============================================= |
+|                                              Export                                              |
 +-------------------------------+------------------------------------------------------------------+
 | export-cdi-format             | ocp.export-cdi.raw-512                                           |
 +-------------------------------+------------------------------------------------------------------+
@@ -1403,6 +1548,8 @@ Table: Command IDs
 `DPE_COMMAND_GET_CERTIFICATE_CHAIN`                     | 0x10
 Reserved Range for Vendor Commands                      | 0x80000000 - 0x8000FFFF
 `DPE_COMMAND_UPDATE_CONTEXT_MEASUREMENT`                | 0x80000000
+`DPE_COMMAND_CERTIFY_STABLE_KEY`                        | 0x80000001
+`DPE_COMMAND_SIGN_STABLE_KEY`                           | 0x80000002
 
 Table: Status Codes
 
@@ -1422,6 +1569,8 @@ Table: Status Codes
 `DPE_STATUS_ARGUMENT_NOT_SUPPORTED`          | 0x83        | Argument is not supported by this profile, implementation, or integration.
 `DPE_STATUS_ALREADY_INITIALIZED`             | 0x84        | InitializeContext has already been called on this DPE reset cycle
 `DPE_STATUS_INVALID_PARENT_LOCALITY`         | 0x85        | Parent ContextHandle does not exist in the caller's locality.
+`DPE_STATUS_INVALID_SVN_OVERRIDE`            | 0x86        | Stable SVN is greater than Current SVN.
+`DPE_STATUS_UNAUTHORIZED`                    | 0x87        | Caller tried to advance Current SVN without the parent.
 
 Table: Magic Constants
 
@@ -1459,8 +1608,9 @@ Table: Numeric Constants
 -------------------------------- | ----------------------------
 `MAX_CONTEXTS`                   | Implementation-defined. SHALL be greater than or equal to 8.
 `CURRENT_PROFILE_MAJOR_VERSION`  | 0
-`CURRENT_PROFILE_MINOR_VERSION`  | 14
+`CURRENT_PROFILE_MINOR_VERSION`  | 15
 `SIGN_RAW_MAX_SIZE`              | 1024
+`MAX_SVN_OVERRIDES`              | 8
 
 The following constants are used to compute field sizes:
 
@@ -1619,7 +1769,7 @@ Table: `DERIVE_CONTEXT_INPUT_ARGS` struct
 |                 |                | 20:0      | `RESERVED`                       | Reserved
 | 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte measurement type field
 | 0x24 + H        | `U32`          | 31:0      | `TARGET_LOCALITY`                | Locality in which `NEW_CONTEXT_HANDLE` will be created if `CHANGE_LOCALITY` is set.
-| 0x28 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | SVN added to TCI node. Callers SHOULD set this field to `0` when SVN is unused.
+| 0x28 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | SVN for a new context. See SVN State. SHOULD be `0` when unused.
 
 Table: `DERIVE_CONTEXT_OUTPUT_ARGS` struct if `EXPORT_CDI` is **not** set
 
@@ -1788,7 +1938,7 @@ Table: `UPDATE_CONTEXT_MEASUREMENT_INPUT_ARGS` struct
 | 0x1C            | `HASH`         |           | `INPUT_DATA`                     | Hash to measure.
 | 0x1C + H        | `BITFIELD`     | 31:0      | `RESERVED`                       | Reserved.
 | 0x20 + H        | `BYTES`        | 31:0      | `INPUT_TYPE`                     | 4-byte type used to identify the child of `PARENT_CONTEXT_HANDLE` to update.
-| 0x24 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | SVN added to TCI node. Callers SHOULD set this field to `0` when SVN is unused.
+| 0x24 + H        | `U32`          | 31:0      | `INPUT_SVN`                      | New Current SVN of the child. Boot SVN is unchanged.
 
 Table: `UPDATE_CONTEXT_MEASUREMENT_OUTPUT_ARGS` struct
 
@@ -1799,3 +1949,76 @@ Table: `UPDATE_CONTEXT_MEASUREMENT_OUTPUT_ARGS` struct
 | 0x08            | `U32`         | 31:0     | `PROFILE`                       | One of `DPE_PROFILE_*`.
 | 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`            | Rotated handle for the updated child context.
 | 0x1C            | `BYTES`       | 127:0    | `NEW_PARENT_CONTEXT_HANDLE`     | Rotated handle for the parent context.
+
+#### CertifyStableKey ABI
+
+Table: `CERTIFY_STABLE_KEY_INPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
+| ----------      | ------------- | -------  | ----------------------- | ------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                 | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`            | `DPE_COMMAND_CERTIFY_STABLE_KEY`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`               | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`        | A numeric handle referring to a DPE context.
+| 0x1C            | `BITFIELD`    | 31:0     | `RESERVED`              | Reserved
+| 0x20            | `U32`         | 31:0     | `ADD_FORMAT`            | Output format of `CERTIFICATE`. SHALL be `CERT_FORMAT_X509`.
+| 0x24            | `HASH`        |          | `LABEL`                 | Public digest used in asymmetric key derivation.
+| 0x24 + H        | `U32`         | 31:0     | `SVN_OVERRIDE_COUNT`    | Number of valid `SVN_OVERRIDES` entries. At most `MAX_SVN_OVERRIDES`.
+| 0x28 + H        | `BYTES`       |          | `SVN_OVERRIDES`         | `MAX_SVN_OVERRIDES` entries. Each is `TYPE` (`U32`), then `STABLE_SVN` (`U32`).
+
+Table: `CERTIFY_STABLE_KEY_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits**    | **Name**                       | **Description**
+| ---------       | ----------    | ----------- | ------------------------------ | --------------------------------------------------------------------
+| 0x00            | `U32`         | 31:0        | `MAGIC`                        | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0        | `STATUS`                       | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0        | `PROFILE`                      | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0       | `NEW_CONTEXT_HANDLE`           | Numeric handle referring to the updated context.
+| 0x1C            | `PUBKEY`      |             | `DERIVED_PUBLIC_KEY`           | Derived public key. This is the same public key as the Subject of the returned certificate.
+| 0x1C + P        | `U32`         | 31:0        | `CERTIFICATE_SIZE`             | Number of bytes used in `CERTIFICATE`.
+| 0x20 + P        | `CERTIFICATE` |             | `CERTIFICATE`                  | Returned leaf certificate.
+
+#### SignStableKey ABI
+
+Table: `SIGN_STABLE_KEY_INPUT_ARGS` struct if `IS_RAW` is **not** set
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
+| -------         | ------------- | -------  | ----------------------- | -------------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                 | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`            | `DPE_COMMAND_SIGN_STABLE_KEY`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`               | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`        | A numeric handle referring to a DPE context.
+| 0x1C            | `HASH`        |          | `LABEL`                 | Digest measurement label used in asymmetric key derivation.
+| 0x1C + H        | `BITFIELD`    | 31:2     | `RESERVED`              | Reserved
+|                 |               | 1        | `HAS_CONTEXT`           | Ignored when `IS_RAW` is not set.
+|                 |               | 0        | `IS_RAW`                | Must be 0 for this layout.
+| 0x20 + H        | `HASH`        |          | `TO_BE_SIGNED`          | Hash (or external `mu` for ML-DSA-87) to be signed.
+| 0x20 + 2H       | `U32`         | 31:0     | `SVN_OVERRIDE_COUNT`    | Number of valid `SVN_OVERRIDES` entries. At most `MAX_SVN_OVERRIDES`.
+| 0x24 + 2H       | `BYTES`       |          | `SVN_OVERRIDES`         | `MAX_SVN_OVERRIDES` entries. Each is `TYPE` (`U32`), then `STABLE_SVN` (`U32`).
+
+Table: `SIGN_STABLE_KEY_INPUT_ARGS` struct if `IS_RAW` is set (`DPE_PROFILE_IROT_MLDSA87_SHA384` only)
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
+| -------         | ------------- | -------  | ----------------------- | -------------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                 | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`            | `DPE_COMMAND_SIGN_STABLE_KEY`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`               | `DPE_PROFILE_IROT_MLDSA87_SHA384`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`        | A numeric handle referring to a DPE context.
+| 0x1C            | `HASH`        |          | `LABEL`                 | Digest measurement label used in asymmetric key derivation.
+| 0x1C + H        | `BITFIELD`    | 31:2     | `RESERVED`              | Reserved
+|                 |               | 1        | `HAS_CONTEXT`           | If set, `RAW_DATA[..SIZE]` is encoded as `context_len: u8 || context[context_len] || message[SIZE - 1 - context_len]`. If not set, `RAW_DATA[..SIZE]` is the message and the ML-DSA context is empty.
+|                 |               | 0        | `IS_RAW`                | Must be 1 for this layout.
+| 0x20 + H        | `U32`         | 31:0     | `SIZE`                  | Number of valid bytes in `RAW_DATA`. Must be less than or equal to `SIGN_RAW_MAX_SIZE` (1024).
+| 0x24 + H        | `BYTES`       | 8191:0   | `RAW_DATA`              | Fixed-size 1024-byte buffer containing raw data to be signed.
+| 0x424 + H       | `U32`         | 31:0     | `SVN_OVERRIDE_COUNT`    | Number of valid `SVN_OVERRIDES` entries. At most `MAX_SVN_OVERRIDES`.
+| 0x428 + H       | `BYTES`       |          | `SVN_OVERRIDES`         | `MAX_SVN_OVERRIDES` entries. Each is `TYPE` (`U32`), then `STABLE_SVN` (`U32`).
+
+Table: `SIGN_STABLE_KEY_OUTPUT_ARGS` struct
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**               | **Description**
+| -------         | ----------    | -------  | ---------------------- | -------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                | Magic number `DPE_RESPONSE_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `STATUS`               | One of `DPE_STATUS_*`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`              | One of `DPE_PROFILE_*`.
+| 0x0C            | `BYTES`       | 127:0    | `NEW_CONTEXT_HANDLE`   | Numeric handle referring to the updated context.
+| 0x1C            | `SIGNATURE`   |          | `SIGNATURE`            | Signature over `TO_BE_SIGNED`
