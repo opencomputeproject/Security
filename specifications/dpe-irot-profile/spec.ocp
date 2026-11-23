@@ -377,6 +377,8 @@ specification which are omitted by this profile:
             ocp.csr.irot.\*). If `SUPPORTS_CSR` is false, this command SHALL
             fail.
         *   An implementation SHALL support at least one format.
+*   A certificate returned by CertifyKey SHALL NOT contain the
+    `id-dpe-keyderivation-svn-only` extension.
 
 ### Sign
 
@@ -515,16 +517,14 @@ because the update is authorized by the parent rather than by the child context 
 *   `NEW_PARENT_CONTEXT_HANDLE` SHALL be a rotated handle for `PARENT_CONTEXT_HANDLE`,
     as if `RETAIN_PARENT_CONTEXT` were always set.
 *   The child context's Current SVN SHALL be set to `INPUT_SVN`. Boot SVN SHALL NOT be modified.
-*   DPE SHALL NOT reject `INPUT_SVN` because it is less than the child context's
-    previous Current SVN.
 
 ### CertifyStableKey
 
-CertifyStableKey is a vendor command. It SHALL follow CertifyKey, with these
-differences:
+CertifyStableKey is a vendor command. It SHALL follow the behavior of CertifyKey,
+with these differences:
 
-*   The CDI SHALL be derived with `ocp.derive.stable-cdi-384` instead of
-    `dice-derivation`. Measurement digests SHALL NOT be inputs.
+*   The CDI SHALL be derived with the profile's `stable-cdi-derivation`
+    instead of `dice-derivation`. Measurement digests SHALL NOT be inputs.
 *   `ADD_FORMAT` SHALL be `CERT_FORMAT_X509`. The certificate SHALL meet
     "Stable Identity Certificates".
 *   The caller selects a Stable SVN for each Context TCB node, as specified
@@ -551,9 +551,8 @@ differences:
 SignStableKey is a vendor command. It SHALL follow Sign, with these
 differences:
 
-*   The CDI SHALL be derived with `ocp.derive.stable-cdi-384` instead of
-    `dice-derivation`. Measurement digests SHALL NOT be inputs.
-*   `IS_RAW` and `HAS_CONTEXT` are not supported.
+*   The CDI SHALL be derived with the profile's `stable-cdi-derivation`
+    instead of `dice-derivation`. Measurement digests SHALL NOT be inputs.
 *   `SVN_OVERRIDE_COUNT`, `SVN_OVERRIDES`, and Stable SVN selection SHALL be as
     specified for CertifyStableKey.
 
@@ -634,7 +633,8 @@ The CDI derivation scheme “ocp.derive.kdf-cdi-512” is defined as follows:
 ### ocp.derive.stable-cdi-384
 
 The derivation scheme `ocp.derive.stable-cdi-384` derives the CDI used by
-CertifyStableKey and SignStableKey.
+CertifyStableKey and SignStableKey when a profile's `stable-cdi-derivation`
+names it.
 
 *   The scheme SHALL be deterministic. Identical inputs SHALL produce an identical
     48-byte output for a given implementation.
@@ -647,27 +647,39 @@ CertifyStableKey and SignStableKey.
         to the ASCII bytes `DPE_STABLE`, `Context` equal to the node encoding
         below without the trailing label, and `L` equal to 384.
 *   Measurement digests SHALL NOT be inputs.
-*   Nodes are processed from the root of the Context TCB through the Current Node,
+*   Nodes are processed from the root of the Context TCB to the Current Node,
     inclusive. "Current Node" is the context handle passed to CertifyStableKey or
     SignStableKey.
 *   `CDI_0` SHALL be the initial CDI supplied to the DPE by initial-derivation.
 *   For each node `i` from 1 to `n`:
     *   `SVN_i` is the Stable SVN selected for that node by CertifyStableKey or
         SignStableKey.
-    *   The node encoding is the concatenation of:
-        *   Vendor length as a little-endian U32, then that many Vendor octets
-        *   Model length as a little-endian U32, then that many Model octets
-        *   Type as a little-endian U32
-        *   `SVN_i` as a little-endian U32
-        *   The ASCII bytes `DPE_STABLE`
-    *   Vendor and Model octets SHALL be the recorded content only. A null
-        terminator or padding SHALL NOT be included. An omitted Vendor or Model
-        has length 0.
+    *   The node encoding is:
+        `node_i = LE32(len(VENDOR_i)) || VENDOR_i || LE32(len(MODEL_i))`
+        `|| MODEL_i || LE32(TYPE_i) || LE32(SVN_i) || "DPE_STABLE"`
+    *   Where:
+        *   `LE32(x)` is `x` as a little-endian U32.
+        *   `||` is concatenation.
+        *   `len(x)` is the number of octets in `x`.
+        *   `VENDOR_i` and `MODEL_i` are the recorded Vendor and Model octets of
+            node `i`, with no null terminator or padding. An omitted value has
+            length 0.
+        *   `TYPE_i` is the Type of node `i`.
+        *   `"DPE_STABLE"` is the ASCII bytes.
     *   `CDI_i` is the 48-byte KDF output for this node, using `CDI_{i-1}` as the
         input key material.
 *   The stable CDI is `CDI_n`.
 *   The stable CDI SHALL NOT be exported and SHALL NOT be used as the CDI input
     of `dice-derivation`, export-cdi, or a further DICE key.
+
+### ocp.derive.stable-cdi-256
+
+The derivation scheme `ocp.derive.stable-cdi-256` is
+`ocp.derive.stable-cdi-384` with these changes:
+
+*   SHA-256 replaces SHA-384 in each KDF.
+*   Each CDI is 32 bytes instead of 48 bytes. For SP 800-108, `L` equals 256
+    instead of 384.
 
 ## CDI Export
 
@@ -693,7 +705,7 @@ To generate exported keypair, use asymmetric-derivation for the relevant profile
 
 *   `LABEL`: LABEL parameter passed to Sign, CertifyKey, SignStableKey, or CertifyStableKey
 *   `CDI`: A CDI derived with `dice-derivation` for Sign and CertifyKey, or with
-    `ocp.derive.stable-cdi-384` for SignStableKey and CertifyStableKey
+    the profile's `stable-cdi-derivation` for SignStableKey and CertifyStableKey
 
 ### ocp.derive.kdf-asymmetric-p256
 
@@ -939,12 +951,10 @@ A certificate returned by CertifyStableKey SHALL meet "Requirements for Leaf
 Certificates" in @sec:leaf-cert-requirements, with the following exceptions:
 
 *   In every populated ocp-dice-TcbInfo, “SVN” SHALL be the Stable SVN used for
-    that node by `ocp.derive.stable-cdi-384`.
-*   All other TcbInfo fields SHALL be populated as specified for CertifyKey.
+    that node by the profile's `stable-cdi-derivation`.
 *   The certificate SHALL contain an X.509 extension with extnID
     `id-dpe-keyderivation-svn-only` and an empty extnValue. The OID value under
     the DPE arc is to be assigned by OCP and is TBD until that assignment.
-*   A CertifyKey certificate SHALL NOT contain `id-dpe-keyderivation-svn-only`.
 
 ### Requirements for CSRs {#sec:csr-requirements}
 
@@ -1216,7 +1226,7 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 +-------------------------------+------------------------------------------------------------------+
 | dice-derivation               | ocp.derive.kdf-cdi-256                                           |
 +-------------------------------+------------------------------------------------------------------+
-| stable-cdi-derivation-384     | ocp.derive.stable-cdi-384 when supports-stable-identity is       |
+| stable-cdi-derivation         | ocp.derive.stable-cdi-256 when supports-stable-identity is       |
 |                               | True. Otherwise Empty.                                           |
 +-------------------------------+------------------------------------------------------------------+
 | max-vendor-length             | 50                                                               |
@@ -1343,6 +1353,9 @@ The format “ocp.csr.irot-eca.mldsa87” is defined as follows:
 |                                            Derivation                                            |
 +-------------------------------+------------------------------------------------------------------+
 | dice-derivation               | ocp.derive.kdf-cdi-384                                           |
++-------------------------------+------------------------------------------------------------------+
+| stable-cdi-derivation         | ocp.derive.stable-cdi-384 when supports-stable-identity is       |
+|                               | True. Otherwise Empty.                                           |
 +-------------------------------+------------------------------------------------------------------+
 | asymmetric-derivation         | ocp.derive.kdf-asymmetric-p384                                   |
 +-------------------------------+------------------------------------------------------------------+
@@ -1967,7 +1980,7 @@ Table: `CERTIFY_STABLE_KEY_OUTPUT_ARGS` struct
 
 #### SignStableKey ABI
 
-Table: `SIGN_STABLE_KEY_INPUT_ARGS` struct
+Table: `SIGN_STABLE_KEY_INPUT_ARGS` struct if `IS_RAW` is **not** set
 
 | **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
 | -------         | ------------- | -------  | ----------------------- | -------------------------------------------------------
@@ -1976,10 +1989,29 @@ Table: `SIGN_STABLE_KEY_INPUT_ARGS` struct
 | 0x08            | `U32`         | 31:0     | `PROFILE`               | One of `DPE_PROFILE_*`.
 | 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`        | A numeric handle referring to a DPE context.
 | 0x1C            | `HASH`        |          | `LABEL`                 | Digest measurement label used in asymmetric key derivation.
-| 0x1C + H        | `BITFIELD`    | 31:0     | `RESERVED`              | Reserved
+| 0x1C + H        | `BITFIELD`    | 31:2     | `RESERVED`              | Reserved
+|                 |               | 1        | `HAS_CONTEXT`           | Ignored when `IS_RAW` is not set.
+|                 |               | 0        | `IS_RAW`                | Must be 0 for this layout.
 | 0x20 + H        | `HASH`        |          | `TO_BE_SIGNED`          | Hash (or external `mu` for ML-DSA-87) to be signed.
 | 0x20 + 2H       | `U32`         | 31:0     | `SVN_OVERRIDE_COUNT`    | Number of valid `SVN_OVERRIDES` entries. At most `MAX_SVN_OVERRIDES`.
 | 0x24 + 2H       | `BYTES`       |          | `SVN_OVERRIDES`         | `MAX_SVN_OVERRIDES` entries. Each is `TYPE` (`U32`), then `STABLE_SVN` (`U32`).
+
+Table: `SIGN_STABLE_KEY_INPUT_ARGS` struct if `IS_RAW` is set (`DPE_PROFILE_IROT_MLDSA87_SHA384` only)
+
+| **Byte Offset** | **Type**      | **Bits** | **Name**                | **Description**
+| -------         | ------------- | -------  | ----------------------- | -------------------------------------------------------
+| 0x00            | `U32`         | 31:0     | `MAGIC`                 | Magic number `DPE_COMMAND_MAGIC`.
+| 0x04            | `U32`         | 31:0     | `COMMAND_ID`            | `DPE_COMMAND_SIGN_STABLE_KEY`.
+| 0x08            | `U32`         | 31:0     | `PROFILE`               | `DPE_PROFILE_IROT_MLDSA87_SHA384`.
+| 0x0C            | `BYTES`       | 127:0    | `CONTEXT_HANDLE`        | A numeric handle referring to a DPE context.
+| 0x1C            | `HASH`        |          | `LABEL`                 | Digest measurement label used in asymmetric key derivation.
+| 0x1C + H        | `BITFIELD`    | 31:2     | `RESERVED`              | Reserved
+|                 |               | 1        | `HAS_CONTEXT`           | If set, `RAW_DATA[..SIZE]` is encoded as `context_len: u8 || context[context_len] || message[SIZE - 1 - context_len]`. If not set, `RAW_DATA[..SIZE]` is the message and the ML-DSA context is empty.
+|                 |               | 0        | `IS_RAW`                | Must be 1 for this layout.
+| 0x20 + H        | `U32`         | 31:0     | `SIZE`                  | Number of valid bytes in `RAW_DATA`. Must be less than or equal to `SIGN_RAW_MAX_SIZE` (1024).
+| 0x24 + H        | `BYTES`       | 8191:0   | `RAW_DATA`              | Fixed-size 1024-byte buffer containing raw data to be signed.
+| 0x424 + H       | `U32`         | 31:0     | `SVN_OVERRIDE_COUNT`    | Number of valid `SVN_OVERRIDES` entries. At most `MAX_SVN_OVERRIDES`.
+| 0x428 + H       | `BYTES`       |          | `SVN_OVERRIDES`         | `MAX_SVN_OVERRIDES` entries. Each is `TYPE` (`U32`), then `STABLE_SVN` (`U32`).
 
 Table: `SIGN_STABLE_KEY_OUTPUT_ARGS` struct
 
