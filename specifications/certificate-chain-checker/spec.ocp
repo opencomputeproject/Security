@@ -1,0 +1,406 @@
+---
+title: "OCP Certificate Chain Checker Requirements"
+version: "0.1"
+type: BASE
+project: Security
+authors: [(See Acknowledgements section)]
+bibliography: bibliography.yaml
+...
+---
+
+\currenttemplateversion
+
+---
+
+\tableofcontents
+
+\listoftables
+
+---
+
+<!-- Will bring this in when its an actual contribution
+
+# License
+
+## Open Web Foundation (OWF) CLA
+
+-->
+
+# Acknowledgements
+
+The Contributors of this Specification would like to acknowledge the following:
+
+- Steven Bellock (NVIDIA)
+
+# Compliance with OCP Tenets
+
+## Openness
+
+The requirements are developed in the open within the OCP Security Project, and the checks that
+they call for are drawn from published specifications.
+
+## Efficiency
+
+A common checker allows a device vendor to find defects in a certificate chain before a device
+ships, rather than during integration with each Verifier.
+
+## Impact
+
+Certificate chains that conform to the same specifications can be consumed by any Verifier that
+implements those specifications.
+
+## Scale
+
+The checker does not need access to a device, and so it can be applied to every certificate chain
+that a device vendor produces.
+
+## Sustainability
+
+Finding certificate chain defects before deployment avoids reissuing certificates for, or returning,
+devices that are already in service.
+
+# Revision History
+
+| Revision | Date       | Description    |
+| :------- | :--------- | :------------- |
+| 0.1      | 2026-11-23 | Initial draft. |
+
+Table: Revision History {#tbl:revision-history}
+
+# Introduction
+
+Device vendors generate certificate chains that must satisfy several specifications at once,
+including RFC 5280 [@{ietf-rfc5280}], SPDM [@{dmtf-dsp0274}], and the TCG DICE specifications. A
+certificate chain that violates one of these specifications, for example through a missing extension
+or an encoding that is not valid DER, is often discovered late, when a Verifier rejects the chain of
+a device that has already been manufactured. This document specifies high-level requirements for a
+certificate chain checker, named `ocp-certificate-chain-checker`, that a device vendor can run on a
+certificate chain to find such violations before a device ships.
+
+The checker is standalone, meaning that the certificate chain itself is its primary input and that
+it does not need access to the device that the chain belongs to.
+
+## Scope
+
+The checker targets certificate chains for devices in data centers, such as the device identity and
+attestation certificate chains that an SPDM Responder returns.
+
+The checker is intended for a device vendor, who runs it to confirm that the certificate chains
+that the vendor generates conform to the reference specifications. The checker is not a Verifier,
+and it is not intended to be run by a Verifier in production. It does not decide whether a device
+is to be trusted.
+
+The following are outside the scope of this document:
+
+- Evaluation of attestation evidence other than certificates, such as measurements, Entity
+  Attestation Tokens, and reference values.
+- Determination of certificate revocation status.
+- The individual rules that the checker evaluates. Each rule is traceable to a clause of a
+  reference specification, and the rules are to be specified separately once these high-level
+  requirements are agreed upon and approved.
+- The design and implementation of the checker, including its programming language, libraries, and
+  command syntax.
+
+# Reference Specifications
+
+@tbl:reference-specifications lists the specifications that the checker evaluates certificate chains
+against. A specification that is always applied governs every X.509 certificate. A specification
+that is applied when selected governs only the devices that claim conformance to it, and so it is
+the user who selects it.
+
+| Specification                                                                    | Subject                                                       | Applied       |
+| :------------------------------------------------------------------------------- | :------------------------------------------------------------ | :------------ |
+| RFC 5280 [@{ietf-rfc5280}]                                                       | Certificate profile and certification path validation         | Always        |
+| ITU-T X.690 [@{itu-t-x690}]                                                      | Distinguished Encoding Rules (DER)                            | Always        |
+| DSP0274 [@{dmtf-dsp0274}]                                                        | SPDM certificate and certificate chain requirements           | When selected |
+| DICE Attestation Architecture [@{tcg-dice-attestation-architecture}]             | Certificate extensions that convey evidence                   | When selected |
+| DICE Concise Evidence Binding for SPDM [@{tcg-dice-concise-evidence-binding-for-spdm}] | Certificate requirements for SPDM and DICE certificate models | When selected |
+| DICE Certificate Profiles [@{tcg-dice-certificate-profiles}]                     | Certificate profiles and policy object identifiers            | When selected |
+| Attestation of System Components [@{ocp-attestation}]                            | Certificate chain requirements for attester devices           | When selected |
+| Server iRoT Profile for DPE [@{ocp-dpe-irot-profile}]                            | Embedded CA and leaf certificate requirements                 | When selected |
+
+Table: Reference Specifications {#tbl:reference-specifications}
+
+The versions of each specification that the checker implements are identified together with the
+rules.
+
+# Inputs
+
+## Certificate Chain
+
+- `Input_PEM`: When the input is one or more PEM-encoded certificates, the checker shall evaluate
+  the certificates as a certificate chain.
+    - Rationale: PEM is the form in which certificates are most often exchanged between a device
+      vendor and its customers.
+- `Input_Binary`: When the input is one or more concatenated certificates in binary form, the
+  checker shall evaluate the certificates as a certificate chain.
+    - Rationale: This is the form in which a certificate chain is commonly stored on a device.
+- `Input_SPDM_Chain`: When the input is in the SPDM certificate chain format, the checker shall
+  evaluate both the fields that precede the certificates and the certificates themselves.
+    - Rationale: This is the form in which a certificate chain is provisioned to, and retrieved
+      from, an SPDM endpoint. Its `Length` and `RootHash` fields are generated separately from the
+      certificates and can be incorrect.
+    - Source: [@{dmtf-dsp0274}], certificate chain format.
+- `Input_Order`: The checker shall treat the first certificate in the input as the certificate
+  closest to the root and, when the chain is complete, the last certificate in the input as the
+  leaf certificate.
+    - Rationale: This is the order that SPDM defines. A chain that is provisioned to a device can be
+      partial and end in a CA certificate, as is the case for `SET_CERTIFICATE` with the AliasCert
+      model, and so the last certificate is the leaf certificate only when the chain is complete.
+    - Source: [@{dmtf-dsp0274}], certificates and certificate chains.
+- `Input_Reverse_Order`: If the certificates in the input form a chain only when taken in the
+  reverse order, then the checker shall report a single error that identifies the reversed order,
+  instead of an error for each certificate.
+    - Rationale: PEM files are often ordered from the leaf certificate to the root. Without this
+      requirement such an input would produce an error for every certificate, none of which names
+      the cause.
+- `Input_Unrecognized`: If the input is in none of the forms that `Input_PEM`, `Input_Binary`, and
+  `Input_SPDM_Chain` describe, then the checker shall report that the evaluation cannot be
+  performed, together with the reason, and end the evaluation.
+- `Input_Malformed_Certificate`: If a certificate in the input cannot be decoded, then the checker
+  shall report an error for that certificate and continue to evaluate every other certificate whose
+  position in the input can be determined.
+
+## Context
+
+Many requirements in the reference specifications depend on information that is not present in the
+certificate chain. This information is referred to as context. @tbl:context lists the context items
+and states how the checker treats an item that the user does not declare.
+
+| Context Item             | Description                                                                                                | When Not Declared                                                          |
+| :----------------------- | :--------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| Reference specifications | The specifications from @tbl:reference-specifications to apply, and the version of each.                   | Not inferred. Only the specifications that are always applied are applied. |
+| Certificate model        | The SPDM certificate model of the chain: DeviceCert, AliasCert, or GenericCert.                            | Inferred.                                                                  |
+| SPDM role                | Whether the chain belongs to an SPDM Requester or an SPDM Responder.                                       | Inferred.                                                                  |
+| Certificate slot         | The SPDM certificate slot that holds the chain.                                                            | Rules that depend on it are not evaluated.                                 |
+| Hash algorithm           | The hash algorithm of the `RootHash` field in the SPDM certificate chain format.                           | Inferred.                                                                  |
+| Chain extent             | Whether the chain is complete and ends in a leaf certificate, or is partial and ends in a CA certificate.  | The chain is treated as complete.                                          |
+| Certificate profiles     | The DICE certificate profiles of each certificate in the chain: IDevID, LDevID, ECA, attestation, or none. | Inferred.                                                                  |
+| Key uses                 | What the key of each certificate is used to sign, such as Evidence or device identity challenges.          | Rules that depend on it are not evaluated.                                 |
+| Trust anchor             | The certificate that the chain is expected to chain to.                                                    | See `Chain_No_Trust_Anchor`.                                               |
+| Validation time          | The time at which certificate validity periods are evaluated.                                              | See `Chain_Validation_Time`.                                               |
+
+Table: Context Items {#tbl:context}
+
+An item that is marked as inferred, and whose value the certificate chain does not determine
+unambiguously, has no value. The rules that depend on it are not evaluated. A rule depends on an
+item only where the value of the item changes the findings of the rule, and so a rule whose
+findings are the same for every value of an item is evaluated when the item has no value.
+
+- `Context_Declare`: The checker shall allow the user to declare each context item in @tbl:context.
+- `Context_Declared`: When the user declares a context item, the checker shall use the declared
+  value.
+- `Context_Inferred`: When the user does not declare a context item that @tbl:context marks as
+  inferred, and the certificate chain determines the value of that item unambiguously, the checker
+  shall use the value that the chain determines.
+    - Rationale: Inference keeps the common case short for the user. The report states that the
+      value was inferred, which allows the user to detect a case where the checker inferred
+      something other than what was intended.
+- `Context_Version_Default`: When the user selects a reference specification without declaring its
+  version, the checker shall apply the latest version of that specification that it implements.
+- `Context_Unsupported`: If the user declares a value for a context item that the checker does not
+  implement, such as a version of a reference specification, then the checker shall report that the
+  evaluation cannot be performed, together with the reason, and end the evaluation.
+    - Rationale: Silently substituting another value would produce findings against requirements
+      that the user did not ask for.
+
+# Checks
+
+## Encoding
+
+- `Encoding_DER`: If a certificate can be decoded but is not encoded according to the Distinguished
+  Encoding Rules, then the checker shall report an error that identifies the location of the
+  violation within the certificate and continue to evaluate the certificate.
+    - Rationale: RFC 5280 requires DER only for the data that is signed when the signature is
+      calculated. The checker requires DER for the entire certificate chain, as DSP0274 does, since
+      a Verifier may reject a certificate that is not DER-encoded.
+    - Source: [@{itu-t-x690}] and [@{dmtf-dsp0274}], certificates and certificate chains.
+- `Encoding_ASN1_Definition`: If a certificate violates a DER rule that depends on the ASN.1
+  definition of the encoded component, such as the rule that a component whose value is equal to
+  its default value is not encoded, then the checker shall report an error.
+    - Rationale: Violations of this rule have occurred in device certificate chains. Such rules can
+      only be evaluated by a checker that applies the ASN.1 definition of each component, which
+      many certificate parsers do not.
+    - Source: [@{itu-t-x690}], clause 11.5.
+- `Encoding_Extension`: If the value of an extension that an applied specification defines is not
+  encoded according to the ASN.1 definition of that extension, then the checker shall report an
+  error.
+    - Rationale: The value of an extension is carried in a certificate as an octet string, and so
+      the encoding of an extension is checked only if the checker decodes it.
+
+## Chain Validation
+
+- `Chain_Path_Validation`: If the certificate chain fails a step of the certification path
+  validation procedure, other than the determination of revocation status, then the checker shall
+  report an error for each step that fails.
+    - Source: [@{ietf-rfc5280}], section 6.
+- `Chain_Trust_Anchor`: When the user declares a trust anchor, the checker shall validate the
+  certificate chain against the declared trust anchor.
+- `Chain_No_Trust_Anchor`: When the user does not declare a trust anchor, the checker shall treat
+  the first certificate in the chain as the trust anchor and report that it did so.
+    - Rationale: A device vendor often checks a certificate chain before the root certificate is
+      available. The report makes it clear that trust in the chain was assumed rather than verified.
+- `Chain_Validation_Time`: When the user does not declare a validation time, the checker shall
+  use the time of the evaluation as the validation time and report that it did so.
+    - Rationale: The report of such an evaluation depends on when the evaluation is performed. A
+      user who needs a reproducible report declares the validation time.
+- `Chain_Unsupported_Algorithm`: If a certificate is signed with an algorithm that the checker does
+  not implement, then the checker shall report the signature on that certificate as not evaluated.
+
+## Certificate Content
+
+- `Content_Always`: The checker shall evaluate every certificate chain against the reference
+  specifications that @tbl:reference-specifications marks as always applied.
+- `Content_Selected`: Where a reference specification is selected, the checker shall evaluate the
+  certificate chain against that specification.
+- `Content_Mandatory`: If a certificate lacks a field, extension, or object identifier that an
+  applied specification requires of that certificate, then the checker shall report the missing
+  item.
+- `Content_Forbidden`: If a certificate contains a field, extension, or object identifier that an
+  applied specification forbids in that certificate, then the checker shall report the forbidden
+  item.
+- `Content_Value`: If a field or extension in a certificate holds a value that an applied
+  specification does not permit, then the checker shall report the field or extension.
+- `Content_Chain`: If the certificate chain as a whole, or the relationship between certificates in
+  the chain, does not meet a requirement of an applied specification, then the checker shall report
+  the requirement that is not met.
+    - Rationale: Some requirements cannot be evaluated on one certificate alone. An example is a
+      requirement that an object identifier is present only in certain certificates of the chain.
+- `Content_Certificate_Role`: The checker shall report the certificate role, as defined by each
+  applied specification, that it assigned to each certificate in the chain.
+    - Rationale: Reference specifications place different requirements on a certificate depending on
+      its role in the chain, for example Device Certificate CA or Alias Certificate. The user needs
+      to see how the checker classified each certificate in order to interpret the findings.
+- `Content_Conflict`: When a certificate is subject to two rules that the checker has recorded as
+  conflicting, the checker shall report the conflict and identify both rules.
+    - Rationale: Reference specifications conflict in places, as listed in the appendix. Where a
+      conflict is not resolved, recording it allows a device vendor to see that a finding results
+      from two specifications that disagree and not from a defect that the vendor can correct.
+- `Content_Unevaluated_Extension`: When a certificate contains an extension that no applied
+  specification defines, the checker shall report the extension as not evaluated and state whether
+  the extension is marked critical.
+    - Rationale: RFC 5280 requires a Verifier to reject a certificate that contains a critical
+      extension that the Verifier does not recognize.
+    - Source: [@{ietf-rfc5280}], section 4.2.
+- `Content_Unselected_Specification`: When a certificate contains an extension or object identifier
+  that is defined by a reference specification that is not applied, the checker shall report that
+  the specification was not applied.
+    - Rationale: A user that has not selected a specification that the certificate chain evidently
+      follows would otherwise receive a report without errors.
+
+# Reporting
+
+The checker reports its results as findings. Each finding has one of four severities: error,
+warning, not evaluated, or information.
+
+- `Report_All`: The checker shall report every violation that it detects during an evaluation.
+    - Rationale: A device vendor that corrects one violation should not have to run the checker
+      again to discover the next one.
+- `Report_Finding`: The checker shall identify, for each finding, its severity, the certificate or
+  other part of the input that it applies to, and, where a rule produced the finding, the rule and
+  the reference specification and clause that the rule is drawn from.
+- `Report_Error`: When a finding arises from a requirement that a reference specification states as
+  mandatory, the checker shall report the finding as an error.
+- `Report_Warning`: When a finding arises from a requirement that a reference specification states
+  as a recommendation, the checker shall report the finding as a warning.
+- `Report_Warning_Implied`: When a finding arises from something that a reference specification
+  implies and does not state as a requirement or as a recommendation, the checker shall report the
+  finding as a warning.
+    - Rationale: A reference specification can imply a property of a certificate chain without
+      stating it, such as an order of certificates that follows from its definitions. The finding
+      is not an error, because the specification does not require the property.
+- `Report_Not_Evaluated`: If the checker cannot evaluate a rule, then the checker shall report the
+  rule as not evaluated and identify the reason.
+    - Rationale: A rule that is skipped without notice gives false assurance. Reasons include a
+      context item that has no value, an algorithm that the checker does not implement, and a
+      certificate that cannot be decoded.
+- `Report_Information`: When the checker reports a context value, a certificate role, or an
+  assumption that it made, the checker shall report it as information.
+- `Report_Context`: The checker shall include in its report the value that it used for each context
+  item and whether that value was declared, inferred, or a default.
+    - Rationale: The context includes the reference specifications that were applied, the version
+      of each, and the validation time. A report cannot be interpreted or reproduced without them.
+- `Report_Machine_Readable`: When the user requests machine-readable output, the checker shall
+  produce its report in a documented machine-readable format.
+- `Report_Result`: When an evaluation ends, the checker shall indicate to the process that invoked
+  it which one of the following applies: the evaluation could not be performed; a finding was
+  reported as an error; no finding was reported as an error but a finding was reported as not
+  evaluated; or no finding was reported as an error or as not evaluated.
+    - Rationale: A process that only learns whether an error was reported would treat a rule that
+      was not evaluated, or a signature that was not verified, as a success.
+- `Report_List_Rules`: When the user requests a list of rules, the checker shall list every rule
+  that it implements together with the reference specification, version, and clause that each rule
+  is drawn from.
+
+# Operation
+
+- `Operation_Standalone`: The checker shall evaluate a certificate chain without communicating with
+  the device that the chain belongs to.
+- `Operation_Offline`: The checker shall evaluate a certificate chain without access to a network.
+    - Rationale: Build and manufacturing environments are often isolated, and a result should not
+      depend on the availability of an external service.
+- `Operation_Non_Interactive`: The checker shall complete an evaluation without prompting the user
+  for input.
+- `Operation_Deterministic`: While the validation time is declared, when given the same input and
+  the same context, a release of the checker shall produce the same report.
+    - Rationale: When the validation time is not declared, `Chain_Validation_Time` makes the report
+      depend on the time of the evaluation.
+
+# Extensibility
+
+Reference specifications are revised, and new specifications are published. The following
+requirements allow rules to be added to the checker without disturbing the rules that it already
+implements.
+
+- `Extend_Rule_Identifier`: The checker shall identify each rule by an identifier that does not
+  change between releases of the checker.
+- `Extend_Rule_Independence`: When a rule is added to the checker, the checker shall continue to
+  produce the same findings from the rules that it already implements.
+    - Rationale: This requirement concerns the effect of a new rule on the other rules. A rule that
+      is found to be incorrect can still be corrected.
+- `Extend_Version`: When a version of a reference specification is added to the checker, the checker
+  shall continue to produce the same findings for the versions of that specification that it
+  already implements.
+    - Rationale: A device conforms to the version of a specification that was current when the
+      device was designed, and it remains in service after that version has been superseded.
+- `Extend_Specification`: When a reference specification is added to the checker, the checker shall
+  allow the user to select it in the same manner as the existing reference specifications.
+
+# Appendix
+
+## Open Issues
+
+### Conflicts and Gaps in Reference Specifications
+
+The following conflicts and gaps affect the rules that the checker evaluates. Each needs either a
+resolution or a decision to record it in the rules, before the corresponding rules are specified.
+
+- Basic constraints in a leaf certificate. DICE Certificate Profiles states that a certificate whose
+  subject is not an embedded CA should not contain the basic constraints extension. The Server iRoT
+  Profile for DPE states that the extension shall be included in the leaf certificate. DSP0274
+  permits either, as the extension is optional in the leaf certificate.
+- Object identifiers in the Server iRoT Profile for DPE. The profile refers to object identifiers
+  with names of the form `ocp-dice-*`, for example `ocp-dice-kp-eca` and `ocp-dice-Ueid`, and does
+  not assign values to them.
+- Key usage of the device identity key. The key table in Attestation of System Components states
+  that the device identity key signs the certificate of the device attestation key and lists digital
+  signature as its only key usage. RFC 5280 requires the `keyCertSign` key usage for a key that
+  verifies signatures on certificates.
+
+### Specifications Under Consideration
+
+The following are candidates for @tbl:reference-specifications.
+
+- The RFCs that define algorithm identifiers and public key encodings for X.509, since RFC 5280 does
+  not define them. This includes the RFCs for post-quantum signature algorithms.
+- The Caliptra specification, which defines the fields of each certificate in its certificate chain.
+- The PCI Express Base Specification, for devices that implement CMA-SPDM or TDISP.
+- Policies on algorithm strength, such as CNSA 2.0.
+
+### Other
+
+- Attestation of System Components version 1.0 is the published version. Version 1.1 is under
+  development and adds requirements on SPDM. The version or versions that the checker applies need
+  to be decided.
+- Whether a user can add rules to the checker without a new release of the checker, for example for
+  a vendor-specific certificate profile.
