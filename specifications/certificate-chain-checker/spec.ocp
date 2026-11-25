@@ -155,11 +155,18 @@ rules.
       model, and so the last certificate is the leaf certificate only when the chain is complete.
     - Source: [@{dmtf-dsp0274}], certificates and certificate chains.
 - `Input_Reverse_Order`: If the certificates in the input form a chain only when taken in the
-  reverse order, then the checker shall report a single error that identifies the reversed order,
-  instead of an error for each certificate.
+  reverse order, then the checker shall evaluate the chain in the reverse order and report a single
+  finding that identifies the reversed order, instead of an error for each certificate.
     - Rationale: PEM files are often ordered from the leaf certificate to the root. Without this
       requirement such an input would produce an error for every certificate, none of which names
       the cause.
+- `Input_Reverse_Order_SPDM`: While DSP0274 is applied, if the certificates in the input form a
+  chain only when taken in the reverse order, then the checker shall report the reversed order as
+  an error.
+    - Rationale: The order of `Input_Order` is a requirement of SPDM. The other reference
+      specifications do not state an order, and so the reversed order is reported for information
+      when DSP0274 is not applied.
+    - Source: [@{dmtf-dsp0274}], certificates and certificate chains.
 - `Input_Unrecognized`: If the input is in none of the forms that `Input_PEM`, `Input_Binary`, and
   `Input_SPDM_Chain` describe, then the checker shall report that the evaluation cannot be
   performed, together with the reason, and end the evaluation.
@@ -181,6 +188,7 @@ and states how the checker treats an item that the user does not declare.
 | Certificate slot         | The SPDM certificate slot that holds the chain.                                                            | Rules that depend on it are not evaluated.                                 |
 | Hash algorithm           | The hash algorithm of the `RootHash` field in the SPDM certificate chain format.                           | Inferred.                                                                  |
 | Chain extent             | Whether the chain is complete and ends in a leaf certificate, or is partial and ends in a CA certificate.  | The chain is treated as complete.                                          |
+| Device Certificate CA    | Which certificate in the chain is the Device Certificate CA of the SPDM AliasCert model.                   | The checker identifies it from the chain where it can.                     |
 | Certificate profiles     | The DICE certificate profiles of each certificate in the chain: IDevID, LDevID, ECA, attestation, or none. | Inferred.                                                                  |
 | Key uses                 | What the key of each certificate is used to sign, such as Evidence or device identity challenges.          | Rules that depend on it are not evaluated.                                 |
 | Trust anchor             | The certificate that the chain is expected to chain to.                                                    | See `Chain_No_Trust_Anchor`.                                               |
