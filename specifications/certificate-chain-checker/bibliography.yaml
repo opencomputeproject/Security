@@ -6,6 +6,48 @@ references:
       year: 2008
       month: 5
     url: "https://www.rfc-editor.org/rfc/rfc5280.html"
+  - id: "ietf-rfc3279"
+    title: "Algorithms and Identifiers for the Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile"
+    publisher: "IETF"
+    issued:
+      year: 2002
+      month: 4
+    url: "https://www.rfc-editor.org/rfc/rfc3279.html"
+  - id: "ietf-rfc4055"
+    title: "Additional Algorithms and Identifiers for RSA Cryptography for use in the Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile"
+    publisher: "IETF"
+    issued:
+      year: 2005
+      month: 6
+    url: "https://www.rfc-editor.org/rfc/rfc4055.html"
+  - id: "ietf-rfc5480"
+    title: "Elliptic Curve Cryptography Subject Public Key Information"
+    publisher: "IETF"
+    issued:
+      year: 2009
+      month: 3
+    url: "https://www.rfc-editor.org/rfc/rfc5480.html"
+  - id: "ietf-rfc5758"
+    title: "Internet X.509 Public Key Infrastructure: Additional Algorithms and Identifiers for DSA and ECDSA"
+    publisher: "IETF"
+    issued:
+      year: 2010
+      month: 1
+    url: "https://www.rfc-editor.org/rfc/rfc5758.html"
+  - id: "ietf-rfc8410"
+    title: "Algorithm Identifiers for Ed25519, Ed448, X25519, and X448 for Use in the Internet X.509 Public Key Infrastructure"
+    publisher: "IETF"
+    issued:
+      year: 2018
+      month: 8
+    url: "https://www.rfc-editor.org/rfc/rfc8410.html"
+  - id: "ietf-rfc9881"
+    title: "Internet X.509 Public Key Infrastructure - Algorithm Identifiers for the Module-Lattice-Based Digital Signature Algorithm (ML-DSA)"
+    publisher: "IETF"
+    issued:
+      year: 2025
+      month: 10
+    url: "https://www.rfc-editor.org/rfc/rfc9881.html"
   - id: "itu-t-x690"
     title: "Information technology - ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)"
     publisher: "ITU-T"

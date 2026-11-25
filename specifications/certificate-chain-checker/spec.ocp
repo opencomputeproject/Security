@@ -112,6 +112,12 @@ the user who selects it.
 | :------------------------------------------------------------------------------- | :------------------------------------------------------------ | :------------ |
 | RFC 5280 [@{ietf-rfc5280}]                                                       | Certificate profile and certification path validation         | Always        |
 | ITU-T X.690 [@{itu-t-x690}]                                                      | Distinguished Encoding Rules (DER)                            | Always        |
+| RFC 3279 [@{ietf-rfc3279}]                                                       | RSA public keys, RSA signatures, and ECDSA signatures         | Always        |
+| RFC 4055 [@{ietf-rfc4055}]                                                       | RSASSA-PSS, and RSA signatures with SHA-2                     | Always        |
+| RFC 5480 [@{ietf-rfc5480}]                                                       | Elliptic curve public keys                                    | Always        |
+| RFC 5758 [@{ietf-rfc5758}]                                                       | ECDSA signatures with SHA-2                                   | Always        |
+| RFC 8410 [@{ietf-rfc8410}]                                                       | Ed25519 and Ed448                                             | Always        |
+| RFC 9881 [@{ietf-rfc9881}]                                                       | ML-DSA                                                        | Always        |
 | DSP0274 [@{dmtf-dsp0274}]                                                        | SPDM certificate and certificate chain requirements           | When selected |
 | DICE Attestation Architecture [@{tcg-dice-attestation-architecture}]             | Certificate extensions that convey evidence                   | When selected |
 | DICE Concise Evidence Binding for SPDM [@{tcg-dice-concise-evidence-binding-for-spdm}] | Certificate requirements for SPDM and DICE certificate models | When selected |
@@ -391,8 +397,7 @@ resolution or a decision to record it in the rules, before the corresponding rul
 
 The following are candidates for @tbl:reference-specifications.
 
-- The RFCs that define algorithm identifiers and public key encodings for X.509, since RFC 5280 does
-  not define them. This includes the RFCs for post-quantum signature algorithms.
+- The RFCs that define further algorithms for X.509, such as RFC 9909 for SLH-DSA.
 - The Caliptra specification, which defines the fields of each certificate in its certificate chain.
 - The PCI Express Base Specification, for devices that implement CMA-SPDM or TDISP.
 - Policies on algorithm strength, such as CNSA 2.0.
