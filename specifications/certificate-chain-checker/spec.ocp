@@ -198,7 +198,7 @@ and states how the checker treats an item that the user does not declare.
 | Certificate profiles     | The DICE certificate profiles of each certificate in the chain: IDevID, LDevID, ECA, attestation, or none. | Inferred.                                                                  |
 | Key uses                 | What the key of each certificate is used to sign, such as Evidence or device identity challenges.          | Rules that depend on it are not evaluated.                                 |
 | Trust anchor             | The certificate that the chain is expected to chain to.                                                    | See `Chain_No_Trust_Anchor`.                                               |
-| Validation time          | The time at which certificate validity periods are evaluated.                                              | See `Chain_Validation_Time`.                                               |
+| Validation time          | The time at which certificate validity periods are evaluated.                                              | See `Chain_No_Validation_Time`.                                            |
 
 Table: Context Items {#tbl:context}
 
@@ -278,10 +278,14 @@ value.
   the first certificate in the chain as the trust anchor and report that it did so.
     - Rationale: A device vendor often checks a certificate chain before the root certificate is
       available. The report makes it clear that trust in the chain was assumed rather than verified.
-- `Chain_Validation_Time`: When the user does not declare a validation time, the checker shall
+- `Chain_Validation_Time`: When the user declares a validation time, the checker shall evaluate
+  certificate validity periods at the declared time.
+- `Chain_No_Validation_Time`: When the user does not declare a validation time, the checker shall
   use the time of the evaluation as the validation time and report that it did so.
     - Rationale: The report of such an evaluation depends on when the evaluation is performed. A
-      user who needs a reproducible report declares the validation time.
+      user who needs a reproducible report declares the validation time. If the time of the
+      evaluation is not available, the validation time has no value, and the rules that depend on
+      it are not evaluated.
 - `Chain_Unsupported_Algorithm`: If a certificate is signed with an algorithm that the checker does
   not implement, then the checker shall report the signature on that certificate as not evaluated.
 
@@ -407,8 +411,8 @@ warning, not evaluated, or information.
       evaluated.
 - `Operation_Deterministic`: While the validation time is declared, when given the same input and
   the same context, a release of the checker shall produce the same report.
-    - Rationale: When the validation time is not declared, `Chain_Validation_Time` makes the report
-      depend on the time of the evaluation.
+    - Rationale: When the validation time is not declared, `Chain_No_Validation_Time` makes the
+      report depend on the time of the evaluation.
 
 # Extensibility
 
