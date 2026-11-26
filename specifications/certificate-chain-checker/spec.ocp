@@ -153,8 +153,7 @@ rules.
       not applied, `Content_Unselected_Specification` reports that it is not.
     - Source: [@{dmtf-dsp0274}], certificate chain format.
 - `Input_Order`: The checker shall treat the first certificate in the input as the certificate
-  closest to the root and, when the chain is complete, the last certificate in the input as the
-  leaf certificate.
+  closest to the root, and the last certificate of a complete chain as the leaf certificate.
     - Rationale: This is the order that SPDM defines. A chain that is provisioned to a device can be
       partial and end in a CA certificate, as is the case for `SET_CERTIFICATE` with the AliasCert
       model, and so the last certificate is the leaf certificate only when the chain is complete.
@@ -210,9 +209,9 @@ value.
 - `Context_Declare`: The checker shall allow the user to declare each context item in @tbl:context.
 - `Context_Declared`: When the user declares a context item, the checker shall use the declared
   value.
-- `Context_Inferred`: When the user does not declare a context item that @tbl:context marks as
-  inferred, and the certificate chain and the rest of the context determine the value of that item
-  unambiguously, the checker shall use the value that they determine.
+- `Context_Inferred`: While a context item that @tbl:context marks as inferred is not declared, and
+  the certificate chain and the rest of the context determine the value of that item unambiguously,
+  the checker shall use the value that they determine.
     - Rationale: Inference keeps the common case short for the user. The report states that the
       value was inferred, which allows the user to detect a case where the checker inferred
       something other than what was intended. An example of the rest of the context is the version
@@ -273,14 +272,14 @@ value.
     - Source: [@{ietf-rfc5280}], section 6.1.1.
 - `Chain_Trust_Anchor`: When the user declares a trust anchor, the checker shall validate the
   certificate chain against the declared trust anchor.
-- `Chain_No_Trust_Anchor`: When the user does not declare a trust anchor, the checker shall treat
-  the first certificate in the chain as the trust anchor and report that it did so.
+- `Chain_No_Trust_Anchor`: While no trust anchor is declared, the checker shall treat the first
+  certificate in the chain as the trust anchor and report that it did so.
     - Rationale: A device vendor often checks a certificate chain before the root certificate is
       available. The report makes it clear that trust in the chain was assumed rather than verified.
 - `Chain_Validation_Time`: When the user declares a validation time, the checker shall evaluate
   certificate validity periods at the declared time.
-- `Chain_No_Validation_Time`: When the user does not declare a validation time, the checker shall
-  use the time of the evaluation as the validation time and report that it did so.
+- `Chain_No_Validation_Time`: While no validation time is declared, the checker shall use the time
+  of the evaluation as the validation time and report that it did so.
     - Rationale: The report of such an evaluation depends on when the evaluation is performed. A
       user who needs a reproducible report declares the validation time. If the time of the
       evaluation is not available, the validation time has no value, and the rules that depend on
@@ -292,14 +291,13 @@ value.
 
 - `Content_Always`: The checker shall evaluate every certificate chain against the reference
   specifications that @tbl:reference-specifications marks as always applied.
-- `Content_Selected`: Where a reference specification is selected, the checker shall evaluate the
+- `Content_Selected`: While a reference specification is selected, the checker shall evaluate the
   certificate chain against that specification.
 - `Content_Disable_Rule`: The checker shall allow the user to disable a rule by its identifier.
     - Rationale: A device vendor can decide not to follow a requirement of a reference
       specification, for example where two specifications conflict.
-- `Content_Rule_Disabled`: When the user disables a rule, the checker shall not report a finding
-  of that rule as an error, as a warning, or as not evaluated, and shall report that the rule is
-  disabled.
+- `Content_Rule_Disabled`: When the user disables a rule, the checker shall report that the rule is
+  disabled and report no finding of that rule as an error, as a warning, or as not evaluated.
     - Rationale: The report states each disabled rule, so that a report without errors is not
       taken to cover a rule that was not evaluated.
 - `Content_Mandatory`: If a certificate lacks a field, extension, or object identifier that an
@@ -346,9 +344,9 @@ warning, not evaluated, or information.
 - `Report_All`: The checker shall report every violation that it detects during an evaluation.
     - Rationale: A device vendor that corrects one violation should not have to run the checker
       again to discover the next one.
-- `Report_Finding`: The checker shall identify, for each finding, its severity, the certificate or
-  other part of the input that it applies to, and, where a rule produced the finding, the rule and
-  the reference specification and clause that the rule is drawn from.
+- `Report_Finding`: The checker shall identify, for each finding, its severity and the certificate
+  or other part of the input that it applies to and, for each finding that a rule produced, the rule
+  and the reference specification and clause that the rule is drawn from.
 - `Report_Error`: When a finding arises from a requirement that a reference specification states as
   mandatory, the checker shall report the finding as an error.
 - `Report_Warning`: When a finding arises from a requirement that a reference specification states
@@ -408,10 +406,11 @@ warning, not evaluated, or information.
   that cannot be decoded.
     - Rationale: `Input_Malformed_Certificate` then applies, and the other certificates are still
       evaluated.
-- `Operation_Deterministic`: While the validation time is declared, when given the same input and
-  the same context, a release of the checker shall produce the same report.
+- `Operation_Deterministic`: While the validation time is declared, the checker shall produce the
+  same report each time that it evaluates the same input with the same context.
     - Rationale: When the validation time is not declared, `Chain_No_Validation_Time` makes the
-      report depend on the time of the evaluation.
+      report depend on the time of the evaluation. The requirement is on one release of the checker,
+      as a later release can produce a different report.
 
 # Extensibility
 
