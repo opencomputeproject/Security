@@ -275,7 +275,7 @@ value.
 - `Chain_No_Trust_Anchor`: While no trust anchor is declared, the checker shall treat the first
   certificate in the chain as the trust anchor and report that it did so.
     - Rationale: A device vendor often checks a certificate chain before the root certificate is
-      available. The report makes it clear that trust in the chain was assumed rather than verified.
+      available. The report states which certificate the chain was validated against.
 - `Chain_Validation_Time`: When the user declares a validation time, the checker shall evaluate
   certificate validity periods at the declared time.
 - `Chain_No_Validation_Time`: While no validation time is declared, the checker shall use the time
