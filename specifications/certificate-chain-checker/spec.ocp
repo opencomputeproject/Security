@@ -123,7 +123,6 @@ the user who selects it.
 | DICE Concise Evidence Binding for SPDM [@{tcg-dice-concise-evidence-binding-for-spdm}] | Certificate requirements for SPDM and DICE certificate models | When selected |
 | DICE Certificate Profiles [@{tcg-dice-certificate-profiles}]                     | Certificate profiles and policy object identifiers            | When selected |
 | Attestation of System Components [@{ocp-attestation}]                            | Certificate chain requirements for attester devices           | When selected |
-| Server iRoT Profile for DPE [@{ocp-dpe-irot-profile}]                            | Embedded CA and leaf certificate requirements                 | When selected |
 
 Table: Reference Specifications {#tbl:reference-specifications}
 
@@ -440,16 +439,9 @@ implements.
 
 ### Conflicts and Gaps in Reference Specifications
 
-The following conflicts and gaps affect the rules that the checker evaluates. Each needs either a
-resolution or a decision to record it in the rules, before the corresponding rules are specified.
+The following conflict affects the rules that the checker evaluates. It needs either a resolution
+or a decision to record it in the rules, before the corresponding rules are specified.
 
-- Basic constraints in a leaf certificate. DICE Certificate Profiles states that a certificate whose
-  subject is not an embedded CA should not contain the basic constraints extension. The Server iRoT
-  Profile for DPE states that the extension shall be included in the leaf certificate. DSP0274
-  permits either, as the extension is optional in the leaf certificate.
-- Object identifiers in the Server iRoT Profile for DPE. The profile refers to object identifiers
-  with names of the form `ocp-dice-*`, for example `ocp-dice-kp-eca` and `ocp-dice-Ueid`, and does
-  not assign values to them.
 - Key usage of the device identity key. The key table in Attestation of System Components states
   that the device identity key signs the certificate of the device attestation key and lists digital
   signature as its only key usage. RFC 5280 requires the `keyCertSign` key usage for a key that
@@ -461,6 +453,8 @@ The following are candidates for @tbl:reference-specifications.
 
 - The RFCs that define further algorithms for X.509, such as RFC 9909 for SLH-DSA.
 - The Caliptra specification, which defines the fields of each certificate in its certificate chain.
+- The Server iRoT Profile for DPE, which defines requirements for embedded CA certificates and
+  leaf certificates. The profile is a draft, and it is a candidate once it is published.
 - The PCI Express Base Specification, for devices that implement CMA-SPDM or TDISP.
 - Policies on algorithm strength, such as CNSA 2.0.
 

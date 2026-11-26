@@ -72,7 +72,3 @@ references:
     title: "Attestation of System Components; Requirements and Recommendations"
     publisher: "Open Compute Project"
     url: "https://www.opencompute.org/documents/attestation-v1-0-20201104-pdf"
-  - id: "ocp-dpe-irot-profile"
-    title: "Server iRoT Profile for DPE"
-    publisher: "Open Compute Project"
-    url: "https://opencomputeproject.github.io/Security/dpe-irot-profile/HEAD/"
