@@ -72,3 +72,14 @@ references:
     title: "Attestation of System Components; Requirements and Recommendations"
     publisher: "Open Compute Project"
     url: "https://www.opencompute.org/documents/attestation-v1-0-20201104-pdf"
+  - id: "nsa-cnsa"
+    title: "Commercial National Security Algorithm (CNSA) Suite"
+    publisher: "National Security Agency"
+    url: "https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm"
+  - id: "rfc8603"
+    title: "Commercial National Security Algorithm (CNSA) Suite Certificate and Certificate Revocation List (CRL) Profile"
+    publisher: "RFC Editor"
+    issued:
+      year: 2019
+      month: 5
+    url: "https://www.rfc-editor.org/rfc/rfc8603.html"

@@ -106,7 +106,8 @@ The following are outside the scope of this document:
 @tbl:reference-specifications lists the specifications that the checker evaluates certificate chains
 against. A specification that is always applied governs every X.509 certificate. A specification
 that is applied when selected governs only the devices that claim conformance to it, and so it is
-the user who selects it.
+the user who selects it. A specification that is applied with another specification is one that the
+other specification requires, and so it is applied whenever the other specification is applied.
 
 | Specification                                                                    | Subject                                                       | Applied       |
 | :------------------------------------------------------------------------------- | :------------------------------------------------------------ | :------------ |
@@ -123,11 +124,21 @@ the user who selects it.
 | TCG DICE Concise Evidence Binding for SPDM [@{tcg-dice-concise-evidence-binding-for-spdm}] | Certificate requirements for SPDM and DICE certificate models | When selected |
 | TCG DICE Certificate Profiles [@{tcg-dice-certificate-profiles}]                     | Certificate profiles and policy object identifiers            | When selected |
 | OCP Attestation of System Components [@{ocp-attestation}]                            | Certificate chain requirements for attester devices           | When selected |
+| NSA Commercial National Security Algorithm (CNSA) Suite [@{nsa-cnsa}]                | Algorithms and key sizes of public keys and signatures        | When selected, or with Attestation of System Components |
 
 Table: Reference Specifications {#tbl:reference-specifications}
 
 The versions of each specification that the checker implements are identified together with the
 rules.
+
+The CNSA Suite is a policy on the algorithms and key sizes that national security systems use.
+Attestation of System Components requires the keys of a device to follow it, and so the checker
+applies the CNSA Suite whenever Attestation of System Components is applied. A user can also select
+the CNSA Suite by itself, for a device that does not claim conformance to Attestation of System
+Components. The checker evaluates the algorithms and key sizes of the public keys and signatures in
+a certificate chain against the CNSA Suite. RFC 8603 [@{rfc8603}] states the requirements of
+version 1.0 of the suite for certificates. The requirements of RFC 8603 on the other fields and
+extensions of a certificate are outside the scope of the checker.
 
 # Inputs
 
@@ -293,6 +304,12 @@ value.
   specifications that @tbl:reference-specifications marks as always applied.
 - `Content_Selected`: While a reference specification is selected, the checker shall evaluate the
   certificate chain against that specification.
+- `Content_Applied_With`: While a reference specification is applied, the checker shall evaluate
+  the certificate chain against each reference specification that @tbl:reference-specifications
+  states is applied with it.
+    - Rationale: Attestation of System Components requires the keys of a device to follow the CNSA
+      Suite. A device vendor who selects Attestation of System Components does not then need to
+      select the CNSA Suite as well.
 - `Content_Disable_Rule`: The checker shall allow the user to disable a rule by its identifier.
     - Rationale: A device vendor can decide not to follow a requirement of a reference
       specification, for example where two specifications conflict.
@@ -438,13 +455,16 @@ implements.
 
 ### Conflicts and Gaps in Reference Specifications
 
-The following conflict affects the rules that the checker evaluates. It needs either a resolution
-or a decision to record it in the rules, before the corresponding rules are specified.
+The following conflict and gap affect the rules that the checker evaluates. Each needs either a
+resolution or a decision to record it in the rules, before the corresponding rules are specified.
 
 - Key usage of the device identity key. The key table in Attestation of System Components states
   that the device identity key signs the certificate of the device attestation key and lists digital
   signature as its only key usage. RFC 5280 requires the `keyCertSign` key usage for a key that
   verifies signatures on certificates.
+- Version of the CNSA Suite. Attestation of System Components requires keys to follow the guidance
+  of the CNSA Suite on algorithms and key sizes, and does not state a version of the suite. It was
+  published before version 2.0 of the suite, and its reference is to the suite as it was then.
 
 ### Specifications Under Consideration
 
@@ -455,12 +475,15 @@ The following are candidates for @tbl:reference-specifications.
 - The Server iRoT Profile for DPE, which defines requirements for embedded CA certificates and
   leaf certificates. The profile is a draft, and it is a candidate once it is published.
 - The PCI Express Base Specification, for devices that implement CMA-SPDM or TDISP.
-- Policies on algorithm strength, such as CNSA 2.0.
 
 ### Other
 
 - Attestation of System Components version 1.0 is the published version. Version 1.1 is under
   development and adds requirements on SPDM. The version or versions that the checker applies need
   to be decided.
+- The CNSA Suite has the versions 1.0 and 2.0. RFC 8603 states the requirements of version 1.0 for
+  certificates, and the corresponding document for version 2.0 is an Internet-Draft. The version or
+  versions that the checker applies need to be decided, as does the version that the checker
+  applies with Attestation of System Components.
 - Whether a user can add rules to the checker without a new release of the checker, for example for
   a vendor-specific certificate profile.
