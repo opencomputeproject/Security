@@ -37,7 +37,7 @@ The Contributors of this Specification would like to acknowledge the following:
 ## Openness
 
 The requirements are developed in the open within the OCP Security Project, and the checks that
-they call for are drawn from published specifications.
+they call for are drawn from publicly available specifications.
 
 ## Efficiency
 
@@ -110,19 +110,19 @@ the user who selects it.
 
 | Specification                                                                    | Subject                                                       | Applied       |
 | :------------------------------------------------------------------------------- | :------------------------------------------------------------ | :------------ |
-| RFC 5280 [@{ietf-rfc5280}]                                                       | Certificate profile and certification path validation         | Always        |
+| IETF RFC 5280 [@{ietf-rfc5280}]                                                       | Certificate profile and certification path validation         | Always        |
 | ITU-T X.690 [@{itu-t-x690}]                                                      | Distinguished Encoding Rules (DER)                            | Always        |
-| RFC 3279 [@{ietf-rfc3279}]                                                       | RSA public keys, RSA signatures, and ECDSA signatures         | Always        |
-| RFC 4055 [@{ietf-rfc4055}]                                                       | RSASSA-PSS, and RSA signatures with SHA-2                     | Always        |
-| RFC 5480 [@{ietf-rfc5480}]                                                       | Elliptic curve public keys                                    | Always        |
-| RFC 5758 [@{ietf-rfc5758}]                                                       | ECDSA signatures with SHA-2                                   | Always        |
-| RFC 8410 [@{ietf-rfc8410}]                                                       | Ed25519 and Ed448                                             | Always        |
-| RFC 9881 [@{ietf-rfc9881}]                                                       | ML-DSA                                                        | Always        |
-| DSP0274 [@{dmtf-dsp0274}]                                                        | SPDM certificate and certificate chain requirements           | When selected |
-| DICE Attestation Architecture [@{tcg-dice-attestation-architecture}]             | Certificate extensions that convey evidence                   | When selected |
-| DICE Concise Evidence Binding for SPDM [@{tcg-dice-concise-evidence-binding-for-spdm}] | Certificate requirements for SPDM and DICE certificate models | When selected |
-| DICE Certificate Profiles [@{tcg-dice-certificate-profiles}]                     | Certificate profiles and policy object identifiers            | When selected |
-| Attestation of System Components [@{ocp-attestation}]                            | Certificate chain requirements for attester devices           | When selected |
+| IETF RFC 3279 [@{ietf-rfc3279}]                                                       | RSA public keys, RSA signatures, and ECDSA signatures         | Always        |
+| IETF RFC 4055 [@{ietf-rfc4055}]                                                       | RSASSA-PSS, and RSA signatures with SHA-2                     | Always        |
+| IETF RFC 5480 [@{ietf-rfc5480}]                                                       | Elliptic curve public keys                                    | Always        |
+| IETF RFC 5758 [@{ietf-rfc5758}]                                                       | ECDSA signatures with SHA-2                                   | Always        |
+| IETF RFC 8410 [@{ietf-rfc8410}]                                                       | Ed25519 and Ed448                                             | Always        |
+| IETF RFC 9881 [@{ietf-rfc9881}]                                                       | ML-DSA                                                        | Always        |
+| DMTF DSP0274 [@{dmtf-dsp0274}]                                                        | SPDM certificate and certificate chain requirements           | When selected |
+| TCG DICE Attestation Architecture [@{tcg-dice-attestation-architecture}]             | Certificate extensions that convey evidence                   | When selected |
+| TCG DICE Concise Evidence Binding for SPDM [@{tcg-dice-concise-evidence-binding-for-spdm}] | Certificate requirements for SPDM and DICE certificate models | When selected |
+| TCG DICE Certificate Profiles [@{tcg-dice-certificate-profiles}]                     | Certificate profiles and policy object identifiers            | When selected |
+| OCP Attestation of System Components [@{ocp-attestation}]                            | Certificate chain requirements for attester devices           | When selected |
 
 Table: Reference Specifications {#tbl:reference-specifications}
 
